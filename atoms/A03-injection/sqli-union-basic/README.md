@@ -6,13 +6,16 @@ A minimal Flask lab for classic UNION-based SQL injection. A "user profile looku
 
 ## Run
 
+From the repo root:
+
 ```bash
-cd atoms/A03-injection/sqli-union-basic
-docker compose up --build
+./atom up sqli-union-basic
 ```
 
 - Vulnerable app: <http://127.0.0.1:8001/>
 - Fixed app: <http://127.0.0.1:8101/>
+
+Stop with `./atom down sqli-union-basic`. If you prefer raw Docker: `cd atoms/A03-injection/sqli-union-basic && docker compose up --build`.
 
 ## What to read next
 
