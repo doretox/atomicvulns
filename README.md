@@ -1,4 +1,6 @@
-# atomicvulns
+<p align="center">
+  <img src="docs/assets/banner.svg" alt="atomicvulns — one vuln per app. nothing more." width="100%">
+</p>
 
 <!-- Badges — initial placeholders; more to come (CI, coverage, release, etc.) -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
