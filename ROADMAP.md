@@ -29,7 +29,7 @@ Legenda:
   - *Por que primeiro:* classe mais icônica, exploit visual (dados vazando na tela), template do repo nasce aqui.
   - *Dependências conceituais:* nenhuma.
 
-- [ ] **02.** `xss-reflected` — A03 Injection
+- [x] **02.** `xss-reflected` — A03 Injection
   - *Por que segundo:* mesma classe (injection) mas sink diferente (HTML em vez de SQL), reforça o conceito de source→sink.
   - *Dependências:* nenhuma.
 
