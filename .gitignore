@@ -99,6 +99,13 @@ desktop.ini
 *.burpstate
 
 # ---------------------------------------------------------------------------
+# Claude Code / agent workspaces — per-session infrastructure (worktrees,
+# scratch state, tooling config). Not part of the project code itself.
+# ---------------------------------------------------------------------------
+
+.claude/
+
+# ---------------------------------------------------------------------------
 # Logs — runtime output from apps or CI; never useful in git history.
 # ---------------------------------------------------------------------------
 
