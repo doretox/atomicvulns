@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Profile &mdash; {{ username }}</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>Profile results</h1>
+<table border="1" cellpadding="6">
+  <tr><th>username</th><th>bio</th><th>joined_at</th></tr>
+  {% for row in rows %}
+  <tr><td>{{ row[0] }}</td><td>{{ row[1] }}</td><td>{{ row[2] }}</td></tr>
+  {% endfor %}
+</table>
+<p><a href="/">&larr; Back</a></p>
+<p><em>Open with Burp proxy enabled, interact once, then work from Burp Repeater.</em></p>
+</body>
+</html>

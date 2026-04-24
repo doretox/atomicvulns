@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>User Profile Lookup</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>User Profile Lookup</h1>
+<form method="get" action="/profile">
+  <label>Username: <input type="text" name="username" autofocus></label>
+  <button type="submit">View profile</button>
+</form>
+<p>Try: alice, bob, carol</p>
+<p><em>Open with Burp proxy enabled, interact once, then work from Burp Repeater.</em></p>
+</body>
+</html>

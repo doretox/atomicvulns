@@ -25,7 +25,7 @@ Legenda:
 
 **Milestone:** `v0.1 — MVP`
 
-- [ ] **01.** `sqli-union-basic` — A03 Injection
+- [x] **01.** `sqli-union-basic` — A03 Injection
   - *Por que primeiro:* classe mais icônica, exploit visual (dados vazando na tela), template do repo nasce aqui.
   - *Dependências conceituais:* nenhuma.
 
