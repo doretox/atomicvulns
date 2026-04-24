@@ -1,0 +1,106 @@
+# =============================================================================
+# .gitignore — atomicvulns
+# =============================================================================
+# Keep the tree clean of generated artifacts, per-developer noise, and files
+# that would leak local state or secrets. Grouped by category; stack rationale
+# for each group lives in CLAUDE.md.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Python — default stack for most atoms (CLAUDE.md §3.1).
+# Bytecode caches, virtual envs, local dotenv files, and tool caches.
+# ---------------------------------------------------------------------------
+
+# Bytecode caches and compiled modules — regenerated on every run.
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments — machine-local, must not be tracked.
+venv/
+.venv/
+env/
+ENV/
+
+# Environment files with secrets or local-only config.
+.env
+.env.local
+.env.*.local
+
+# Test, lint, and type-check caches.
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Packaging artifacts (atoms aren't published as packages, but just in case).
+*.egg
+*.egg-info/
+dist/
+build/
+
+# ---------------------------------------------------------------------------
+# Node.js — only the few atoms where the vuln is JS-idiomatic (CLAUDE.md §3.2):
+# prototype-pollution, deserialization-node. Ignored repo-wide regardless.
+# ---------------------------------------------------------------------------
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---------------------------------------------------------------------------
+# SQLite — every atom that uses SQLite seeds its local DB on startup.
+# Schema and seed scripts live in the repo; the DB file itself is generated.
+# ---------------------------------------------------------------------------
+
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+*.sqlite3
+*.sqlite3-journal
+
+# ---------------------------------------------------------------------------
+# Docker — developer-only compose overrides and any local bind-mount volumes.
+# Named volumes live inside Docker's own storage, not on disk here, so only
+# what might actually leak into the working tree is listed.
+# ---------------------------------------------------------------------------
+
+docker-compose.override.yml
+docker-compose.override.yaml
+volumes/
+.docker/
+
+# ---------------------------------------------------------------------------
+# IDE and editor noise — per-developer settings, never committed.
+# ---------------------------------------------------------------------------
+
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS-level junk files dropped into working directories.
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------------------
+# Burp Suite — binary project and state files produced while exploring atoms.
+# Note: curated `burp/*.txt` request exports ARE committed per atom;
+# only the binary Burp files are ignored here.
+# ---------------------------------------------------------------------------
+
+*.burp
+*.burpstate
+
+# ---------------------------------------------------------------------------
+# Logs — runtime output from apps or CI; never useful in git history.
+# ---------------------------------------------------------------------------
+
+*.log
+logs/
