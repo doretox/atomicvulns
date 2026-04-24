@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Shell-invoked scripts must keep LF (CRLF in shebangs breaks execution on Linux/WSL).
+atom text eol=lf
+Makefile text eol=lf
