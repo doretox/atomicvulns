@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""atomicvulns CLI wrapper."""
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+ATOMS_DIR = ROOT / "atoms"
+
+USAGE = """usage: atom <command> [args]
+
+Commands:
+  list              Show all available atoms.
+  up <atom-id>      Start the vulnerable + fixed pair (detached).
+  down <atom-id>    Stop and remove the atom's containers.
+  doctor            Sanity-check your local setup.
+"""
+
+
+def find_atoms():
+    atoms = {}
+    if not ATOMS_DIR.is_dir():
+        return atoms
+    for compose in sorted(ATOMS_DIR.glob("*/*/docker-compose.yml")):
+        atom_id = compose.parent.name
+        if atom_id in atoms:
+            sys.exit(
+                f"error: duplicate atom id {atom_id!r} — "
+                f"found in {atoms[atom_id].parent} and {compose.parent}"
+            )
+        atoms[atom_id] = compose
+    return atoms
+
+
+def resolve(atom_id):
+    atoms = find_atoms()
+    if atom_id not in atoms:
+        print(f"error: unknown atom {atom_id!r}", file=sys.stderr)
+        if atoms:
+            print("available atoms:", file=sys.stderr)
+            for i in sorted(atoms):
+                print(f"  {i}", file=sys.stderr)
+        sys.exit(1)
+    return atoms[atom_id]
+
+
+def compose(compose_file, *args):
+    return subprocess.run(
+        ["docker", "compose", "-f", str(compose_file), *args],
+        cwd=compose_file.parent,
+    ).returncode
+
+
+def parse_ports(compose_file):
+    """Return [(service, host_port)] by scanning the compose yaml.
+
+    Assumes the project's standard shape: services: at the top, each service
+    under 2-space indent, ports listed as "127.0.0.1:HOST:CONTAINER".
+    """
+    svc_pat = re.compile(r"^  ([A-Za-z][\w-]*):\s*$")
+    port_pat = re.compile(r'^\s*-\s+"127\.0\.0\.1:(\d+):\d+"\s*$')
+    results = []
+    current_svc = None
+    in_services = False
+    for line in compose_file.read_text(encoding="utf-8").splitlines():
+        if line.rstrip() == "services:":
+            in_services = True
+            continue
+        if not in_services:
+            continue
+        m = svc_pat.match(line)
+        if m:
+            current_svc = m.group(1)
+            continue
+        m = port_pat.match(line)
+        if m and current_svc:
+            results.append((current_svc, int(m.group(1))))
+    return results
+
+
+def cmd_list():
+    atoms = find_atoms()
+    if not atoms:
+        print("No atoms found under atoms/.")
+        return 0
+    width = max(len(i) for i in atoms)
+    print(f"{len(atoms)} atom(s):\n")
+    for atom_id in sorted(atoms):
+        category = atoms[atom_id].parent.parent.name
+        print(f"  {atom_id:<{width}}  {category}")
+    return 0
+
+
+def cmd_up(atom_id):
+    compose_file = resolve(atom_id)
+    print(f"Starting {atom_id}...\n")
+    rc = compose(compose_file, "up", "-d", "--build")
+    if rc != 0:
+        return rc
+    ports = parse_ports(compose_file)
+    if ports:
+        print()
+        width = max(len(svc) for svc, _ in ports)
+        for svc, port in ports:
+            print(f"  {svc:<{width}}  →  http://127.0.0.1:{port}")
+    print()
+    print("Tail logs: docker compose -f", compose_file, "logs -f")
+    return 0
+
+
+def cmd_down(atom_id):
+    compose_file = resolve(atom_id)
+    return compose(compose_file, "down")
+
+
+def cmd_doctor():
+    ok = True
+
+    def check(label, passed, hint=""):
+        nonlocal ok
+        status = "ok" if passed else "FAIL"
+        print(f"  [{status}] {label}")
+        if not passed:
+            if hint:
+                print(f"         {hint}")
+            ok = False
+
+    print("Checking local setup...\n")
+
+    docker = shutil.which("docker")
+    check("docker on PATH", docker is not None, "install Docker Desktop")
+
+    if docker:
+        rc = subprocess.run(
+            ["docker", "compose", "version"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode
+        check(
+            "docker compose v2 available",
+            rc == 0,
+            "update Docker Desktop (Compose V2 ships with it)",
+        )
+
+        rc = subprocess.run(
+            ["docker", "info"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode
+        check("docker daemon reachable", rc == 0, "start Docker Desktop")
+
+    check("atoms/ directory present", ATOMS_DIR.is_dir())
+    atoms = find_atoms()
+    check(
+        f"atoms discovered ({len(atoms)})",
+        len(atoms) > 0,
+        "no docker-compose.yml files found under atoms/*/*/",
+    )
+
+    print("\n" + ("all checks passed." if ok else "some checks failed."))
+    return 0 if ok else 1
+
+
+def main(argv):
+    if len(argv) < 2:
+        print(USAGE, file=sys.stderr)
+        return 1
+    cmd = argv[1]
+    args = argv[2:]
+    if cmd in ("-h", "--help", "help"):
+        print(USAGE)
+        return 0
+    if cmd == "list":
+        return cmd_list()
+    if cmd == "doctor":
+        return cmd_doctor()
+    if cmd in ("up", "down"):
+        if len(args) != 1:
+            print(f"usage: atom {cmd} <atom-id>", file=sys.stderr)
+            return 1
+        return cmd_up(args[0]) if cmd == "up" else cmd_down(args[0])
+    print(f"error: unknown command {cmd!r}\n", file=sys.stderr)
+    print(USAGE, file=sys.stderr)
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
