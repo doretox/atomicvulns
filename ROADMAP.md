@@ -33,7 +33,7 @@ Legenda:
   - *Por que segundo:* mesma classe (injection) mas sink diferente (HTML em vez de SQL), reforça o conceito de source→sink.
   - *Dependências:* nenhuma.
 
-- [ ] **03.** `idor-numeric-id` — A01 Broken Access Control
+- [x] **03.** `idor-numeric-id` — A01 Broken Access Control
   - *Por que terceiro:* sai de injection e entra em *logic flaw*. Mostra que nem toda vuln é input malicioso — às vezes é só trocar um `1` por `2`.
   - *Dependências:* nenhuma.
 
