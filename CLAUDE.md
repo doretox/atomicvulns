@@ -215,6 +215,16 @@ Cada átomo recebe um número sequencial de implementação (ver `ROADMAP.md`):
 
 Onde `NN` é o número do átomo na ordem de implementação (átomo 01 → 8001/8101, átomo 15 → 8015/8115).
 
+### Padrões didáticos do walkthrough
+
+**Vulns de lógica precisam de um passo "o que a vuln NÃO é".**
+
+Em átomos de injection (SQLi, XSS, command injection), o exploit *é* um payload — a demonstração já carrega o significado. Em vulns de lógica (IDOR, BOLA, mass assignment, race condition, session fixation), o exploit é dado legítimo: trocar um número, reordenar uma chamada, mudar um campo. Isso cria risco do aluno internalizar a forma errada do bug — por exemplo, achar que IDOR é "fingir ser outro usuário" em vez de "ausência de check de autorização".
+
+A solução: incluir um passo no walkthrough que isole a causa real, frequentemente demonstrando o que a vuln *não é*. Exemplo do átomo `idor-numeric-id`: depois do exploit padrão (mudar `/notes/1` pra `/notes/2`), o walkthrough mantém o path em `/notes/1` mas muda `X-User-ID` de `1` pra `2` — a resposta continua sendo a nota da Alice. Prova que IDOR não é "fingir ser outro user", é ausência total de check.
+
+Esse passo de contraste é obrigatório em todo átomo onde o exploit possa ser confundido com um conceito vizinho.
+
 ---
 
 ## 6. Convenções de nomenclatura
