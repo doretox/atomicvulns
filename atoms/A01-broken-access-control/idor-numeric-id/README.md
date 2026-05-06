@@ -6,6 +6,11 @@ A minimal Flask lab for classic IDOR. The app serves private notes through `GET 
 
 This is the first atom in the project that is **not input-driven**. There is no malicious payload to craft — the exploit is literally counting `1, 2, 3`. The vulnerability lives in code that *isn't there* (the missing ownership check), not in code that mishandles a string.
 
+> **Theory primer:** Read [PortSwigger: Insecure direct object references (IDOR)](https://portswigger.net/web-security/access-control/idor)
+> before working through this atom. The atoms in this repo show
+> *how* a vulnerability happens in code; the Academy explains *what*
+> it is and why it matters.
+
 ## Stack note — no database
 
 Unlike `sqli-union-basic`, this atom keeps its data in a plain Python list rather than SQLite. IDOR doesn't depend on the storage layer: the bug is a missing authorization check above whichever store you use. The surface is kept minimal so the missing line is obvious. The storage choice in each atom follows the surface of the bug — not the other way around.

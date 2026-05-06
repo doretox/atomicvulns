@@ -4,6 +4,11 @@
 
 Lab mínimo em Flask para reflected XSS clássico. Um endpoint de "busca de posts" ecoa o parâmetro `q` da query string de volta para a página de resposta através de um template Jinja que marca o valor como `|safe`, desligando o autoescape que normalmente encodaria `<`, `>`, `&`, `'` e `"`. Qualquer HTML ou `<script>` que o atacante mande em `q` roda no browser sob a origin da app.
 
+> **Teoria primeiro:** Leia [PortSwigger: Reflected cross-site scripting (XSS)](https://portswigger.net/web-security/cross-site-scripting/reflected)
+> antes de fazer este átomo. Os átomos deste repo mostram *como* uma
+> vulnerabilidade acontece no código; a Academy explica *o que* ela é
+> e por que importa.
+
 ## Como rodar
 
 Da raiz do repo:

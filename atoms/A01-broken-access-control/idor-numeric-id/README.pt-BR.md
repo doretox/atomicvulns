@@ -6,6 +6,11 @@ Lab mínimo em Flask para IDOR clássico. A app serve notas privadas via `GET /n
 
 Este é o primeiro átomo do projeto que **não é input-driven**. Não tem payload malicioso pra construir — o exploit é literalmente contar `1, 2, 3`. A vulnerabilidade vive em código que *não está lá* (o ownership check ausente), não em código que maltrata uma string.
 
+> **Teoria primeiro:** Leia [PortSwigger: Insecure direct object references (IDOR)](https://portswigger.net/web-security/access-control/idor)
+> antes de fazer este átomo. Os átomos deste repo mostram *como* uma
+> vulnerabilidade acontece no código; a Academy explica *o que* ela é
+> e por que importa.
+
 ## Nota de stack — sem banco
 
 Diferente do `sqli-union-basic`, este átomo guarda os dados numa lista Python simples em vez de SQLite. IDOR não depende da camada de storage: o bug é um check de autorização ausente acima de qualquer store que você use. A superfície é mantida mínima pra a linha que falta ficar óbvia. A escolha de storage em cada átomo segue a superfície do bug — não o contrário.
