@@ -37,7 +37,7 @@ Legenda:
   - *Por que terceiro:* sai de injection e entra em *logic flaw*. Mostra que nem toda vuln é input malicioso — às vezes é só trocar um `1` por `2`.
   - *Dependências:* nenhuma.
 
-- [ ] **04.** `ssrf-basic` — A10 SSRF
+- [~] **04.** `ssrf-basic` — A10 SSRF
   - *Por que quarto:* server-side, moderno, altíssimo impacto em cloud. Requer o conceito de "app que faz request por você" — bom pra introduzir.
   - *Dependências:* nenhuma.
 
