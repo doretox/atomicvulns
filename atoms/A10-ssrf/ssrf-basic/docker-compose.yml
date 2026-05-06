@@ -1,0 +1,22 @@
+services:
+  vulnerable:
+    build: ./vulnerable
+    ports:
+      - "127.0.0.1:8004:5000"
+    networks:
+      - lab-vulnerable
+  fixed:
+    build: ./fixed
+    ports:
+      - "127.0.0.1:8104:5000"
+    networks:
+      - lab-fixed
+  internal:
+    build: ./internal
+    networks:
+      - lab-vulnerable
+      - lab-fixed
+
+networks:
+  lab-vulnerable:
+  lab-fixed:
