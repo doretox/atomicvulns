@@ -4,6 +4,11 @@
 
 A minimal Flask lab for classic UNION-based SQL injection. A "user profile lookup" endpoint concatenates the `username` query parameter into a SQL string, letting an attacker append a `UNION SELECT` and exfiltrate rows from a sibling `secrets` table (password hashes, API keys) that the feature never intended to expose.
 
+> **Theory primer:** Read [PortSwigger: SQL injection](https://portswigger.net/web-security/sql-injection)
+> before working through this atom. The atoms in this repo show
+> *how* a vulnerability happens in code; the Academy explains *what*
+> it is and why it matters.
+
 ## Run
 
 From the repo root:

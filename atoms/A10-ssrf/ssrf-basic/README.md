@@ -6,6 +6,11 @@ A minimal Flask lab for classic SSRF. The app exposes a "URL preview" feature �
 
 This is the first atom in the project where the **server itself** is the one making the outbound request. In `sqli-union-basic`, `xss-reflected`, and `idor-numeric-id` the attacker sent a payload that the app processed locally. In SSRF the attacker sends a *URL*, and the app turns around and makes an HTTP request *to that URL* on its own. The threat shape changes: now the attacker's reach equals the server's reach — internal services, cloud metadata endpoints, anything the server's network can see.
 
+> **Theory primer:** Read [PortSwigger: Server-side request forgery (SSRF)](https://portswigger.net/web-security/ssrf)
+> before working through this atom. The atoms in this repo show
+> *how* a vulnerability happens in code; the Academy explains *what*
+> it is and why it matters.
+
 ## Lab structure — three containers
 
 This is also the first multi-container atom. Three services come up under one `docker-compose.yml`:

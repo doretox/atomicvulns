@@ -225,6 +225,32 @@ A solução: incluir um passo no walkthrough que isole a causa real, frequenteme
 
 Esse passo de contraste é obrigatório em todo átomo onde o exploit possa ser confundido com um conceito vizinho.
 
+### Theory primer obrigatório
+
+Todo átomo DEVE incluir, no início do `README.md` e `README.pt-BR.md` do átomo (logo após o título e a descrição de uma linha, ANTES da seção "How to run" / "Como rodar"), um bloco de Theory primer linkando pra página específica da vulnerabilidade na PortSwigger Web Security Academy.
+
+Formato em `README.md`:
+
+```markdown
+> **Theory primer:** Read [PortSwigger: <Nome da vuln>](<URL exata>)
+> before working through this atom. The atoms in this repo show
+> *how* a vulnerability happens in code; the Academy explains *what*
+> it is and why it matters.
+```
+
+Formato em `README.pt-BR.md`:
+
+```markdown
+> **Teoria primeiro:** Leia [PortSwigger: <Nome da vuln>](<URL exata>)
+> antes de fazer este átomo. Os átomos deste repo mostram *como* uma
+> vulnerabilidade acontece no código; a Academy explica *o que* ela é
+> e por que importa.
+```
+
+A URL DEVE ser a página de introdução conceitual da vuln na Academy (tipicamente a que começa com "What is X?"), NÃO a página de listagem de labs. Ao gerar um átomo novo, o Claude Code deve buscar a URL real e nunca inventar — se não conseguir verificar, deve perguntar ao mantenedor.
+
+Para o "<Nome da vuln>" no link, use a forma apresentada pela própria PortSwigger na página (ex.: "SQL injection", "Reflected cross-site scripting", "IDOR", "Server-side request forgery (SSRF)"). NÃO traduza pra PT mesmo no README PT — a página linkada é em inglês, e manter o nome em inglês evita a confusão de "liguei no link e a página tem outro nome".
+
 ---
 
 ## 6. Convenções de nomenclatura

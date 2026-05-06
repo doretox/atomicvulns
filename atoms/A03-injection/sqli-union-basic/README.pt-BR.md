@@ -4,6 +4,11 @@
 
 Lab mínimo em Flask para SQL injection clássica via UNION. Um endpoint de "busca de perfil" concatena o parâmetro `username` direto numa query SQL, permitindo ao atacante anexar um `UNION SELECT` e exfiltrar linhas de uma tabela vizinha `secrets` (password hashes, API keys) que a feature nunca pretendeu expor.
 
+> **Teoria primeiro:** Leia [PortSwigger: SQL injection](https://portswigger.net/web-security/sql-injection)
+> antes de fazer este átomo. Os átomos deste repo mostram *como* uma
+> vulnerabilidade acontece no código; a Academy explica *o que* ela é
+> e por que importa.
+
 ## Como rodar
 
 Da raiz do repo:
