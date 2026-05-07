@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Token Issuer</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}code{background:#eee;padding:0.1em 0.3em;border-radius:3px;}.token{background:#eee;padding:0.6em;border-radius:4px;word-break:break-all;font-family:monospace;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>Token Issuer</h1>
+<p>Logged in as <strong>{{ username }}</strong> (role: <code>{{ role }}</code>).</p>
+<p>Your token:</p>
+<div class="token">{{ token }}</div>
+<p>Send it on the <code>Authorization: Bearer &lt;token&gt;</code> header to <code>GET /admin</code> or <code>GET /me</code>. Browsers don't add that header on link clicks &mdash; <a href="/admin">/admin</a> will return 401 from this page. Use Burp Repeater.</p>
+<p><em>Open with Burp proxy enabled, interact once, then work from Burp Repeater.</em></p>
+</body>
+</html>

@@ -41,7 +41,7 @@ Legenda:
   - *Por que quarto:* server-side, moderno, altíssimo impacto em cloud. Requer o conceito de "app que faz request por você" — bom pra introduzir.
   - *Dependências:* nenhuma.
 
-- [ ] **05.** `jwt-none-alg` — A02 Cryptographic Failures
+- [x] **05.** `jwt-none-alg` — A02 Cryptographic Failures
   - *Por que fecha MVP:* introduz o mundo JWT, ensina a decodar token no Burp, mostra que "parece crypto" não é "é crypto".
   - *Dependências:* conceito de autenticação via token (explicado no walkthrough).
 
