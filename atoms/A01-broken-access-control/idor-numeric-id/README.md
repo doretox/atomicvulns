@@ -17,7 +17,7 @@ Unlike `sqli-union-basic`, this atom keeps its data in a plain Python list rathe
 
 ## Authentication, simulated
 
-Real authentication (login forms, sessions, password hashing) is out of scope here — the `session-fixation` atom (15) is the right place for that ceremony. This lab fakes "who is logged in" with a single header: `X-User-ID`. If absent, the app defaults to `1` (alice) so the UI works without you setting anything up. Three users are seeded:
+Real authentication (login forms, sessions, password hashing) is out of scope here — that ceremony belongs in a dedicated authentication atom. This lab fakes "who is logged in" with a single header: `X-User-ID`. If absent, the app defaults to `1` (alice) so the UI works without you setting anything up. Three users are seeded:
 
 - `1` — alice — note titled "Banking"
 - `2` — bob — note titled "Meeting"

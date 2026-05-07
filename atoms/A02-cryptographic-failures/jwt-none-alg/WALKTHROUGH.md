@@ -170,7 +170,7 @@ return jwt.decode(token, SECRET, algorithms=["HS256"])
 
 The validation policy — "do I need a signature here?" — is decided based on a value *inside the token*. The token came from the client. So the **client picks the validation policy.** That's a confused-deputy shape: a privileged actor (the server, deciding whether to trust a token) takes orders from an unprivileged one (the attacker, who wrote the header).
 
-The "accept alg=none" branch is one way to lose that game. Atom 13 (`jwt-weak-secret`) is another, and atom 14 (`jwt-key-confusion`) is a third — neither of those involves `none` at all. The pattern repeats because the JWT spec deliberately puts `alg` in the header and asks libraries to honor it. Every JWT-validating function has to defend against attacker-controlled algorithm selection.
+The "accept alg=none" branch is one way to lose that game. Weak shared secrets that survive a brute-force, and algorithm-confusion attacks where the server is tricked into using the wrong key, are two others — neither of those involves `none` at all. The pattern repeats because the JWT spec deliberately puts `alg` in the header and asks libraries to honor it. Every JWT-validating function has to defend against attacker-controlled algorithm selection.
 
 The fix in this atom is one line. The fix for the *class* is one rule: **the server decides which algorithms it accepts, and it does so before reading the token's header.** Whatever the token claims about its own signing algorithm is a hint, not a directive.
 
@@ -201,6 +201,6 @@ Three things matter about this form:
 
 - **`algorithms` is a positive list.** PyJWT compares the token's `alg` against the list and rejects anything not in it. `none` isn't in the list, so unsigned tokens fail at the algorithm check before any signature work happens. Adding `"none"` to that list re-introduces the bug.
 - **There is no branch on the header.** The server commits to "this endpoint accepts HS256 tokens" before it ever reads the token. The attacker can write whatever they want into `alg` — the server doesn't care, doesn't ask.
-- **Blocklisting `none` is not the fix.** A natural-but-wrong alternative is `if header["alg"] == "none": abort()`. That fails to bypasses: case (`"None"`, `"NONE"`, `"nOnE"`), Unicode escapes (`"none"`), and other algorithm-confusion cases that don't involve `none` at all (atom 14, `jwt-key-confusion`, will exploit one). Allowlists are finite; blocklists are guesses.
+- **Blocklisting `none` is not the fix.** A natural-but-wrong alternative is `if header["alg"] == "none": abort()`. That fails to bypasses: case (`"None"`, `"NONE"`, `"nOnE"`), Unicode escapes (`"none"`), and other algorithm-confusion cases that don't involve `none` at all. Allowlists are finite; blocklists are guesses.
 
 The general rule, for any JWT decode call you write or audit: pass `algorithms=` as a positive list of exactly the algorithms this endpoint is supposed to accept, and never branch off `header["alg"]` to choose how to validate. The header is data, not policy.

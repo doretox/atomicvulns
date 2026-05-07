@@ -63,7 +63,7 @@ A natural-looking alternative is to **block** known-bad inputs instead of allowi
 - Redirects: the URL you check resolves to a public host, returns a `302` to `http://169.254.169.254/`, and your HTTP client follows. The check ran on the wrong URL.
 - URL parsers and HTTP clients sometimes disagree on which substring is "the host" — userinfo, IPv6 brackets, trailing dots, percent-encoded characters in the authority all create gaps.
 
-The atom `ssrf-blind-oob` (atom 16) walks through several of these bypasses against a more realistic blocklist defense. For now the takeaway is shape, not technique: **allowlists are finite and decide on intent; blocklists are infinite and decide on guesses.**
+The takeaway is shape, not technique: **allowlists are finite and decide on intent; blocklists are infinite and decide on guesses.**
 
 ## Contrast with previous atoms
 

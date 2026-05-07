@@ -42,7 +42,7 @@ Três motivos pra não fazer:
 
 - **Case sensitivity e Unicode.** `"NONE"`, `"None"`, `"nOnE"` e `"none"` decodam pra o mesmo algoritmo em alguns parsers JWT mas escapam do check de string-equality desse guard. Bypasses reais contra exatamente esse pattern foram publicados pra várias bibliotecas JWT.
 - **Continua fazendo branch sob `header["alg"]`.** O servidor continua deixando o header do token guiar comportamento, só que com um valor permitido a menos. O pattern sobrevive; só o alfabeto encolhe.
-- **Só endereça `none`.** O átomo 13 (`jwt-weak-secret`) e o 14 (`jwt-key-confusion`) exploram outras formas do atacante manipular `alg` pra subverter validação — nenhum dos dois envolve `none`. Uma blocklist que mira `none` especificamente protege contra exatamente um bypass e zero dos relacionados.
+- **Só endereça `none`.** Outras formas do atacante manipular `alg` pra subverter validação — secrets fracos que caem em brute-force, e ataques de algorithm confusion onde o servidor é induzido a usar a chave errada — não envolvem `none`. Uma blocklist que mira `none` especificamente protege contra exatamente um bypass e zero dos relacionados.
 
 A regra geral pra chamadas de decode JWT: passe `algorithms=` como uma lista positiva exatamente dos algoritmos que esse endpoint deve aceitar, e nunca faça branch sob `header["alg"]` pra escolher como validar.
 

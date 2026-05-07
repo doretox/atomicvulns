@@ -30,7 +30,7 @@ The `# VULNERABLE` comment was deleted because the line it described is gone.
 
 Notice what is *not* in the diff. The IDs are still numeric and still incrementing. The URL is still `/notes/1`, `/notes/2`, `/notes/3`. The note table is the same. The header is still self-asserted. None of that is the fix — and none of that needed to change.
 
-The fix is a single conditional. The class of vulnerability is "the server returns a user-scoped object without checking that the caller is the owner". The remediation is exactly its negation: "the server returns a user-scoped object only after checking that the caller is the owner". Anything else — UUIDs, signed tokens, hidden URLs, rate limits — leaves that conditional missing and only changes how hard the bug is to *find*. The atom `idor-uuid-guessable` (atom 11) makes that point concrete by replaying this same exploit against UUID IDs.
+The fix is a single conditional. The class of vulnerability is "the server returns a user-scoped object without checking that the caller is the owner". The remediation is exactly its negation: "the server returns a user-scoped object only after checking that the caller is the owner". Anything else — UUIDs, signed tokens, hidden URLs, rate limits — leaves that conditional missing and only changes how hard the bug is to *find*.
 
 ## Contrast with `sqli-union-basic` and `xss-reflected`
 

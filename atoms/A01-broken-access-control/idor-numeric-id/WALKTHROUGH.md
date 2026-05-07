@@ -27,17 +27,17 @@ Read it twice. Nothing concatenates user input into a dangerous sink. There's no
 Two things to internalize from this shape:
 
 - **`grep` for the keywords that exist in injection bugs (`f"`, `%s`, `|safe`, `Markup`, `eval`) won't find IDOR.** This class shows up as the *absence* of code, and absence doesn't grep. Audit by tracing requests: pick an endpoint that returns user-scoped data, ask "where is the ownership check", and if the answer is "nowhere", you have a finding.
-- **The fix is a single explicit check on the server.** Not "use a UUID instead of an integer", not "rate-limit", not "remove the ID from the URL". Those are obfuscation. You'll see the UUID variant fail in atom 11 (`idor-uuid-guessable`). For now, hold the rule: **the server must verify, on every request, that the caller is allowed to access the requested object.**
+- **The fix is a single explicit check on the server.** Not "use a UUID instead of an integer", not "rate-limit", not "remove the ID from the URL". Those are obfuscation. Hold the rule: **the server must verify, on every request, that the caller is allowed to access the requested object.**
 
 ## 3. How auth works in this lab
 
-Real auth (login forms, session cookies, password hashing) is out of scope for an IDOR lab — it would triple the code size and teach a different lesson. The `session-fixation` atom (15) is the right place for the full ceremony.
+Real auth (login forms, session cookies, password hashing) is out of scope for an IDOR lab — it would triple the code size and teach a different lesson.
 
 Here we fake it with a single header: **`X-User-ID`**. Whatever integer the client sends, the app treats as "the logged-in user". If the header is absent, the app defaults to `1` so the UI is clickable without you setting anything up.
 
 Two consequences worth holding in your head before you start exploiting:
 
-- **The header is self-asserted.** Nothing prevents you from claiming to be user `2` or `99`. In a real app that would be a separate bug (broken authentication, atom 15) — but here we're not even pretending to verify identity. The "session" is whatever you say it is.
+- **The header is self-asserted.** Nothing prevents you from claiming to be user `2` or `99`. In a real app that would be a separate bug (broken authentication) — but here we're not even pretending to verify identity. The "session" is whatever you say it is.
 - **Whether the app *uses* that claimed identity for authorization is a different question.** The vulnerable version reads `X-User-ID` for the home page (so it can greet you by name) but ignores it inside `/notes/<id>`. That's the bug. Step 4 below makes the distinction concrete.
 
 ## 4. Exploitation via Burp Suite (primary track)

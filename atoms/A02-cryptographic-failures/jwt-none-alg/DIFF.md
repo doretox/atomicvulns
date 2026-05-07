@@ -42,7 +42,7 @@ Three reasons not to do this:
 
 - **Case sensitivity and Unicode.** `"NONE"`, `"None"`, `"nOnE"`, and `"none"` all decode through to the same algorithm in some JWT parsers but skip the string-equality check in this guard. Real bypasses against this exact pattern have been published for several JWT libraries.
 - **It still branches off `header["alg"]`.** The server is still letting the token's header steer behavior, just with one fewer permitted value. The pattern survives; only the alphabet shrinks.
-- **It only addresses `none`.** Atom 13 (`jwt-weak-secret`) and atom 14 (`jwt-key-confusion`) exploit other ways the attacker can manipulate `alg` to subvert validation — neither of those involves `none`. A blocklist that targets `none` specifically protects against exactly one bypass and zero of the related ones.
+- **It only addresses `none`.** Other ways the attacker can manipulate `alg` to subvert validation — weak secrets that fall to brute-force, and algorithm-confusion attacks where the server is tricked into using the wrong key — don't involve `none` at all. A blocklist that targets `none` specifically protects against exactly one bypass and zero of the related ones.
 
 The general rule for JWT decode calls: pass `algorithms=` as a positive list of exactly the algorithms this endpoint should accept, and never branch off `header["alg"]` to choose how to validate.
 

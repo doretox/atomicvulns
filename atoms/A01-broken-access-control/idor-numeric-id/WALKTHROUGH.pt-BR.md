@@ -27,17 +27,17 @@ Leia duas vezes. Nada concatena input de usuário num sink perigoso. Não tem fi
 Duas coisas pra internalizar dessa forma:
 
 - **`grep` pelas keywords que aparecem em bugs de injection (`f"`, `%s`, `|safe`, `Markup`, `eval`) não acha IDOR.** Esta classe aparece como a *ausência* de código, e ausência não dá grep. Auditoria aqui é por traço de request: escolha um endpoint que retorna dado escopado a usuário, pergunte "onde está o ownership check", e se a resposta é "em lugar nenhum", você tem um achado.
-- **O fix é um único check explícito no servidor.** Não é "trocar inteiro por UUID", não é "rate-limit", não é "tirar o ID da URL". Isso é obfuscation. Você vai ver a variante UUID falhar no átomo 11 (`idor-uuid-guessable`). Por enquanto, segura a regra: **o servidor tem que verificar, em todo request, que o caller tem direito ao objeto requisitado.**
+- **O fix é um único check explícito no servidor.** Não é "trocar inteiro por UUID", não é "rate-limit", não é "tirar o ID da URL". Isso é obfuscation. Segura a regra: **o servidor tem que verificar, em todo request, que o caller tem direito ao objeto requisitado.**
 
 ## 3. Como funciona a "auth" deste lab
 
-Auth de verdade (form de login, session cookie, password hashing) está fora do escopo de um lab de IDOR — triplicaria o tamanho do código e ensinaria outra lição. O átomo `session-fixation` (15) é o lugar pra a cerimônia toda.
+Auth de verdade (form de login, session cookie, password hashing) está fora do escopo de um lab de IDOR — triplicaria o tamanho do código e ensinaria outra lição.
 
 Aqui simulamos com um único header: **`X-User-ID`**. Qualquer inteiro que o cliente mandar, a app trata como "o usuário logado". Se o header está ausente, a app default-a pra `1` pra a UI ser clicável sem você configurar nada.
 
 Duas consequências pra ter em mente antes de começar a explorar:
 
-- **O header é auto-declarado.** Nada impede você de dizer que é o user `2` ou `99`. Numa app de verdade isso seria outro bug (broken authentication, átomo 15) — mas aqui a gente nem fingiu verificar identidade. A "session" é o que você disser que é.
+- **O header é auto-declarado.** Nada impede você de dizer que é o user `2` ou `99`. Numa app de verdade isso seria outro bug (broken authentication) — mas aqui a gente nem fingiu verificar identidade. A "session" é o que você disser que é.
 - **Se a app *usa* essa identidade declarada pra autorização é uma pergunta diferente.** A versão vulnerable lê `X-User-ID` na home page (pra te cumprimentar pelo nome) mas ignora dentro de `/notes/<id>`. É aí que está o bug. O Passo 4 abaixo torna a distinção concreta.
 
 ## 4. Exploração via Burp Suite (trilha principal)

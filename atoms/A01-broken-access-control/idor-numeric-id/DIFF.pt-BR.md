@@ -30,7 +30,7 @@ O comentário `# VULNERABLE` foi apagado porque a linha que ele descrevia não e
 
 Olha o que *não* está no diff. Os IDs continuam numéricos e continuam incrementando. A URL continua sendo `/notes/1`, `/notes/2`, `/notes/3`. A tabela de notas é a mesma. O header continua sendo auto-declarado. Nada disso é o fix — e nada disso precisava mudar.
 
-O fix é um único conditional. A classe da vulnerabilidade é "o servidor devolve um objeto escopado a usuário sem checar se o caller é o dono". A remediação é exatamente a negação: "o servidor devolve um objeto escopado a usuário só depois de checar que o caller é o dono". Qualquer outra coisa — UUIDs, signed tokens, URLs escondidas, rate limits — deixa esse conditional ausente e só muda quanto custa *achar* o bug. O átomo `idor-uuid-guessable` (átomo 11) torna esse ponto concreto replayando este mesmo exploit contra IDs em UUID.
+O fix é um único conditional. A classe da vulnerabilidade é "o servidor devolve um objeto escopado a usuário sem checar se o caller é o dono". A remediação é exatamente a negação: "o servidor devolve um objeto escopado a usuário só depois de checar que o caller é o dono". Qualquer outra coisa — UUIDs, signed tokens, URLs escondidas, rate limits — deixa esse conditional ausente e só muda quanto custa *achar* o bug.
 
 ## Contraste com `sqli-union-basic` e `xss-reflected`
 

@@ -63,7 +63,7 @@ Uma alternativa de aparência natural é **bloquear** inputs conhecidos como rui
 - Redirects: a URL que você checa resolve pra um host público, devolve `302` pra `http://169.254.169.254/`, e seu client HTTP segue. O check rodou na URL errada.
 - Parsers de URL e clients HTTP às vezes discordam sobre qual substring é "o host" — userinfo, colchetes de IPv6, ponto final, caracteres percent-encoded na authority, todos criam frestas.
 
-O átomo `ssrf-blind-oob` (átomo 16) caminha por vários desses bypasses contra uma defesa por blocklist mais realista. Por enquanto o takeaway é forma, não técnica: **allowlists são finitas e decidem por intenção; blocklists são infinitas e decidem por palpite.**
+O takeaway é forma, não técnica: **allowlists são finitas e decidem por intenção; blocklists são infinitas e decidem por palpite.**
 
 ## Contraste com os átomos anteriores
 

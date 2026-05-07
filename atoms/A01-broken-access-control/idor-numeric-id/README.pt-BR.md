@@ -17,7 +17,7 @@ Diferente do `sqli-union-basic`, este átomo guarda os dados numa lista Python s
 
 ## Autenticação simulada
 
-Autenticação de verdade (form de login, session, password hashing) está fora do escopo aqui — o átomo `session-fixation` (15) é o lugar certo pra essa cerimônia. Este lab simula "quem está logado" com um único header: `X-User-ID`. Se ausente, a app default-a pra `1` (alice) pra a UI rodar sem você configurar nada. Três usuários no seed:
+Autenticação de verdade (form de login, session, password hashing) está fora do escopo aqui — essa cerimônia cabe num átomo de autenticação dedicado. Este lab simula "quem está logado" com um único header: `X-User-ID`. Se ausente, a app default-a pra `1` (alice) pra a UI rodar sem você configurar nada. Três usuários no seed:
 
 - `1` — alice — nota "Banking"
 - `2` — bob — nota "Meeting"

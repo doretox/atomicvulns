@@ -263,7 +263,6 @@ Formato: `<categoria>-<variante>-<qualificador>` (a pasta pai já diz o A0X, ent
 
 Exemplos:
 - `sqli-union-basic` (dentro de `A03-injection/`)
-- `sqli-blind-boolean`
 - `xss-reflected`
 - `ssrf-basic` (dentro de `A10-ssrf/`)
 - `idor-numeric-id` (dentro de `A01-broken-access-control/`)
@@ -384,7 +383,7 @@ Antes de criar qualquer átomo, o Claude Code DEVE ler, nesta ordem:
    - Profundidade, tom e formato do `WALKTHROUGH.md` (trilha Burp principal, browser secundária)
    - Granularidade e comentários do `DIFF.md`
    - Estilo dos READMEs de átomo (PT e EN)
-4. **Átomos já concluídos da mesma categoria OWASP**, se existirem. Ex.: ao criar `xss-stored`, ler antes `xss-reflected`; ao criar `sqli-blind-boolean`, ler antes `sqli-union-basic`.
+4. **Átomos já concluídos da mesma categoria OWASP**, se existirem. Ex.: ao criar uma nova variante de XSS, ler antes os átomos XSS já publicados; ao criar uma segunda variante de SQLi, ler antes `sqli-union-basic`.
 
 O objetivo **não é copiar** — é manter consistência de estilo, densidade didática e estrutura entre átomos. Convenções escritas capturam a forma; a referência captura o tom.
 
