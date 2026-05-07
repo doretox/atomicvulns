@@ -88,16 +88,6 @@ Se a vuln não comporta escalada (ex: open redirect), 1 passo só, sem forçar.
 
 ---
 
-## "Try it yourself" — variações de fixação
-
-3-4 desafios curtos que o aluno faz sozinho pra consolidar. Uma linha cada. Exemplo:
-
-- E se o parâmetro viesse via POST em JSON?
-- E se a app encodasse o input com `html.escape` antes? Ainda funciona?
-- Como detectar essa vuln em code review sem rodar a app?
-
----
-
 ## Dependências extras
 
 Se o átomo precisa de lib além do Flask, liste aqui com versão fixa. Pense duas vezes antes de adicionar — a regra da Seção 3.6 do CLAUDE.md é "só inclua se serve à falha ou ao fix".

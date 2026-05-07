@@ -2,6 +2,8 @@
 
 > Documento de especificação para o Claude Code implementar o primeiro átomo do projeto `atomicvulns`. Leia junto com `CLAUDE.md` (Seções 3.3, 5, 8) e `ROADMAP.md`.
 
+*Nota histórica: esta spec foi escrita quando o template do walkthrough incluía a seção "Try it yourself". Essa seção foi posteriormente removida do projeto. O conteúdo abaixo é preservado como referência histórica e não reflete o template atual.*
+
 ---
 
 ## Identidade

@@ -120,15 +120,3 @@ O browser URL-encoda os espaços (e às vezes as aspas) pra você antes de envia
 ## 5. Por que o fix funciona
 
 Veja [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) pra a mudança. Em resumo: a versão fixed chama `conn.execute("... WHERE username = ?", (username,))`. O driver do SQLite faz o parse do statement primeiro, *sem* o valor do parâmetro, e só depois liga `username` como valor literal. Nenhum caractere do input — `'`, `--`, `UNION`, `;`, newline — consegue escapar do slot de string literal pra virar sintaxe SQL. Rode qualquer payload da seção 3 contra <http://127.0.0.1:8101/profile> pra confirmar: a tabela volta vazia (nenhum usuário literalmente chamado `x' UNION SELECT ...` existe), nenhum secret vaza.
-
-## 6. Tente você mesmo
-
-1. **Trocar o estilo de aspas.** Se a app envolvesse o input em `"` em vez de `'`, como ficariam seus payloads? (Dica: troque toda `'` por `"` nos payloads. O `--` ainda comenta qualquer aspas final que a app tentar concatenar.)
-2. **Menos colunas renderizadas.** Suponha que `profile.html` renderizasse só as duas primeiras colunas de cada linha. O banco ainda retorna três. Como você adapta o UNION pra o payload continuar funcionando, e o que isso te diz sobre "colunas que existem no result set" vs "colunas que a app escolhe renderizar"?
-3. **Descobrir nomes de tabela e coluna sem dica.** Você explorou `secrets.password_hash` porque o walkthrough te contou que existia. Num alvo real você não sabe. Tente este payload primeiro pra enumerar tabelas:
-
-   ```
-   ?username=x' UNION SELECT name, null, null FROM sqlite_master WHERE type='table' --
-   ```
-
-   Depois, com o nome da tabela, pegue a definição das colunas em `sqlite_master.sql` (a instrução `CREATE TABLE` completa fica guardada lá como texto).

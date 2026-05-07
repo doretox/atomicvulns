@@ -142,9 +142,3 @@ Replay todo request da seção 4 contra <http://127.0.0.1:8103/>:
 - Passo 4 (`/notes/1` com `X-User-ID: 2`): **403 Forbidden**.
 
 Olha o que o fix *não* faz: não muda os IDs de inteiros pra UUIDs, não esconde eles da URL, não adiciona token, não faz rate-limit. Nada disso é autorização — é obfuscation. A única linha que importa é a comparação explícita; todo o resto é teatro.
-
-## 7. Tente você mesmo
-
-1. **Enumerar além do seed.** Tente `GET /notes/4` contra a app vulnerable (com qualquer `X-User-ID`). O que acontece? Agora `GET /notes/0` e `GET /notes/-1`. Acostume-se com as formas de response — 200 vs 404 vs 403 — é assim que você mapeia o blast radius de um IDOR sem vazar dado real.
-2. **Argumentar por que UUID não conserta isto.** Suponha que a app reconstruísse o seed com IDs UUID (`/notes/4f1a-...-9b3d`). O passo 2 não funcionaria mais na mão porque você não consegue adivinhar o próximo UUID. Isso significa que o bug está corrigido? Tente escrever a resposta em duas frases antes de ler o próximo átomo desta categoria (`idor-uuid-guessable`, átomo 11) — a resposta é "não", e o *porquê* é o que faz aquele átomo valer.
-3. **E em endpoint POST?** Imagine `POST /notes/<id>/delete` com o mesmo check ausente. Caminhe pelo que muda nos seus passos de exploração e o que continua igual. (Dica: muito pouco muda — a classe do bug é method-agnostic. O request no Burp muda de verbo, o impacto vai de "leak de leitura" pra "destruição de dado", e é isso.)

@@ -120,15 +120,3 @@ The browser URL-encodes spaces (and sometimes quotes) for you before sending, so
 ## 5. Why the fix works
 
 See [`DIFF.md`](./DIFF.md) for the change. In short: the fixed version calls `conn.execute("... WHERE username = ?", (username,))`. The SQLite driver parses the SQL statement first, *without* the parameter value, and only then binds `username` as a literal data value. No character in the input — `'`, `--`, `UNION`, `;`, newline — can escape the string-literal slot to become SQL syntax. Run any payload from section 3 against <http://127.0.0.1:8101/profile> to confirm: the table comes back empty (no user literally named `x' UNION SELECT ...` exists), no secrets leak.
-
-## 6. Try it yourself
-
-1. **Change the quote style.** If the app wrapped the input in `"` instead of `'`, what would your payloads look like? (Hint: replace every `'` in the payloads with `"`. The `--` still comments whatever trailing quote character the app tries to append.)
-2. **Fewer rendered columns.** Suppose `profile.html` only rendered the first two columns of each row. The database still returns three. How do you adapt the UNION to keep the payload working, and what does this tell you about "columns that exist in the result set" vs. "columns that the app chooses to render"?
-3. **Discover table and column names without a hint.** You exploited `secrets.password_hash` because the walkthrough told you it exists. In a real target you wouldn't know. Try this payload first to enumerate tables:
-
-   ```
-   ?username=x' UNION SELECT name, null, null FROM sqlite_master WHERE type='table' --
-   ```
-
-   Then, once you have a table name, grab its column definitions from `sqlite_master.sql` (the full `CREATE TABLE` statement is stored there as text).

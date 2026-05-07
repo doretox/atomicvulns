@@ -225,6 +225,8 @@ A solução: incluir um passo no walkthrough que isole a causa real, frequenteme
 
 Esse passo de contraste é obrigatório em todo átomo onde o exploit possa ser confundido com um conceito vizinho.
 
+O walkthrough termina onde a falha foi mostrada e o fix explicado. Não inclua seção de exercícios ou variações adicionais — esse papel cabe à PortSwigger Web Security Academy (referenciada no Theory primer e na seção "Recommended approach" dos READMEs raiz).
+
 ### Theory primer obrigatório
 
 Todo átomo DEVE incluir, no início do `README.md` e `README.pt-BR.md` do átomo (logo após o título e a descrição de uma linha, ANTES da seção "How to run" / "Como rodar"), um bloco de Theory primer linkando pra página específica da vulnerabilidade na PortSwigger Web Security Academy.
