@@ -227,6 +227,20 @@ Esse passo de contraste é obrigatório em todo átomo onde o exploit possa ser 
 
 O walkthrough termina onde a falha foi mostrada e o fix explicado. Não inclua seção de exercícios ou variações adicionais — esse papel cabe à PortSwigger Web Security Academy (referenciada no Theory primer e na seção "Recommended approach" dos READMEs raiz).
 
+### Referências cross-átomo
+
+Cada átomo é uma unidade auto-contida. Pode referenciar outros átomos por nome ou número, mas APENAS átomos já publicados em `atoms/` no momento da escrita.
+
+NÃO referencie átomos planejados mas ainda não-publicados, mesmo que estejam no ROADMAP. Foreshadowing pedagógico do tipo "o próximo átomo vai mostrar X" ou "o átomo Y explora outra forma disso" cria expectativa de timeline e link em potencial quebrado se o roadmap evoluir.
+
+Quando a tentação for citar uma vuln ou variante que ainda não virou átomo, prefira:
+
+- **Generalizar a lição.** Em vez de "o átomo `xss-dom` vai mostrar que esse payload falha lá", escreva "em DOM-based XSS — onde o sink está em JavaScript pós-load — esse mesmo payload falha". A lição fica completa, ancorada no conceito, não no átomo.
+- **Linkar a PortSwigger Academy.** Se a variante já tem página na Academy, é o lugar certo pra mandar o aluno aprofundar.
+- **Realocar pro `ROADMAP.md`.** Foreshadowing genuíno de "o projeto vai cobrir X" mora no ROADMAP, não no átomo.
+
+Referências a átomos JÁ PUBLICADOS são bem-vindas — contraste explícito ("diferente do `idor-numeric-id`, aqui o sink é...") ancora a lição em algo que o aluno consegue abrir e validar imediatamente.
+
 ### Theory primer obrigatório
 
 Todo átomo DEVE incluir, no início do `README.md` e `README.pt-BR.md` do átomo (logo após o título e a descrição de uma linha, ANTES da seção "How to run" / "Como rodar"), um bloco de Theory primer linkando pra página específica da vulnerabilidade na PortSwigger Web Security Academy.
