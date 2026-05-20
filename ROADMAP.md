@@ -209,6 +209,19 @@ Nenhuma dessas direções é compromisso. Decisão fica pra quando chegar lá.
 
 ---
 
+## Infraestrutura e governança
+
+Trabalho transversal ao projeto — não faz parte das fases de átomos e pode
+ser atacado a qualquer momento, em paralelo. Itens listados em ordem
+aproximada de prioridade, mas sem dependência entre si.
+
+- [ ] **CI: linter de port-binding** — workflow GitHub Actions que valida que toda chave `ports:` em `docker-compose.yml` do repo está bindada explicitamente em `127.0.0.1`, e bloqueia merge caso algum container exponha em `0.0.0.0` ou em IP/interface diferente. Hoje a regra é verificada manualmente em revisão de PR.
+- [ ] **`docs/contributing.md`** — guia formal de contribuição: como abrir issue, como propor átomo novo, fluxo de PR, expectativas de qualidade.
+- [ ] **`docs/atom-template/`** — boilerplate completo de átomo (Dockerfile, `app.py` esqueleto, `docker-compose.yml`, stubs PT+EN de README/WALKTHROUGH/DIFF) pra acelerar a criação de novos átomos.
+- [ ] **`docs/validation-checklist.md`** — versão standalone do checklist da Seção 11 do `CLAUDE.md`, linkável diretamente em descrições de PR.
+
+---
+
 ## Dúvidas frequentes que você vai ter durante execução
 
 **"Estou preso no átomo X, posso pular?"**

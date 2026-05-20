@@ -165,12 +165,11 @@ atomicvulns/
 │       ├── ssrf-basic/
 │       ├── ssrf-blind-oob/
 │       └── ssrf-cloud-metadata/
-├── docs/
-│   ├── contributing.md
-│   ├── atom-template/             # template pra criar novos átomos
-│   └── validation-checklist.md
-└── .github/
-    └── workflows/                 # CI: build containers, smoke test
+└── docs/
+    ├── assets/                    # imagens públicas (banner do README, etc.)
+    │   └── banner.svg
+    └── templates/                 # template de spec pra novos átomos
+        └── ATOM-SPEC-TEMPLATE.md
 ```
 
 **Nota sobre categorização:** seguimos a OWASP Top 10 de 2021 (edição estável mais atual). Se surgir uma nova edição durante o projeto, revisamos o mapeamento sem reescrever os átomos — só movemos as pastas.
@@ -332,7 +331,7 @@ Toda app deste repositório é **intencionalmente vulnerável**. As regras abaix
 3. **Sem credenciais reais.** Usuários fake, dados fake, chaves dummy óbvias (`secret = "changeme"`).
 4. **Sem código malicioso real.** Payloads de exploit são demonstrativos (alert, leitura de `/etc/passwd` dummy, etc.), nunca payloads destrutivos ou com C2.
 5. **Sem dependências com vulns conhecidas não relacionadas ao átomo.** Se o átomo é de SQLi, as outras libs devem estar em versão atual. Não queremos CVE "de brinde".
-6. **CI bloqueia merge** se algum container bindar em `0.0.0.0` (linter dedicado em `.github/workflows/`).
+6. **Bind em `127.0.0.1` é convenção obrigatória do projeto**, validada manualmente em revisão de PR. Automatizar essa checagem via CI está previsto no `ROADMAP.md` (seção "Infraestrutura e governança").
 
 ---
 
