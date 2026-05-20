@@ -1,4 +1,4 @@
-# sqli-union-basic — SQL Injection UNION-based
+# sqli-union-basic — UNION-based SQL Injection
 
 > ⚠️ Intentionally vulnerable. Run locally only. Never expose to the internet or a shared network.
 

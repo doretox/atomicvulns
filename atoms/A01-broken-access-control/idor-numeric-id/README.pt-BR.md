@@ -1,4 +1,4 @@
-# idor-numeric-id — Insecure Direct Object Reference (ID numérico)
+# idor-numeric-id — Insecure Direct Object Reference (numeric ID)
 
 > ⚠️ Intentionally vulnerable. Run locally only. Never expose to the internet or a shared network.
 

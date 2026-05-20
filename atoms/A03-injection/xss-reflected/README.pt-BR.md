@@ -1,4 +1,4 @@
-# xss-reflected — Cross-Site Scripting Refletido
+# xss-reflected — Reflected Cross-Site Scripting
 
 > ⚠️ Intentionally vulnerable. Run locally only. Never expose to the internet or a shared network.
 

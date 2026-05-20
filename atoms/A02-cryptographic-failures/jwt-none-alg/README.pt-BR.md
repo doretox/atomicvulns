@@ -1,4 +1,4 @@
-# jwt-none-alg — bypass de assinatura JWT via alg=none
+# jwt-none-alg — JWT alg=none signature bypass
 
 > ⚠️ Intentionally vulnerable. Run locally only. Never expose to the internet or a shared network.
 

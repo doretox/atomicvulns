@@ -317,6 +317,8 @@ Regras claras para evitar inconsistência:
 
 **Termos técnicos não se traduzem** mesmo nos textos em português. Use "SQL injection", "payload", "bypass", "blind", "out-of-band", "sink", "source", "sanitize", etc. O pentester brasileiro precisa aprender o vocabulário em inglês — é o vocabulário do mercado.
 
+**Título h1 do `README.pt-BR.md` é idêntico ao do `README.md`** (sem tradução). O resto do documento — tagline/descrição, parágrafos, headers de seção — é traduzido normalmente. Razão: o nome canônico de uma classe de vulnerabilidade circula em inglês na comunidade de segurança ("Reflected Cross-Site Scripting", "Server-Side Request Forgery"); preservar no título evita ambiguidade terminológica, mantém consistência com IDs de átomo (que já são em inglês) e elimina a tentação de inventar uma tradução por átomo.
+
 **Sincronização:** ao editar uma versão da doc, o Claude Code deve atualizar a contraparte no mesmo commit. Nunca deixar PT e EN dessincronizados.
 
 ---
