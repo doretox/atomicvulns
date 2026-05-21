@@ -20,7 +20,7 @@ This is **not** another DVWA or Juice Shop. Monolithic vulnerable apps already e
 
 ## Target audience
 
-Junior pentesters and AppSec students who already know the basics of HTTP and the terminal, use (or are learning to use) **Burp Suite**, and want a focused lab where each exercise is short enough to finish in one sitting. The material is written for someone who will apply this in a pentest career — Burp is the primary tool, the UI is just context.
+Pentest students and AppSec learners who already know the basics of HTTP and the terminal, use (or are learning to use) **Burp Suite**, and want a focused lab where each exercise is short enough to finish in one sitting. The material is written for someone who will apply this in a pentest career — Burp is the primary tool, the UI is just context.
 
 ## Running an atom
 

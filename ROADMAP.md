@@ -49,7 +49,7 @@ Legenda:
 
 ## Fase 2 — Aprofundamento em Injection
 
-**Objetivo:** dominar as variantes blind e side-channels, que são o que separa pentester júnior de pleno em relatórios de SQLi/command injection.
+**Objetivo:** dominar as variantes blind e side-channels, que são o que diferencia um relatório básico de SQLi/command injection de um relatório de nível profissional.
 
 **Milestone:** `v0.2 — Injection Deep Dive`
 

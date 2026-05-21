@@ -20,7 +20,7 @@ Este projeto **não** é mais um DVWA ou Juice Shop. Apps vulneráveis monolíti
 
 ## Público-alvo
 
-Pentesters júnior e estudantes de AppSec que já sabem o básico de HTTP e terminal, usam (ou estão aprendendo a usar) **Burp Suite**, e querem um laboratório focado onde cada exercício é curto o suficiente para terminar de uma sentada. O material é escrito para quem vai aplicar isso na carreira de pentest — Burp é a ferramenta principal, a UI é só contexto.
+Estudantes de pentest e de AppSec que já sabem o básico de HTTP e terminal, usam (ou estão aprendendo a usar) **Burp Suite**, e querem um laboratório focado onde cada exercício é curto o suficiente para terminar de uma sentada. O material é escrito para quem vai aplicar isso na carreira de pentest — Burp é a ferramenta principal, a UI é só contexto.
 
 ## Rodando um átomo
 

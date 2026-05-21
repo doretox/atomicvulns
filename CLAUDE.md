@@ -12,7 +12,7 @@
 
 **O que NÃO é:** não é um DVWA/Juice Shop concorrente. Apps vulneráveis monolíticas já existem. O diferencial deste projeto é o *atomismo radical*: uma app por falha, rápida de ler, rápida de explorar.
 
-**Público-alvo:** pentesters júnior (incluindo estudantes de pentest/AppSec) que já sabem o básico de HTTP e terminal, usam (ou estão aprendendo a usar) Burp Suite, e querem mapear *código causal → request/response → exploit* sem precisar entender uma aplicação inteira primeiro. O tom do material assume alguém que vai aplicar isso na carreira de pentest.
+**Público-alvo:** estudantes de pentest e AppSec que já sabem o básico de HTTP e terminal, usam (ou estão aprendendo a usar) Burp Suite, e querem mapear *código causal → request/response → exploit* sem precisar entender uma aplicação inteira primeiro. O tom do material assume alguém que vai aplicar isso na carreira de pentest.
 
 **Mantenedor:** projeto solo, médio/longo prazo.
 

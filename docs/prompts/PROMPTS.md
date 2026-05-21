@@ -389,7 +389,7 @@ Me dê uma avaliação honesta:
 ### 8.3. Sanity check no tom/didática do walkthrough
 
 ```
-Leia WALKTHROUGH.md do átomo `<id>` e critique com olhos de pentester júnior (não júnior absoluto — já fez uns 3-5 átomos).
+Leia WALKTHROUGH.md do átomo `<id>` e critique com olhos de estudante de pentest que já passou da fase inicial (já fez uns 3-5 átomos).
 
 Aponte:
 - Passos que pularam explicação.
