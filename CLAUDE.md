@@ -332,6 +332,7 @@ Toda app deste repositório é **intencionalmente vulnerável**. As regras abaix
 4. **Sem código malicioso real.** Payloads de exploit são demonstrativos (alert, leitura de `/etc/passwd` dummy, etc.), nunca payloads destrutivos ou com C2.
 5. **Sem dependências com vulns conhecidas não relacionadas ao átomo.** Se o átomo é de SQLi, as outras libs devem estar em versão atual. Não queremos CVE "de brinde".
 6. **Bind em `127.0.0.1` é convenção obrigatória do projeto**, validada manualmente em revisão de PR. Automatizar essa checagem via CI está previsto no `ROADMAP.md` (seção "Infraestrutura e governança").
+7. **Atualizações de dependência são manuais.** Dependabot está desativado. A revisão acontece ao fim de cada release de fase, com smoke test dos átomos antes do merge. Razão: algumas dependências têm versões intencionalmente pinadas porque o comportamento dessas versões É o objeto de estudo do átomo (ex: PyJWT no `jwt-none-alg`); atualizações automatizadas quebrariam o invariante educacional do projeto.
 
 ---
 
