@@ -37,7 +37,7 @@ A app expõe `GET /` (formulário de login) e `POST /login` (verificação). O u
 
 Sem cookies, sem sessão persistida, sem CSRF token. A app só responde com uma das duas páginas e termina ali. Essa simplicidade é deliberada: o oráculo precisa ser inequívoco, e qualquer feature adicional (flash messages, redirects, headers de sessão) introduz ruído que atrapalha a leitura no Repeater.
 
-**Tipo de átomo:** com HTML (`templates/index.html` para o form + `templates/result.html` mostrando uma das duas mensagens). O HTML existe como destino legítimo das requests interceptadas no Burp, não como ponto de entrada do aluno — o walkthrough é integralmente Burp-only desde a primeira request.
+**Tipo de átomo:** com HTML (`templates/index.html` para o form + `templates/result.html` mostrando uma das duas mensagens). O HTML existe como destino legítimo das requests enviadas pelo Burp, não como ponto de entrada do aluno — o walkthrough é integralmente Burp-only desde a primeira request.
 
 ---
 
