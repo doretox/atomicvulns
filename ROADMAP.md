@@ -53,7 +53,7 @@ Legenda:
 
 **Milestone:** `v0.2 — Injection Deep Dive`
 
-- [ ] **06.** `sqli-blind-boolean` — A03 Injection
+- [x] **06.** `sqli-blind-boolean` — A03 Injection
   - *Por que aqui:* agora que SQLi básico tá internalizado, introduz o conceito de extrair dado sem ver a resposta direto.
 
 - [ ] **07.** `sqli-blind-time` — A03 Injection
