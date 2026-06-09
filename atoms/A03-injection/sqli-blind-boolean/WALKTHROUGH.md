@@ -36,7 +36,10 @@ This atom is worked entirely in Burp Suite (Proxy → Repeater → Intruder). Th
 
 The login form on `/` issues a `POST /login` whose body is form-encoded as `username=<...>&password=<...>`. Build that request in a new Repeater tab targeting `127.0.0.1:8006` and send it once with the seeded credentials (`username=alice&password=wonderland`): the response body comes back with `<h1>Welcome, alice!</h1>`, your baseline for the success state. Every step below edits the body and re-sends.
 
-> **Notation convention.** A lone uppercase letter in a payload (`N`, `P`, `C`) is a *reading placeholder* — substitute a concrete value before sending the request. Sending the literal letter triggers an HTTP 500 (SQLite tries to resolve it as a column name).
+> **Notation convention.** A lone uppercase letter in a payload (`N`, `P`, `C`) is a *reading placeholder* — substitute a concrete value before sending the request. Left literal, it fails one of two ways:
+>
+> - `N`, `P` (unquoted) → SQLite tries to resolve it as a column name → HTTP 500.
+> - `'C'` (quoted) → a valid comparison against the string literal `'C'`, always false: no error, but no hits either.
 
 ### A note on encoding the body
 

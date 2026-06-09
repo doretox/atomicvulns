@@ -36,7 +36,10 @@ Este átomo é trabalhado inteiramente no Burp Suite (Proxy → Repeater → Int
 
 O form de login em `/` dispara um `POST /login` com body form-encoded `username=<...>&password=<...>`. Monte esse request numa nova aba do Repeater apontando pra `127.0.0.1:8006` e mande uma vez com as credenciais do seed (`username=alice&password=wonderland`): o body da response volta com `<h1>Welcome, alice!</h1>`, seu baseline pro estado de sucesso. Cada passo abaixo edita o body e reenvia.
 
-> **Convenção de notação.** Letras maiúsculas isoladas em payloads (`N`, `P`, `C`) são *placeholders de leitura* — substitua por um valor concreto antes de enviar a request. Mandar a letra literal causa erro 500 (SQLite tenta resolver como nome de coluna).
+> **Convenção de notação.** Letras maiúsculas isoladas em payloads (`N`, `P`, `C`) são *placeholders de leitura* — substitua por um valor concreto antes de enviar a request. Sem substituir, a letra literal falha de um de dois jeitos:
+>
+> - `N`, `P` (sem aspas) → o SQLite tenta resolver como nome de coluna → HTTP 500.
+> - `'C'` (com aspas) → comparação válida com a string literal `'C'`, sempre FALSE: sem erro, mas sem hits.
 
 ### Uma nota sobre encoding do body
 
