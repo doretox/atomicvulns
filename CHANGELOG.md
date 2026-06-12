@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added atom 06: `sqli-blind-boolean` — Blind SQL injection (boolean-based) (A03 Injection).
+- Added atom 07: `sqli-blind-time` — Blind SQL injection (time-based) (A03 Injection).
 
 ## [0.1.0] - 2026-05-21
 
