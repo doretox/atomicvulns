@@ -56,7 +56,7 @@ Legenda:
 - [x] **06.** `sqli-blind-boolean` — A03 Injection
   - *Por que aqui:* agora que SQLi básico tá internalizado, introduz o conceito de extrair dado sem ver a resposta direto.
 
-- [ ] **07.** `sqli-blind-time` — A03 Injection
+- [x] **07.** `sqli-blind-time` — A03 Injection
   - *Por que aqui:* mesmo conceito do anterior mas via timing side-channel. Par natural.
 
 - [ ] **08.** `xss-stored` — A03 Injection
