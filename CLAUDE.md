@@ -85,6 +85,8 @@ Todo `WALKTHROUGH.md` (e sua versão PT) tem duas seções de exploração:
 
 Em átomos API-only, a trilha secundária não existe — só a principal, via Burp/curl.
 
+**Exceção — átomos cuja prova exige execução de JavaScript no browser (XSS e outras classes client-side).** O Burp continua sendo a ferramenta primária da maioria dos átomos, mas há classes cuja *prova* só acontece com JavaScript rodando num browser — e o Burp não executa JS. Nesses átomos (XSS e, futuramente, outras vulnerabilidades client-side), o **browser é parte OBRIGATÓRIA da trilha principal**, não a trilha secundária: o Burp **planta e manipula** as requests (a parte que ensina a profissão — controle cru do payload, encoding, Repeater) e o **browser observa a execução** (o `alert` disparando, o cookie chegando no listener). Quando atacante e vítima são partes diferentes (ex.: stored XSS, onde o atacante planta e a vítima dispara), essa divisão de ferramentas espelha o próprio modelo do ataque. A trilha secundária opcional — fazer tudo sem Burp, pelo próprio UI/form — continua existindo, com o mesmo papel de baixa fricção.
+
 ### 3.4. Banco de dados
 
 - **SQLite** por padrão (zero setup, arquivo local, realista o suficiente pra SQLi).
