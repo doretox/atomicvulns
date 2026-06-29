@@ -27,7 +27,7 @@ def comment():
 
 Repare nos placeholders `?`: o insert é parametrizado, então **não há SQL injection** aqui. O payload é armazenado *com segurança*. O bug não é como o dado entra — é como ele volta a sair. O sink está a um arquivo de distância, em [`vulnerable/templates/index.html`](./vulnerable/templates/index.html), no loop que renderiza os comentários salvos:
 
-```jinja
+```html
 <li><strong>{{ comment.author }}</strong> &middot; {{ comment.created_at }} &mdash; {{ comment.body|safe }}</li>
 ```
 
