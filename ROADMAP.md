@@ -59,7 +59,7 @@ Legenda:
 - [x] **07.** `sqli-blind-time` — A03 Injection
   - *Por que aqui:* mesmo conceito do anterior mas via timing side-channel. Par natural.
 
-- [ ] **08.** `xss-stored` — A03 Injection
+- [x] **08.** `xss-stored` — A03 Injection
   - *Por que aqui:* reflected já tá dominado (átomo 02), stored mostra persistência e impacto em vítimas múltiplas.
 
 - [ ] **09.** `command-injection-basic` — A03 Injection
