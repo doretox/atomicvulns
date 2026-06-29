@@ -18,7 +18,7 @@ def search():
 
 The source is obvious (`request.args.get("q", "")`), but there's no unescaped concatenation in the view itself. The sink lives one file over, in [`vulnerable/templates/search.html`](./vulnerable/templates/search.html):
 
-```jinja
+```html
 <h1>Results for: {{ q|safe }}</h1>
 ```
 
