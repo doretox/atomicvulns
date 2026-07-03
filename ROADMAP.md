@@ -62,7 +62,7 @@ Legenda:
 - [x] **08.** `xss-stored` — A03 Injection
   - *Por que aqui:* reflected já tá dominado (átomo 02), stored mostra persistência e impacto em vítimas múltiplas.
 
-- [ ] **09.** `command-injection-basic` — A03 Injection
+- [x] **09.** `command-injection-basic` — A03 Injection
   - *Por que aqui:* outra injection, sink diferente (shell). Reforça padrão source→sink em ambiente OS.
 
 - [ ] **10.** `path-traversal-basic` — A01 Broken Access Control
