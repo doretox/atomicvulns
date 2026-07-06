@@ -65,7 +65,7 @@ Legenda:
 - [x] **09.** `command-injection-basic` — A03 Injection
   - *Por que aqui:* outra injection, sink diferente (shell). Reforça padrão source→sink em ambiente OS.
 
-- [ ] **10.** `path-traversal-basic` — A01 Broken Access Control
+- [x] **10.** `path-traversal-basic` — A01 Broken Access Control
   - *Por que aqui:* parente próximo de command injection (manipulação de caminho no sistema de arquivos), bom ponte pra fase de access control.
 
 ---

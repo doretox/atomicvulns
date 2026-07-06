@@ -1,0 +1,5 @@
+Project notes
+-------------
+- Ship the file viewer demo.
+- Ask design for the new icon.
+- Nothing secret here — this is just seed content.

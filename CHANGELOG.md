@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added atom 07: `sqli-blind-time` — Blind SQL injection (time-based) (A03 Injection).
 - Added atom 08: `xss-stored` — Stored Cross-Site Scripting (A03 Injection).
 - Added atom 09: `command-injection-basic` — OS Command Injection (A03 Injection).
+- Added atom 10: `path-traversal-basic` — Path traversal (A01 Broken Access Control).
 
 ## [0.1.0] - 2026-05-21
 
