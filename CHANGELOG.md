@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-06
+
+Injection Deep Dive (Phase 2 of the ROADMAP). Five atoms deepening the injection classes and bridging into access control: the SQLi trilogy completed with its blind pair (boolean- and time-based), stored XSS, OS command injection, and path traversal.
+
 ### Added
 
 - Added atom 06: `sqli-blind-boolean` — Blind SQL injection (boolean-based) (A03 Injection).
@@ -44,5 +48,6 @@ First public release — MVP Pentester (Phase 1 of the ROADMAP).
 - Established bilingual documentation requirement: every atom ships EN + PT-BR versions of `README.md`, `WALKTHROUGH.md`, and `DIFF.md`, kept in sync within the same commit.
 - Established Burp Suite as the primary exploration path in every walkthrough; UI is context only.
 
-[Unreleased]: https://github.com/doretox/atomicvulns/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/doretox/atomicvulns/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/doretox/atomicvulns/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/doretox/atomicvulns/releases/tag/v0.1.0
