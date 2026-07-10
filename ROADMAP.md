@@ -76,7 +76,7 @@ Legenda:
 
 **Milestone:** `v0.3 — Auth & Access`
 
-- [ ] **11.** `idor-uuid-guessable` — A01 Broken Access Control
+- [x] **11.** `idor-uuid-guessable` — A01 Broken Access Control
   - *Variante do 03:* IDOR em UUID previsível, não só ID numérico. Mostra que UUID ≠ seguro por si só.
 
 - [ ] **12.** `bola-rest` — A01 Broken Access Control

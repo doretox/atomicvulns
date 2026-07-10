@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Receipt &mdash; {{ receipt.id }}</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}.receipt{background:#eee;padding:0.8em;border-radius:4px;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>Receipt</h1>
+<div class="receipt">
+<p>Receipt id: <strong>{{ receipt.id }}</strong></p>
+<p>Owner: {{ receipt.owner }}</p>
+<p>Item: {{ receipt.item }}</p>
+<p>Amount: {{ receipt.amount }}</p>
+<p>Issued at: {{ receipt.issued_at.isoformat(timespec="microseconds") }}</p>
+</div>
+<p><a href="/">&larr; Back</a></p>
+<p><em>Open with Burp proxy enabled, interact once, then work from Burp Repeater.</em></p>
+</body>
+</html>

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added atom 11: `idor-uuid-guessable` — Insecure Direct Object Reference (guessable UUID) (A01 Broken Access Control).
+
 ## [0.2.0] - 2026-07-06
 
 Injection Deep Dive (Phase 2 of the ROADMAP). Five atoms deepening the injection classes and bridging into access control: the SQLi trilogy completed with its blind pair (boolean- and time-based), stored XSS, OS command injection, and path traversal.
