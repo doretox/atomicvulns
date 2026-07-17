@@ -155,7 +155,7 @@ Response: `200 OK`, o HTML do painel admin — `Pretend admin key`, approvals pe
 
 ## 5. O que aconteceu de verdade — o bug mais fundo
 
-O bug de superfície — "a app aceita tokens sem assinatura" — explica o que funcionou. A forma do bug é maior que isso, e merece um minuto de atenção porque os átomos 13 e 14 vão explorar outras variantes da mesma forma.
+O bug de superfície — "a app aceita tokens sem assinatura" — explica o que funcionou. A forma do bug é maior que isso, e merece um minuto de atenção porque a mesma forma reaparece em outras falhas de JWT.
 
 **Este é o primeiro átomo do projeto onde o bug é uma falha de configuração criptográfica, não de input nem de lógica.** Nos átomos 01–04 a coisa quebrada era concreta: uma string SQL não-sanitizada, uma expressão HTML sem escape, um check de ownership ausente, uma URL de saída irrestrita. Aqui o código é todo crypto: secrets, signatures, HMAC. Nada disso está quebrado. O problema é que o servidor aceitou *não fazer* crypto quando o token pediu. **Parece-crypto não é é-crypto.** Uma chamada `jwt.decode(...)` cercada por uma constante `SECRET` e um parâmetro `algorithms=` parece um security boundary; se qualquer caminho pela função retorna claims parseadas sem verificar uma signature, não é.
 
