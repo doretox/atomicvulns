@@ -79,7 +79,7 @@ Legenda:
 - [x] **11.** `idor-uuid-guessable` — A01 Broken Access Control
   - *Variante do 03:* IDOR em UUID previsível, não só ID numérico. Mostra que UUID ≠ seguro por si só.
 
-- [ ] **12.** `bola-rest` — A01 Broken Access Control
+- [x] **12.** `bola-rest` — A01 Broken Access Control
   - *Por que aqui:* BOLA (Broken Object Level Authorization) em API REST, variante moderna do IDOR — é o #1 do OWASP API Top 10.
 
 - [ ] **13.** `jwt-weak-secret` — A02 Cryptographic Failures
