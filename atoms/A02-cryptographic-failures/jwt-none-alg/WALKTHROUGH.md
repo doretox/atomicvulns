@@ -155,7 +155,7 @@ Response: `200 OK`, the admin panel HTML — `Pretend admin key`, pending approv
 
 ## 5. What just happened — the deeper bug
 
-The surface bug — "the app accepts unsigned tokens" — explains what worked. The shape of the bug is bigger than that, and worth a minute of attention because atoms 13 and 14 will exploit other flavors of the same shape.
+The surface bug — "the app accepts unsigned tokens" — explains what worked. The shape of the bug is bigger than that, and worth a minute of attention because the same shape recurs across other JWT flaws.
 
 **This is the first atom in the project where the bug is a crypto-config failure, not an input or logic failure.** In atoms 01–04 the broken thing was concrete: an unsanitized SQL string, an unescaped HTML expression, a missing ownership check, an unrestricted outbound URL. Here the code is full of crypto: secrets, signatures, HMAC. None of it is broken. The problem is that the server agreed to do *no* crypto when the token said so. **Looks-like-crypto is not is-crypto.** A `jwt.decode(...)` call surrounded by a `SECRET` constant and an `algorithms=` parameter looks like a security boundary; if any path through the function returns parsed claims without verifying a signature, it isn't.
 
