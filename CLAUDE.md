@@ -455,3 +455,11 @@ Este arquivo evolui com o projeto. Toda mudança estrutural (novo padrão, nova 
 
 **Última revisão:** dia de criação do repositório.
 **Responsável:** mantenedor (Jose Renato).
+
+## Memória de projeto
+
+Gravar memória de projeto (arquivos em `.claude/projects/.../memory/`, incluindo o `MEMORY.md`) é decisão do mantenedor, não do Claude Code — mesma regra de "o Claude Code recomenda, o mantenedor decide" que vale para commits e merges.
+
+- O Claude Code **nunca grava nem edita memória por conta própria**, nem mesmo um lembrete factual. Se achar que algo vale registrar, **propõe**: descreve a memória (nome + conteúdo curto) e espera o "pode gravar" do mantenedor.
+- Isso vale para toda memória — fato pontual, débito, regra de método, qualquer uma. Não há categoria que o Claude Code possa gravar sem pedir; a decisão é sempre do mantenedor.
+- Uma vez aprovada, a memória segue as convenções do repo (concisa, factual, verdadeira, de escopo estreito).
