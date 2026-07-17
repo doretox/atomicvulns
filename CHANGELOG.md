@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added atom 11: `idor-uuid-guessable` — Insecure Direct Object Reference (guessable UUID) (A01 Broken Access Control).
 - Added atom 12: `bola-rest` — Broken Object Level Authorization (BOLA) in a REST API (A01 Broken Access Control).
+- Added atom 13: `jwt-weak-secret` — JWT weak signing secret, brute-forced (A02 Cryptographic Failures).
 
 ## [0.2.0] - 2026-07-06
 
