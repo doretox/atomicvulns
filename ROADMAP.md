@@ -82,7 +82,7 @@ Legenda:
 - [x] **12.** `bola-rest` — A01 Broken Access Control
   - *Por que aqui:* BOLA (Broken Object Level Authorization) em API REST, variante moderna do IDOR — é o #1 do OWASP API Top 10.
 
-- [ ] **13.** `jwt-weak-secret` — A02 Cryptographic Failures
+- [x] **13.** `jwt-weak-secret` — A02 Cryptographic Failures
   - *Por que aqui:* complementa o `jwt-none-alg`, introduz brute force de secret com hashcat/john.
 
 - [ ] **14.** `jwt-key-confusion` — A02 Cryptographic Failures
