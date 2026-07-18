@@ -85,7 +85,7 @@ Legenda:
 - [x] **13.** `jwt-weak-secret` — A02 Cryptographic Failures
   - *Por que aqui:* complementa o `jwt-none-alg`, introduz brute force de secret com hashcat/john.
 
-- [ ] **14.** `jwt-key-confusion` — A02 Cryptographic Failures
+- [x] **14.** `jwt-key-confusion` — A02 Cryptographic Failures
   - *Por que aqui:* trilogia JWT fechada com o mais sofisticado dos três (RS256→HS256 confusion).
 
 - [ ] **15.** `session-fixation` — A07 Auth Failures
