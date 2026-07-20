@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Account Portal</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}code{background:#eee;padding:0 .3em;word-break:break-all;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>Account Portal</h1>
+<p>Your session id: <code>{{ sid }}</code></p>
+{% if sess.authenticated %}
+<p>Status: <strong>logged in as {{ sess.user }}</strong>. <a href="/account">Go to my account &rarr;</a></p>
+{% else %}
+<p>Status: <strong>anonymous</strong> (not logged in).</p>
+<form method="post" action="/login">
+<input name="user" value="alice">
+<input name="password" value="password123">
+<button type="submit">Log in</button>
+</form>
+{% endif %}
+<p><em>Open with Burp proxy enabled, interact once, then work from Burp Repeater.</em></p>
+</body>
+</html>

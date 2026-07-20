@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>My Account &mdash; {{ user }}</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}code{background:#eee;padding:0 .3em;word-break:break-all;}.acct{background:#eee;padding:.8em;border-radius:4px;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>My Account</h1>
+<p>Your session id: <code>{{ sid }}</code></p>
+<div class="acct">
+<p>Signed in as <strong>{{ user }}</strong>.</p>
+<p>Email: {{ user }}@example.test &middot; Plan: Pro &middot; Balance: $4,200.00</p>
+</div>
+<p><a href="/">&larr; Home</a></p>
+<p><em>Open with Burp proxy enabled, interact once, then work from Burp Repeater.</em></p>
+</body>
+</html>
