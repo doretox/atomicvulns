@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-20
+
+Access Control & Authentication (Phase 3 of the ROADMAP). Five atoms spanning access control and identity: guessable-UUID and REST BOLA object-level flaws, the JWT trilogy completed with weak-secret and key-confusion, and session fixation. Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR).
+
 ### Added
 
 - Added atom 11: `idor-uuid-guessable` — Insecure Direct Object Reference (guessable UUID) (A01 Broken Access Control).
@@ -56,6 +60,7 @@ First public release — MVP Pentester (Phase 1 of the ROADMAP).
 - Established bilingual documentation requirement: every atom ships EN + PT-BR versions of `README.md`, `WALKTHROUGH.md`, and `DIFF.md`, kept in sync within the same commit.
 - Established Burp Suite as the primary exploration path in every walkthrough; UI is context only.
 
-[Unreleased]: https://github.com/doretox/atomicvulns/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/doretox/atomicvulns/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/doretox/atomicvulns/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/doretox/atomicvulns/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/doretox/atomicvulns/releases/tag/v0.1.0
