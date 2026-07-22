@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Webhook Tester</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>Webhook Tester</h1>
+<p>Register a webhook URL and the server sends it a test ping &mdash; a background request. The result is not shown back to you.</p>
+<form method="post" action="/ping">
+  <label>Webhook URL: <input type="url" name="url" size="48" value="https://hooks.example.com/webhook-test" autofocus></label>
+  <button type="submit">Send test ping</button>
+</form>
+<p><em>Open with Burp proxy enabled, interact once, then work from Burp Repeater.</em></p>
+</body>
+</html>

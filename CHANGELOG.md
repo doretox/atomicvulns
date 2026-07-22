@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added atom 16: `ssrf-blind-oob` — Blind SSRF, confirmed out-of-band via an embedded listener (A10 SSRF).
+
 ## [0.3.0] - 2026-07-20
 
 Access Control & Authentication (Phase 3 of the ROADMAP). Five atoms spanning access control and identity: guessable-UUID and REST BOLA object-level flaws, the JWT trilogy completed with weak-secret and key-confusion, and session fixation. Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR).
