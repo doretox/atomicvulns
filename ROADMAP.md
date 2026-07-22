@@ -99,7 +99,7 @@ Legenda:
 
 **Milestone:** `v0.4 — Server-side Power Moves`
 
-- [ ] **16.** `ssrf-blind-oob` — A10 SSRF
+- [x] **16.** `ssrf-blind-oob` — A10 SSRF
   - *Variante do 04:* SSRF sem resposta direta, usando canal out-of-band (Burp Collaborator, interact.sh).
 
 - [ ] **17.** `ssrf-cloud-metadata` — A10 SSRF
