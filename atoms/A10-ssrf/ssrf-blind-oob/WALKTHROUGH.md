@@ -136,7 +136,7 @@ Because the exploit produces no visible loot, it is easy to draw the wrong lesso
 
 Blind SSRF means the server can be coerced into making arbitrary outbound requests to destinations the attacker picks, without the attacker seeing the response. On its own, that is what this atom demonstrates: **detection of the primitive** — proof that the server will reach out on your command.
 
-The listener here is a tripwire, not a prize; it holds nothing to steal. Turning this reach into real damage — pointing the server at internal services, or at a cloud metadata endpoint to lift credentials — is a *separate* escalation step beyond this atom's scope. This atom stops at the primitive: the confirmed callback. It is **not** RCE, and nothing here should be over-claimed as more than "the server made a request I chose, and I proved it".
+The listener here is a tripwire, not a prize; it holds nothing to steal. This atom stops at the primitive — the confirmed callback, proof that the server made a request you chose. That is the honest ceiling: it is not RCE, and nothing here should be over-claimed beyond "I made the server reach a destination I picked, and I proved it out-of-band".
 
 ## 7. Exploitation via browser (secondary track, optional)
 

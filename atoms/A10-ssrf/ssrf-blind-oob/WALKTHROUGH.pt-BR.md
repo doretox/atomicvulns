@@ -136,7 +136,7 @@ Como o exploit não produz loot visível, é fácil tirar a lição errada. Crav
 
 Blind SSRF significa que o servidor pode ser coagido a fazer requisições outbound arbitrárias pra destinos que o atacante escolhe, sem o atacante ver a resposta. Por si só, é isso que este átomo demonstra: **detecção da primitiva** — a prova de que o servidor sai pra fora sob o seu comando.
 
-O listener aqui é uma tripwire, não um prêmio; não tem nada pra roubar. Transformar esse alcance em dano real — apontar o servidor pra serviços internos, ou pra um endpoint de metadata de cloud pra levantar credenciais — é um passo de escalada *separado*, além do escopo deste átomo. Este átomo para na primitiva: o callback confirmado. **Não** é RCE, e nada aqui deve ser superestimado além de "o servidor fez uma requisição que eu escolhi, e eu provei".
+O listener aqui é uma tripwire, não um prêmio; não tem nada pra roubar. Este átomo para na primitiva — o callback confirmado, a prova de que o servidor fez uma requisição que você escolheu. Esse é o teto honesto: não é RCE, e nada aqui deve ser superestimado além de "fiz o servidor alcançar um destino que eu escolhi, e provei out-of-band".
 
 ## 7. Exploração via browser (trilha secundária, opcional)
 
