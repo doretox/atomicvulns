@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Contact Importer</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}textarea{width:100%;height:8em;font-family:monospace;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>Contact Importer</h1>
+<p>Paste a contact card (XML). The server imports it and shows the contact's name.</p>
+<form method="post" action="/import">
+  <textarea name="xml" autofocus>&lt;contact&gt;
+  &lt;name&gt;Ada Lovelace&lt;/name&gt;
+  &lt;email&gt;ada@example.com&lt;/email&gt;
+&lt;/contact&gt;</textarea>
+  <button type="submit">Import</button>
+</form>
+<p><em>Open with Burp proxy enabled, interact once, then work from Burp Repeater.</em></p>
+</body>
+</html>
