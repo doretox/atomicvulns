@@ -107,16 +107,6 @@ Host: 127.0.0.1:8001
 
 Response: three rows, one per user, each leaking the username, bcrypt-style hash, and API key. That's the whole point of this bug — the feature was scoped to a single user's three public fields, but the database connection is not. Any table reachable from this connection is now readable through the `/profile` endpoint.
 
-## 4. Exploitation via browser (secondary track, optional)
-
-The same three payloads pasted directly into the browser address bar (or the form input on `/`):
-
-1. `http://127.0.0.1:8001/profile?username=alice' --`
-2. `http://127.0.0.1:8001/profile?username=x' UNION SELECT '1','2','3' --`
-3. `http://127.0.0.1:8001/profile?username=x' UNION SELECT users.username, secrets.password_hash, secrets.api_key FROM users JOIN secrets ON users.id = secrets.user_id --`
-
-The browser URL-encodes spaces (and sometimes quotes) for you before sending, so the raw forms above paste cleanly. The "Executed query" block on each response page makes the source → sink path explicit without needing Burp. Use this track for the very first read-through; switch to Burp for everything after.
-
-## 5. Why the fix works
+## 4. Why the fix works
 
 See [`DIFF.md`](./DIFF.md) for the change. In short: the fixed version calls `conn.execute("... WHERE username = ?", (username,))`. The SQLite driver parses the SQL statement first, *without* the parameter value, and only then binds `username` as a literal data value. No character in the input — `'`, `--`, `UNION`, `;`, newline — can escape the string-literal slot to become SQL syntax. Run any payload from section 3 against <http://127.0.0.1:8101/profile> to confirm: the table comes back empty (no user literally named `x' UNION SELECT ...` exists), no secrets leak.

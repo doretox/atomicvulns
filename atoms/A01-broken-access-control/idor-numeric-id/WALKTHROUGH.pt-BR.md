@@ -106,21 +106,9 @@ Response: status 200, nota da alice de novo. Owner id: 1. **Nada na response mud
 
 Sente nessa um pouco. Se o bug fosse "a app confia na identidade declarada do caller pra autorização", então mudar `X-User-ID` de `1` pra `2` deveria mudar *alguma coisa* — outra nota, outro erro, qualquer coisa diferente. Não muda, porque a view `/notes/<id>` nunca lê o header. Não tem o que spoofar. O "fix" não é "validar o header melhor"; o header nunca fez parte da decisão.
 
-O bug é precisamente: **a decisão de autorização está ausente**, não "a decisão de autorização usa inputs ruins". Um check correto no server-side (ver seção 6) lê o id do caller, compara com `note["owner_id"]` e rejeita as divergências. Se o caller é honesto sobre a identidade dele é uma preocupação separada (e um átomo separado).
+O bug é precisamente: **a decisão de autorização está ausente**, não "a decisão de autorização usa inputs ruins". Um check correto no server-side (ver seção 5) lê o id do caller, compara com `note["owner_id"]` e rejeita as divergências. Se o caller é honesto sobre a identidade dele é uma preocupação separada (e um átomo separado).
 
-## 5. Exploração via browser (trilha secundária, opcional)
-
-Pros passos 1–3, o mesmo exploit funciona direto na barra de endereços do browser — sem Burp:
-
-1. <http://127.0.0.1:8003/notes/1>
-2. <http://127.0.0.1:8003/notes/2>
-3. <http://127.0.0.1:8003/notes/3>
-
-O default `X-User-ID: 1` entra (porque o browser não envia esse header), então os três renderizam como "alice vendo a nota". É a primeira passada mais leve possível: tira qualquer dúvida de que a URL em si é o exploit inteiro.
-
-O passo 4 não tem equivalente no browser — browsers não te deixam setar headers arbitrários a partir da barra de endereços. É por isso que o Burp é a trilha principal: ele torna visível a distinção *check ausente vs identidade errada*. Num engagement real, todo IDOR que você reportar deveria parecer com o passo 4, não só com o passo 2 — replay o request sob "identidades" diferentes e documente que a authorization não muda. É assim que a relevância pro escopo é provada.
-
-## 6. Por que o fix funciona
+## 5. Por que o fix funciona
 
 Veja [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) pra mudança. Em resumo, a view `/notes/<id>` corrigida lê `X-User-ID` e compara com `note["owner_id"]` antes de devolver a nota — se não baterem, o request é rejeitado com `403 Forbidden`:
 

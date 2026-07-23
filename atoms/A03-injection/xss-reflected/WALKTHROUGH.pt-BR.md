@@ -107,16 +107,6 @@ Abra a response na render view do browser. Uma alert box aparece mostrando `127.
 
 Uma nota sobre por que esse payload funciona aqui. O servidor coloca sua tag `<script>` na **response HTML inicial**, que o browser parseia de cima pra baixo no load da página — inline script tags encontradas nesse parse sempre executam. Em um XSS baseado em DOM — onde a vulnerabilidade vive inteiramente em JavaScript client-side que escreve input do usuário no DOM *depois* da página já ter carregado — os browsers deliberadamente **não** executam script tags inseridas via `innerHTML` pós-load. O mesmo payload literal que funciona aqui vai falhar silenciosamente lá. A classe é a mesma ("string controlada pelo atacante vira JavaScript"), mas o sink é diferente, e o payload precisa casar com o sink.
 
-## 4. Exploração via browser (trilha secundária, opcional)
-
-Os mesmos três payloads colados direto na barra de endereços do browser (ou no input do form em `/`):
-
-1. `http://127.0.0.1:8002/search?q=hello`
-2. `http://127.0.0.1:8002/search?q=<b>hello</b>`
-3. `http://127.0.0.1:8002/search?q=<script>alert(document.domain)</script>`
-
-O browser URL-encoda os caracteres que precisam de encoding antes de enviar, então as formas cruas colam limpas. No passo 3 o alert dispara assim que a página carrega — nenhum Repeater necessário. Use esta trilha pra a primeira passada pra *sentir* o impacto, depois passe pro Burp pra tudo.
-
-## 5. Por que o fix funciona
+## 4. Por que o fix funciona
 
 Veja [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) pra mudança de uma linha. Em resumo: o template fixed larga o `|safe` e emite `{{ q }}` via autoescape default do Jinja. Todo caractere que poderia mexer no parser do HTML — `<`, `>`, `&`, `'`, `"` — vira entidade HTML no render. Rode qualquer payload da seção 3 contra <http://127.0.0.1:8102/search> pra confirmar: a página mostra visivelmente `<script>alert(document.domain)</script>` como texto, nada executa.

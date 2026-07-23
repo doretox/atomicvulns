@@ -2,7 +2,7 @@
 
 Você vai fazer o servidor alcançar um host da sua escolha e **provar** que ele fez isso — sem nunca ler um único byte do que ele buscou. No `ssrf-basic` o servidor te entregava a resposta e você lia um serviço interno direto. Aqui o servidor não te diz nada: toda requisição recebe o mesmo `Test ping sent.` de volta. Isso não é o SSRF estar ausente; é o SSRF estar **blind**. Você vai confirmá-lo out-of-band, observando um callback pousar num listener que você controla.
 
-Há um ator neste átomo: você, o pentester, sondando o endpoint. A trilha principal é o Burp Repeater (pra disparar a requisição) mais o `docker compose logs` (pra capturar o callback); o browser é a trilha secundária de baixa fricção.
+Há um ator neste átomo: você, o pentester, sondando o endpoint. A trilha principal é o Burp Repeater (pra disparar a requisição) mais o `docker compose logs` (pra capturar o callback).
 
 ## 1. Contexto
 
@@ -123,6 +123,8 @@ Lá está. O servidor fez a requisição que você pediu — pra um host que seu
 
 É essa a skill inteira de blind SSRF: provar que a requisição aconteceu quando você não pode ver o resultado dela.
 
+**Uma nota sobre DNS.** Este lab usa um callback HTTP porque é simples e auto-contido. No campo, o sinal out-of-band é frequentemente um pingback de **DNS** em vez de HTTP: o egress filtering pode impedir o servidor de abrir uma conexão HTTP de saída, mas ele quase sempre ainda consegue *resolver um nome*, e essa resolução alcança o seu serviço de interação. Mesma ideia — uma requisição escapando pra um sink que você controla — por um canal com mais chance de sobreviver ao filtro. Burp Collaborator e `interactsh` capturam os dois.
+
 ## 5. O que a vuln NÃO é
 
 Como o exploit não produz loot visível, é fácil tirar a lição errada. Crave o que isto *não* é:
@@ -138,20 +140,7 @@ Blind SSRF significa que o servidor pode ser coagido a fazer requisições outbo
 
 O listener aqui é uma tripwire, não um prêmio; não tem nada pra roubar. Este átomo para na primitiva — o callback confirmado, a prova de que o servidor fez uma requisição que você escolheu. Esse é o teto honesto: não é RCE, e nada aqui deve ser superestimado além de "fiz o servidor alcançar um destino que eu escolhi, e provei out-of-band".
 
-## 7. Exploração via browser (trilha secundária, opcional)
-
-A primeira passada mais suave, sem precisar de Burp:
-
-1. Abra <http://127.0.0.1:8016/>.
-2. Deixe o campo como `http://oob-listener/proof-ssrf-16` (ou digite) e clique em **Send test ping**.
-3. A página diz `Test ping sent.` — e não te conta mais nada.
-4. Num terminal: `docker compose logs oob-listener` → a linha `OOB HIT path=/proof-ssrf-16`.
-
-Migre pro Burp pro trabalho de verdade: o Repeater deixa trivial iterar em payloads e controlar a requisição crua, que é o que você faria num engagement.
-
-**Uma nota sobre DNS.** Este lab usa um callback HTTP porque é simples e auto-contido. No campo, o sinal out-of-band é frequentemente um pingback de **DNS** em vez de HTTP: o egress filtering pode impedir o servidor de abrir uma conexão HTTP de saída, mas ele quase sempre ainda consegue *resolver um nome*, e essa resolução alcança o seu serviço de interação. Mesma ideia — uma requisição escapando pra um sink que você controla — por um canal com mais chance de sobreviver ao filtro. Burp Collaborator e `interactsh` capturam os dois.
-
-## 8. Por que o fix funciona
+## 7. Por que o fix funciona
 
 Ver [`DIFF.md`](./DIFF.md) pra a mudança. A view `/ping` corrigida valida o destino contra uma allowlist deny-by-default *antes* de buscar, checada no host parseado:
 

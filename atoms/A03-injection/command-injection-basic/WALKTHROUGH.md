@@ -4,7 +4,7 @@
 
 The app is a "network ping tool." You type a host on `/`, the form submits a `GET /ping?host=<host>` request, and the server runs `ping -c 1 <host>` and shows you the command's output — the kind of reachability check you find in admin panels and status pages everywhere.
 
-Unlike XSS, this one is worked entirely in Burp. The command runs on the server and its output comes straight back in the HTTP response, so there is nothing to execute in a browser — you see `root`, or `/etc/passwd`, right there in the Repeater response pane. The browser track in section 4 is a convenience, not a requirement.
+Unlike XSS, this one is worked entirely in Burp. The command runs on the server and its output comes straight back in the HTTP response, so there is nothing to execute in a browser — you see `root`, or `/etc/passwd`, right there in the Repeater response pane.
 
 ## 2. Spot the bug
 
@@ -132,7 +132,7 @@ ping: groups=0(root): Name or service not known
 
 That last one is worth reading closely: `ping` never resolves a host, yet `groups=0(root)` — a fragment of `id`'s output — appears in its error. The shell executed `$(id)` *before* `ping` ran and pasted the result into the hostname; `ping` then failed on the mangled name. The command still ran.
 
-`;`, `|`, `&&`, `$(...)` — four characters, one root cause: the shell interprets attacker input as code. Blocking one character just moves the attacker to the next. In `sqli-union-basic` the lesson was "escaping quotes is a losing game — parameterize"; here it is "escaping metacharacters is a losing game — drop the shell." Section 5 does exactly that.
+`;`, `|`, `&&`, `$(...)` — four characters, one root cause: the shell interprets attacker input as code. Blocking one character just moves the attacker to the next. In `sqli-union-basic` the lesson was "escaping quotes is a losing game — parameterize"; here it is "escaping metacharacters is a losing game — drop the shell." Section 4 does exactly that.
 
 ### Step 3 — Full command execution: read an arbitrary file
 
@@ -174,16 +174,7 @@ nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
 
 In `sqli-union-basic` the unsanitized input flowed into the **SQL engine**, and the attacker read **data** out of the database. In the XSS atoms it flowed into the **browser's HTML/JS parser**, and the code ran in the **victim's browser**. Here it flows into the **OS shell**, and the command runs **on the server itself**: `whoami` returns `root`, `cat /etc/passwd` hands back the file. Same root cause all three times — input concatenated into a string that an interpreter parses — but the interpreter is now the shell, and the result is Remote Code Execution: the worst case of the family. And the fix rhymes with the SQLi one: just as the parameterized query separated SQL from data, an argument list separates the command from its argument, taking the shell out of the loop entirely.
 
-## 4. Exploitation via browser (secondary track, optional)
-
-The same payloads work straight from the form on `/` (or pasted into the address bar):
-
-1. `http://127.0.0.1:8009/ping?host=127.0.0.1; whoami`
-2. `http://127.0.0.1:8009/ping?host=127.0.0.1; cat /etc/passwd`
-
-The browser URL-encodes spaces (and the rest) for you before sending, so the raw forms paste cleanly — the `%26` trap only bites when you craft the request by hand in Burp. The "Executed command" block on each result page makes the source → sink path explicit without any tooling. Use this for the first read-through; switch to Burp when you want byte-level control over the payload, which is how you'd work a real target.
-
-## 5. Why the fix works
+## 4. Why the fix works
 
 See [`DIFF.md`](./DIFF.md) for the change. In short: the fixed version calls `subprocess.run(["ping", "-c", "1", host])` — an argument list with no `shell=True`. Python hands those exact items to `execvp` and the kernel runs `ping` directly; **no `/bin/sh` is spawned to parse anything.** `host` is always a single, inert argument to `ping`, so `127.0.0.1; whoami` becomes one literal "hostname" that `ping` tries to resolve and can't:
 

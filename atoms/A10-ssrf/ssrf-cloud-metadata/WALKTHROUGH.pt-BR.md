@@ -2,7 +2,7 @@
 
 Você vai fazer o servidor buscar a única URL que existe em toda instância de cloud e que paga mais que qualquer dashboard interno: o metadata endpoint em `169.254.169.254`. Um `GET` não-autenticado ali devolve as credenciais IAM da instância, e esta app te entrega o corpo da resposta. No `ssrf-basic` você apontava o servidor para um serviço interno genérico e o lia; aqui é o **mesmo primitivo** — buscar e mostrar — apontado para o crown-jewel. No fim, você terá o `AccessKeyId`, o `SecretAccessKey` e o session `Token` da instância no painel de resposta do Repeater.
 
-Há um único ator neste átomo: você, o pentester. A trilha principal é o Burp Repeater; o browser é uma trilha secundária de baixa fricção.
+Há um único ator neste átomo: você, o pentester. A trilha principal é o Burp Repeater.
 
 ## 1. Context
 
@@ -127,11 +127,7 @@ Este exploit é input de aparência legítima — uma URL — então é fácil d
 
 **Roubo de credencial IAM → account takeover na cloud.** Um atacante lê credenciais vivas do role da instância no metadata service via SSRF e então age como aquele role na conta cloud — fazendo o que a policy do role permitir (ler buckets S3, enumerar a conta, e assim por diante). Este é um dos SSRF de maior impacto do mundo real; o breach da Capital One em 2019 seguiu exatamente esta forma — SSRF → metadata endpoint → credenciais IAM → dados em S3. **Não** é RCE no servidor da aplicação em si, e *usar* as credenciais é pós-exploração, fora de escopo aqui; este átomo termina no roubo.
 
-## 7. Exploração via browser (trilha secundária, opcional)
-
-Você pode fazer tudo pelo form. Abra <http://127.0.0.1:8017/>, troque a URL por `http://169.254.169.254/latest/meta-data/iam/security-credentials/`, e clique em **Fetch** — o nome do role renderiza no `<pre>`. Depois anexe o nome do role (`.../app-instance-role`) e busque de novo pra ver as credenciais. É a primeira passada mais suave; migre pro Burp Repeater pra iterar de verdade — controle cru do corpo, edições mais rápidas, e os bytes crus da resposta.
-
-## 8. Por que o fix funciona
+## 7. Por que o fix funciona
 
 Veja [`DIFF.md`](./DIFF.md) pra mudança. Em resumo, a view `/fetch` corrigida parseia a URL com `urllib.parse.urlparse` e rejeita qualquer coisa cujo scheme não seja `http`/`https` ou cujo host não esteja numa pequena allowlist:
 

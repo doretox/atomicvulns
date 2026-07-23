@@ -50,7 +50,7 @@ The `POST /comment` body is `application/x-www-form-urlencoded`: `author=<...>&b
 - `&` (`%26`) separates fields and `=` (`%3D`) separates key from value — a literal one inside your payload would be misparsed.
 - **`+` must be `%2B`.** In a form-urlencoded body a literal `+` decodes to a *space*. The Step 3 payload contains `'+document.cookie`; sent raw, the server stores `' document.cookie` and the JavaScript breaks. This is the single most common reason a copy-pasted XSS payload silently fails in a POST body.
 
-The `<`, `>`, `'`, `/` of an XSS payload are not form-structural and can travel as-is, but the safe habit is to paste the decoded payload into Repeater, select the value, and press **Ctrl+U** — Burp encodes everything, including the `+`. Each step shows a **Body (decoded)** for reading and a **Body (Burp-ready)** to paste. (Planting through the browser form instead — section 4 — encodes everything for you; the `+` trap only bites when you craft the raw body in Burp.)
+The `<`, `>`, `'`, `/` of an XSS payload are not form-structural and can travel as-is, but the safe habit is to paste the decoded payload into Repeater, select the value, and press **Ctrl+U** — Burp encodes everything, including the `+`. Each step shows a **Body (decoded)** for reading and a **Body (Burp-ready)** to paste. (The browser form encodes everything for you; the `+` trap only bites when you craft the raw body in Burp.)
 
 ### Step 1 — Plant once, fire elsewhere
 
@@ -131,17 +131,7 @@ Two things worth knowing, both reusable beyond this lab:
 
 In `xss-reflected` the payload rode in the query string of a single request and came back in that same response — the attacker saw their own alert, and a victim was only hit if they clicked an attacker-crafted link (social engineering). Here the attacker planted one `POST` and walked away; the payload lives in the database, and every visitor who opens the guestbook — clicking nothing — runs it, persistently. Same sink (`|safe`), same fix (autoescape), same class. Only the delivery changed: from an ephemeral echo in your own response to a persistent payload in everyone's. And what it steals is not server-side data the way SQLi exfiltrates a password — it's the victim's own session, out of their browser.
 
-## 4. Exploitation via the browser alone (secondary track, optional)
-
-If you haven't set up Burp yet, you can do the whole thing from the browser and still feel the impact:
-
-1. On <http://127.0.0.1:8008/>, type any name and paste `<script>alert(document.domain)</script>` into the comment field, then submit. The browser form-encodes the body for you (including any `+`), so there's no encoding to think about.
-2. You land back on `/` (the redirect) and the alert fires immediately — your freshly stored comment is already in the page.
-3. Reload to see it fire again (persistence), and try the Step 3 `fetch(...)` payload with the listener running to watch the cookie arrive.
-
-This is the low-friction first pass. Use Burp for the primary track when you want raw control over the planted bytes — which is how you'd work a real target.
-
-## 5. Why the fix works
+## 4. Why the fix works
 
 See [`DIFF.md`](./DIFF.md) for the one-line change. In short: the fixed template drops `|safe` and renders `{{ comment.body }}` through Jinja's default autoescape, so `<`, `>`, `&`, `'`, `"` become HTML entities at render time. Point your browser at the fixed app on **8108**, plant any payload from above, and reload: the comment shows up as visible text — `<script>alert(document.domain)</script>` printed on screen, angle brackets and all — and nothing executes. The listener stays silent.
 

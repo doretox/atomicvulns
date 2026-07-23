@@ -4,7 +4,7 @@
 
 The app is a "file viewer." You type a filename on `/`, the form submits a `GET /view?file=<name>` request, and the server reads that file from its `files/` directory and shows you the contents — the kind of "open a document" feature you find in help centers and admin panels everywhere.
 
-Like `command-injection-basic`, this one is worked entirely in Burp. The file is read on the server and its contents come straight back in the HTTP response, so there is nothing to execute in a browser — you see `/etc/passwd` right there in the Repeater response pane. The browser track in section 5 is a convenience, not a requirement.
+Like `command-injection-basic`, this one is worked entirely in Burp. The file is read on the server and its contents come straight back in the HTTP response, so there is nothing to execute in a browser — you see `/etc/passwd` right there in the Repeater response pane.
 
 And keep that atom in mind, because you are about to reach the **same destination** — `/etc/passwd` — by the **opposite route**. In `command-injection-basic` you made the app *run a command* of yours. Here you will make the app *open a file* of yours. One is execution; the other is navigation. Hold that contrast; section 4 closes on it.
 
@@ -130,7 +130,7 @@ Resolved path:
 
 The base directory is *gone*. `os.path.join("/app/files", "/etc/passwd")` returns `/etc/passwd` — when a component is absolute, `os.path.join` discards everything before it. You reached the exact same file without a single `../`.
 
-Sit with that. A developer who "fixes" this by stripping `../` from the input has done nothing: `/etc/passwd` sails straight through. The bug was never the `../` token — it is that the app opens whatever path the input resolves to, with no check that it landed inside the folder. That is why blocklisting is a losing game, and why the real fix (section 6) *resolves the path and confirms the destination* instead of scrubbing characters. In `command-injection-basic` the parallel lesson was "escaping metacharacters is a losing game — drop the shell"; here it is "filtering `../` is a losing game — confine the path."
+Sit with that. A developer who "fixes" this by stripping `../` from the input has done nothing: `/etc/passwd` sails straight through. The bug was never the `../` token — it is that the app opens whatever path the input resolves to, with no check that it landed inside the folder. That is why blocklisting is a losing game, and why the real fix (section 5) *resolves the path and confirms the destination* instead of scrubbing characters. In `command-injection-basic` the parallel lesson was "escaping metacharacters is a losing game — drop the shell"; here it is "filtering `../` is a losing game — confine the path."
 
 ### Step 3 — Read beyond /etc/passwd: the app's own source
 
@@ -184,17 +184,7 @@ You just read `/etc/passwd` — the same file `command-injection-basic` handed y
 
 That last row is why this atom lives in **Broken Access Control**, not Injection: nothing became code, a filename simply steered the app to a resource outside its scope. It is the same shape as `idor-numeric-id` — there you changed a numeric ID (`/notes/1` → `/notes/2`) to read another user's note; here you navigate the filesystem (`notes.txt` → `../../etc/passwd`) to read a file that isn't yours to see. In both, the app handed you something that wasn't meant for you, and in both the fix is the check that was missing — an ownership check there, a confinement check here.
 
-## 5. Exploitation via browser (secondary track, optional)
-
-The same payloads work straight from the address bar — no Burp required:
-
-1. <http://127.0.0.1:8010/view?file=../../../../etc/passwd>
-2. `http://127.0.0.1:8010/view?file=/etc/passwd`
-3. <http://127.0.0.1:8010/view?file=../app.py>
-
-The browser does **not** normalize `../` in the query string (it only collapses dot-segments in the URL *path*), so these travel through intact; the form encodes `/` to `%2f` on submit and the server decodes it back. Use this for the first read-through; switch to Burp when you want byte-level control over the payload, which is how you'd work a real target — and it's the only place the `..%2f` encoding trick from section 4 is visible.
-
-## 6. Why the fix works
+## 5. Why the fix works
 
 See [`DIFF.md`](./DIFF.md) for the change. In short, the fixed `/view` view resolves the requested path to its canonical form and confirms it stays inside the base directory before opening it:
 

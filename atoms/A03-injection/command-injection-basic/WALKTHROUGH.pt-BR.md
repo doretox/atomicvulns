@@ -4,7 +4,7 @@
 
 A app é uma "ferramenta de ping de rede". Você digita um host em `/`, o form dispara um request `GET /ping?host=<host>`, e o servidor roda `ping -c 1 <host>` e te mostra o output do comando — o tipo de checagem de alcance que existe em painéis de admin e status pages por todo lado.
 
-Diferente de XSS, este átomo é trabalhado inteiramente no Burp. O comando roda no servidor e o output volta direto na resposta HTTP, então não há nada pra executar num browser — você vê `root`, ou `/etc/passwd`, ali no painel de response do Repeater. A trilha do browser na seção 4 é conveniência, não requisito.
+Diferente de XSS, este átomo é trabalhado inteiramente no Burp. O comando roda no servidor e o output volta direto na resposta HTTP, então não há nada pra executar num browser — você vê `root`, ou `/etc/passwd`, ali no painel de response do Repeater.
 
 ## 2. Ache o bug
 
@@ -132,7 +132,7 @@ ping: groups=0(root): Name or service not known
 
 Esse último vale ler com atenção: o `ping` nunca resolve um host, mas `groups=0(root)` — um pedaço do output do `id` — aparece no erro dele. O shell executou o `$(id)` *antes* do `ping` rodar e colou o resultado no hostname; o `ping` então falhou no nome mutilado. O comando rodou mesmo assim.
 
-`;`, `|`, `&&`, `$(...)` — quatro caracteres, uma causa raiz: o shell interpreta input do atacante como código. Bloquear um caractere só empurra o atacante pro próximo. No `sqli-union-basic` a lição era "escapar aspas é jogo perdido — parametrize"; aqui é "escapar metacaracteres é jogo perdido — tire o shell". A seção 5 faz exatamente isso.
+`;`, `|`, `&&`, `$(...)` — quatro caracteres, uma causa raiz: o shell interpreta input do atacante como código. Bloquear um caractere só empurra o atacante pro próximo. No `sqli-union-basic` a lição era "escapar aspas é jogo perdido — parametrize"; aqui é "escapar metacaracteres é jogo perdido — tire o shell". A seção 4 faz exatamente isso.
 
 ### Passo 3 — Execução de comando completa: ler um arquivo arbitrário
 
@@ -174,16 +174,7 @@ nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
 
 No `sqli-union-basic` o input não sanitizado ia pra **SQL engine**, e o atacante lia **dado** do banco. Nos átomos de XSS ia pro **parser HTML/JS do browser**, e o código rodava no **browser da vítima**. Aqui ele vai pro **shell do OS**, e o comando roda **no próprio servidor**: `whoami` retorna `root`, `cat /etc/passwd` devolve o arquivo. Mesma causa raiz nos três — input concatenado numa string que um interpretador parseia — só que o interpretador agora é o shell, e o resultado é Remote Code Execution: o pior caso da família. E o fix rima com o do SQLi: assim como a query parametrizada separou SQL de dado, uma lista de argumentos separa o comando do seu argumento, tirando o shell da jogada por completo.
 
-## 4. Exploração via browser (trilha secundária, opcional)
-
-Os mesmos payloads funcionam direto do form em `/` (ou colados na barra de endereços):
-
-1. `http://127.0.0.1:8009/ping?host=127.0.0.1; whoami`
-2. `http://127.0.0.1:8009/ping?host=127.0.0.1; cat /etc/passwd`
-
-O browser URL-encoda os espaços (e o resto) pra você antes de enviar, então as formas cruas colam limpas — o trap do `%26` só morde quando você monta o request à mão no Burp. O bloco "Executed command" em cada página de resultado deixa o caminho source → sink explícito sem nenhuma ferramenta. Use isto pra a primeira leitura; passe pro Burp quando quiser controle byte a byte do payload, que é como você trabalharia um alvo real.
-
-## 5. Por que o fix funciona
+## 4. Por que o fix funciona
 
 Veja [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) pra a mudança. Em resumo: a versão fixed chama `subprocess.run(["ping", "-c", "1", host])` — uma lista de argumentos, sem `shell=True`. O Python entrega esses itens exatos pro `execvp` e o kernel roda o `ping` direto; **nenhum `/bin/sh` é spawnado pra parsear nada.** `host` é sempre um argumento único e inerte do `ping`, então `127.0.0.1; whoami` vira um "hostname" literal que o `ping` tenta resolver e não consegue:
 

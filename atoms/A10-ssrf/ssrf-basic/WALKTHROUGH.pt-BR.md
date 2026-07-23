@@ -127,19 +127,7 @@ Response: a tabela de users do interno (id, name, email, role) pra três funcion
 
 Um request que parece, na camada de ingress, um `GET /fetch?url=...` sem payload de qualquer tipo, fez o servidor ler dado interno e devolver pra você. Nada no request era "malicioso" no sentido de SQLi/XSS. O exploit inteiro vive em *qual URL* o servidor concordou em buscar.
 
-## 5. Exploração via browser (trilha secundária, opcional)
-
-As mesmas três URLs coladas direto na barra de endereços do browser:
-
-1. <http://127.0.0.1:8004/fetch?url=https://api.github.com/zen>
-2. <http://127.0.0.1:8004/fetch?url=http://internal/>
-3. <http://127.0.0.1:8004/fetch?url=http://internal/users>
-
-O browser URL-encoda os `://` e `/` de dentro (ou não — a maioria dos browsers modernos deixa eles legíveis na barra) e a página renderizada mostra a response buscada dentro de um bloco `<pre>`. É a primeira passada mais leve: a barra de URL sozinha prova que você consegue ler conteúdo só-interno via a app vulnerable.
-
-Passe pro Burp pra tudo depois da primeira sensação — o workflow do Repeater é muito mais rápido pra iterar em URLs e pra inspecionar os bytes crus de response (que importa quando o serviço interno devolve binário, JSON, ou content types incomuns que o browser tentaria renderizar em vez de exibir).
-
-## 6. Por que o fix funciona
+## 5. Por que o fix funciona
 
 Veja [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) pra mudança. Em resumo, a view `/fetch` corrigida faz parse da URL com `urllib.parse.urlparse` e rejeita qualquer coisa cujo scheme não seja `https` ou cujo hostname não esteja numa allowlist pequena (`api.github.com`, `wikipedia.org`):
 

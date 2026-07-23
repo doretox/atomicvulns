@@ -50,7 +50,7 @@ O corpo do `POST /comment` é `application/x-www-form-urlencoded`: `author=<...>
 - `&` (`%26`) separa campos e `=` (`%3D`) separa chave de valor — um literal desses dentro do seu payload seria mal-parseado.
 - **`+` precisa ser `%2B`.** Num corpo form-urlencoded um `+` literal é decodado como *espaço*. O payload do Passo 3 contém `'+document.cookie`; mandado cru, o servidor armazena `' document.cookie` e o JavaScript quebra. Esse é o motivo número um de um payload de XSS colado falhar silenciosamente num corpo de POST.
 
-Os `<`, `>`, `'`, `/` de um payload de XSS não são estruturais do form e podem viajar como estão, mas o hábito seguro é colar o payload decoded no Repeater, selecionar o valor e apertar **Ctrl+U** — o Burp encoda tudo, inclusive o `+`. Cada passo mostra um **Body (decoded)** pra leitura e um **Body (Burp-ready)** pra colar. (Plantar pelo form do browser — seção 4 — encoda tudo pra você; a armadilha do `+` só morde quando você monta o corpo cru no Burp.)
+Os `<`, `>`, `'`, `/` de um payload de XSS não são estruturais do form e podem viajar como estão, mas o hábito seguro é colar o payload decoded no Repeater, selecionar o valor e apertar **Ctrl+U** — o Burp encoda tudo, inclusive o `+`. Cada passo mostra um **Body (decoded)** pra leitura e um **Body (Burp-ready)** pra colar. (O form do browser encoda tudo pra você; a armadilha do `+` só morde quando você monta o corpo cru no Burp.)
 
 ### Passo 1 — Plantar uma vez, disparar em outro lugar
 
@@ -131,17 +131,7 @@ Duas coisas que vale saber, ambas reutilizáveis além deste lab:
 
 No `xss-reflected` o payload ia na query string de uma única request e voltava naquela mesma response — o atacante via o próprio alert, e uma vítima só era atingida se clicasse num link preparado pelo atacante (engenharia social). Aqui o atacante plantou um `POST` e foi embora; o payload vive no banco, e todo visitante que abre o guestbook — sem clicar em nada — executa ele, persistentemente. Mesmo sink (`|safe`), mesmo fix (autoescape), mesma classe. Só a entrega mudou: de um eco efêmero na sua própria resposta pra um payload persistente na resposta de todo mundo. E o que ele rouba não é dado server-side como o SQLi exfiltra uma senha — é a própria session da vítima, do browser dela.
 
-## 4. Exploração via browser apenas (trilha secundária, opcional)
-
-Se você ainda não configurou o Burp, dá pra fazer tudo pelo browser e ainda sentir o impacto:
-
-1. Em <http://127.0.0.1:8008/>, digite um nome qualquer e cole `<script>alert(document.domain)</script>` no campo de comentário, depois submeta. O browser faz o form-encode do corpo pra você (incluindo qualquer `+`), então não tem encoding pra pensar.
-2. Você cai de volta no `/` (o redirect) e o alert dispara imediatamente — seu comentário recém-armazenado já está na página.
-3. Recarregue pra ver disparar de novo (persistência), e tente o payload `fetch(...)` do Passo 3 com o listener no ar pra ver o cookie chegar.
-
-Esta é a primeira passada de baixa fricção. Use o Burp pra trilha principal quando quiser controle cru sobre os bytes plantados — que é como você trabalharia num alvo real.
-
-## 5. Por que o fix funciona
+## 4. Por que o fix funciona
 
 Veja o [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) pra mudança de uma linha. Em resumo: o template fixed larga o `|safe` e renderiza `{{ comment.body }}` via autoescape default do Jinja, então `<`, `>`, `&`, `'`, `"` viram entidades HTML no render. Aponte o browser pra app fixed na **8108**, plante qualquer payload de cima e recarregue: o comentário aparece como texto visível — `<script>alert(document.domain)</script>` impresso na tela, angle brackets e tudo — e nada executa. O listener fica silencioso.
 
