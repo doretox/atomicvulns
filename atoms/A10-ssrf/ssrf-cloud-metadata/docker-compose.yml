@@ -1,0 +1,24 @@
+services:
+  vulnerable:
+    build: ./vulnerable
+    ports:
+      - "127.0.0.1:8017:5000"
+    networks:
+      - lab
+  fixed:
+    build: ./fixed
+    ports:
+      - "127.0.0.1:8117:5000"
+    networks:
+      - lab
+  metadata-mock:
+    build: ./metadata-mock
+    networks:
+      lab:
+        ipv4_address: 169.254.169.254
+
+networks:
+  lab:
+    ipam:
+      config:
+        - subnet: 169.254.169.0/24
