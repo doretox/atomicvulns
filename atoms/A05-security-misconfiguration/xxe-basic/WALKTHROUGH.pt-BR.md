@@ -1,12 +1,12 @@
 # Walkthrough — xxe-basic
 
-Você é o pentester, trabalhando sozinho. A app importa um contato de um documento XML e te mostra o nome importado. XML parece inofensivo — até você lembrar que XML tem DTD, e um DTD deixa você declarar uma *entity* que aponta pra um arquivo do servidor. Se o parser resolver essa entity, o conteúdo do arquivo vira o "nome" do contato e volta direto na sua tela. Você vai ler o `/etc/passwd`, depois o segredo da própria app.
+A app importa um contato de um documento XML e te mostra o nome importado. Um documento XML pode carregar um **DTD** (Document Type Definition) — um preâmbulo opcional que, entre outras coisas, permite declarar **entities**: atalhos nomeados que o parser expande, como variáveis. Uma entity pode ser _external_, apontando pra uma URI como um arquivo no servidor (`file:///etc/passwd`). Se o parser a resolve, o conteúdo do arquivo expande no documento e volta no "nome" importado. Você vai ler o `/etc/passwd`, depois o segredo da própria app.
 
 ## 1. Contexto
 
 A app expõe um "Contact Importer". Em `/` você recebe um form com um `<textarea>` pré-preenchido com um cartão de contato benigno. Submeter dispara `POST /import` com um campo de form `xml=<o documento>`; o servidor parseia o XML com `lxml`, extrai o elemento `<name>`, e renderiza `Imported contact: <name>`.
 
-O parser é construído pra resolver **external entities**. Essa única config é o bug inteiro — a lógica de importação, no mais, é comum. Isto é **A05 — XML External Entity (XXE) injection** (XXE está dobrado em A05 Security Misconfiguration no Top 10 de 2021; era categoria própria, A4, em 2017).
+O parser é construído pra resolver **external entities**. Essa única config é o bug inteiro — a lógica de importação, no mais, é comum. Isto é XML External Entity (XXE) injection, sob A05 — Security Misconfiguration: a causa-raiz é uma config perigosa do parser, não um bug de lógica.
 
 Não há banco nem segundo serviço — só a app `vulnerable` em `127.0.0.1:8018` e a `fixed` em `127.0.0.1:8118`. A trilha principal é o Burp; uma trilha browser vem no fim.
 

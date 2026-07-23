@@ -1,12 +1,12 @@
 # Walkthrough — xxe-basic
 
-You are the pentester, working alone. The app imports a contact from an XML document and shows you the imported name. XML looks harmless — until you remember that XML has a DTD, and a DTD lets you declare an *entity* that points at a file on the server. If the parser resolves that entity, the file's contents become the contact's "name" and come straight back on your screen. You will read `/etc/passwd`, then the app's own secret.
+The app imports a contact from an XML document and shows you the imported name. An XML document can carry a **DTD** (Document Type Definition) — an optional preamble that, among other things, lets it declare **entities**: named shortcuts the parser expands, like variables. An entity can be _external_, pointing at a URI such as a file on the server (`file:///etc/passwd`). If the parser resolves it, the file's contents expand into the document and come back in the imported "name". You will read `/etc/passwd`, then the app's own secret.
 
 ## 1. Context
 
 The app exposes a "Contact Importer". On `/` you get a form with a `<textarea>` pre-filled with a benign contact card. Submitting it sends `POST /import` with a form field `xml=<the document>`; the server parses the XML with `lxml`, pulls out the `<name>` element, and renders `Imported contact: <name>`.
 
-The parser is built to resolve **external entities**. That single setting is the whole bug — the import logic is otherwise ordinary. This is **A05 — XML External Entity (XXE) injection** (XXE is folded into A05 Security Misconfiguration in the 2021 Top 10; it was its own category, A4, in 2017).
+The parser is built to resolve **external entities**. That single setting is the whole bug — the import logic is otherwise ordinary. This is XML External Entity (XXE) injection, under A05 — Security Misconfiguration: the root cause is a dangerous parser setting, not a logic bug.
 
 There is no database and no second service — just the `vulnerable` app on `127.0.0.1:8018` and the `fixed` app on `127.0.0.1:8118`. Primary track is Burp; a browser track follows at the end.
 
