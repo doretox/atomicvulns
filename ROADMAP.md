@@ -105,7 +105,7 @@ Legenda:
 - [x] **17.** `ssrf-cloud-metadata` — A10 SSRF
   - *Por que aqui:* mostra o impacto real de SSRF em AWS/GCP/Azure (metadata endpoint). Altíssimo valor em pentest cloud.
 
-- [ ] **18.** `xxe-basic` — A05 Security Misconfiguration
+- [x] **18.** `xxe-basic` — A05 Security Misconfiguration
   - *Por que aqui:* introduz XML externo, leitura de arquivo via entity.
 
 - [ ] **19.** `ssti-jinja` — A03 Injection
