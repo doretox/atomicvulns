@@ -4,7 +4,7 @@
 
 A app é uma "ferramenta de ping de rede". Você digita um host em `/`, o form dispara um request `GET /ping?host=<host>`, e o servidor roda `ping -c 1 <host>` e te mostra o output do comando — o tipo de checagem de alcance que existe em painéis de admin e status pages por todo lado.
 
-Diferente de XSS, este átomo é trabalhado inteiramente no Burp. O comando roda no servidor e o output volta direto na resposta HTTP, então não há nada pra executar num browser — você vê `root`, ou `/etc/passwd`, ali no painel de response do Repeater. A trilha do browser na seção 4 é conveniência, não requisito.
+Diferente de XSS, este átomo é trabalhado inteiramente no Burp. O comando roda no servidor e o output volta direto na resposta HTTP, então não há nada pra executar num browser — você vê `root`, ou `/etc/passwd`, ali no painel de response do Repeater.
 
 ## 2. Ache o bug
 

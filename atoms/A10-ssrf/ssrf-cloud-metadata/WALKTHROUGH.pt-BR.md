@@ -2,7 +2,7 @@
 
 Você vai fazer o servidor buscar a única URL que existe em toda instância de cloud e que paga mais que qualquer dashboard interno: o metadata endpoint em `169.254.169.254`. Um `GET` não-autenticado ali devolve as credenciais IAM da instância, e esta app te entrega o corpo da resposta. No `ssrf-basic` você apontava o servidor para um serviço interno genérico e o lia; aqui é o **mesmo primitivo** — buscar e mostrar — apontado para o crown-jewel. No fim, você terá o `AccessKeyId`, o `SecretAccessKey` e o session `Token` da instância no painel de resposta do Repeater.
 
-Há um único ator neste átomo: você, o pentester. A trilha principal é o Burp Repeater; o browser é uma trilha secundária de baixa fricção.
+Há um único ator neste átomo: você, o pentester. A trilha principal é o Burp Repeater.
 
 ## 1. Context
 

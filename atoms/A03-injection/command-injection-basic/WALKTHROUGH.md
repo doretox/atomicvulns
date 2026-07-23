@@ -4,7 +4,7 @@
 
 The app is a "network ping tool." You type a host on `/`, the form submits a `GET /ping?host=<host>` request, and the server runs `ping -c 1 <host>` and shows you the command's output — the kind of reachability check you find in admin panels and status pages everywhere.
 
-Unlike XSS, this one is worked entirely in Burp. The command runs on the server and its output comes straight back in the HTTP response, so there is nothing to execute in a browser — you see `root`, or `/etc/passwd`, right there in the Repeater response pane. The browser track in section 4 is a convenience, not a requirement.
+Unlike XSS, this one is worked entirely in Burp. The command runs on the server and its output comes straight back in the HTTP response, so there is nothing to execute in a browser — you see `root`, or `/etc/passwd`, right there in the Repeater response pane.
 
 ## 2. Spot the bug
 

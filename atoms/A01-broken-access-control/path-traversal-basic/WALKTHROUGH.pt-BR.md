@@ -4,7 +4,7 @@
 
 A app é um "file viewer". Você digita um nome de arquivo em `/`, o form dispara um request `GET /view?file=<nome>`, e o servidor lê esse arquivo do diretório `files/` dele e te mostra o conteúdo — o tipo de feature de "abrir um documento" que existe em help centers e painéis de admin por todo lado.
 
-Como o `command-injection-basic`, este átomo é trabalhado inteiramente no Burp. O arquivo é lido no servidor e o conteúdo volta direto na resposta HTTP, então não há nada pra executar num browser — você vê o `/etc/passwd` ali no painel de response do Repeater. A trilha do browser na seção 5 é conveniência, não requisito.
+Como o `command-injection-basic`, este átomo é trabalhado inteiramente no Burp. O arquivo é lido no servidor e o conteúdo volta direto na resposta HTTP, então não há nada pra executar num browser — você vê o `/etc/passwd` ali no painel de response do Repeater.
 
 E tenha aquele átomo em mente, porque você está prestes a chegar no **mesmo destino** — `/etc/passwd` — pela rota **oposta**. No `command-injection-basic` você fez a app *rodar um comando* seu. Aqui você vai fazer a app *abrir um arquivo* seu. Um é execução; o outro é navegação. Segure esse contraste; a seção 4 fecha nele.
 

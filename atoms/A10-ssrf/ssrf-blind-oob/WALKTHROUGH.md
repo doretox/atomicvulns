@@ -2,7 +2,7 @@
 
 You are going to make the server reach a host of your choosing and **prove** it did — without ever reading a single byte of what it fetched. In `ssrf-basic` the server handed you the response and you read an internal service directly. Here the server tells you nothing: every request gets the same `Test ping sent.` back. That is not the SSRF being absent; it is the SSRF being **blind**. You will confirm it out-of-band, by watching a callback land on a listener you control.
 
-There is one actor in this atom: you, the pentester, probing the endpoint. The primary track is Burp Repeater (to fire the request) plus `docker compose logs` (to catch the callback); the browser is a low-friction secondary track.
+There is one actor in this atom: you, the pentester, probing the endpoint. The primary track is Burp Repeater (to fire the request) plus `docker compose logs` (to catch the callback).
 
 ## 1. Context
 

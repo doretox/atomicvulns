@@ -8,7 +8,7 @@ Two things make this atom different from every atom before it. First, it is the 
 
 Like `idor-numeric-id`, this is not an input-driven bug — there's no payload. The "exploit" is a perfectly legitimate session id, used at the wrong time. The request that does the damage is a plain `GET /account` with a valid cookie.
 
-Track: **Burp Suite is primary** — you'll set the `Cookie` header explicitly on every request, and that hand control is exactly what lets one person hold both roles with a single id. A browser **secondary track** at the end shows the same thing visually.
+Track: **Burp Suite is primary** — you'll set the `Cookie` header explicitly on every request, and that hand control is exactly what lets one person hold both roles with a single id.
 
 ## 2. Spot the bug
 
@@ -177,14 +177,3 @@ Location: /
 Redirected to the login page — no account. SID_A was **discarded** at login (the fixed app `del`etes it), so it identifies nothing. Confirm the discard: `GET /` with `Cookie: session_id=SID_A` now makes the server mint yet another fresh id instead of reusing SID_A — the planted id is gone from the store entirely.
 
 Everything else is identical — same endpoints, same templates, same strong `secrets.token_urlsafe` ids, same cookie flags. The single change is that the fixed `/login` **regenerates** the session id at the moment of authentication. See [`DIFF.md`](./DIFF.md).
-
-## 9. Exploitation via browser (secondary track, optional)
-
-For a quick, low-friction feel of the bug, no Burp:
-
-1. Open <http://127.0.0.1:8015/> — you're anonymous, and the page prints your `session_id`.
-2. Click **Log in** (the form is pre-filled with `alice` / `password123`). You land on `/account`, and the page shows the **same** `session_id` as before. That visible non-change *is* the vulnerability.
-
-Repeat against the fixed app <http://127.0.0.1:8115/> and the id on `/account` is **different** from the one on the home page — regeneration, seen at a glance.
-
-Playing the attacker's step 3 in a browser needs one manual move: open a private window, set the cookie `session_id` to SID_A via **DevTools → Application → Cookies**, and visit `/account`. On the vulnerable app you land in alice's account; on the fixed app you're bounced to the login page. A single browser can't naturally hold the attacker and victim at once — one cookie jar, one id at a time — which is exactly why Burp, with explicit per-request `Cookie` control, is the primary track.

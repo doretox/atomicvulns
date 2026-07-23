@@ -4,7 +4,7 @@
 
 The app is a "file viewer." You type a filename on `/`, the form submits a `GET /view?file=<name>` request, and the server reads that file from its `files/` directory and shows you the contents — the kind of "open a document" feature you find in help centers and admin panels everywhere.
 
-Like `command-injection-basic`, this one is worked entirely in Burp. The file is read on the server and its contents come straight back in the HTTP response, so there is nothing to execute in a browser — you see `/etc/passwd` right there in the Repeater response pane. The browser track in section 5 is a convenience, not a requirement.
+Like `command-injection-basic`, this one is worked entirely in Burp. The file is read on the server and its contents come straight back in the HTTP response, so there is nothing to execute in a browser — you see `/etc/passwd` right there in the Repeater response pane.
 
 And keep that atom in mind, because you are about to reach the **same destination** — `/etc/passwd` — by the **opposite route**. In `command-injection-basic` you made the app *run a command* of yours. Here you will make the app *open a file* of yours. One is execution; the other is navigation. Hold that contrast; section 4 closes on it.
 

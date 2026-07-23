@@ -8,7 +8,7 @@ The app exposes a "Contact Importer". On `/` you get a form with a `<textarea>` 
 
 The parser is built to resolve **external entities**. That single setting is the whole bug — the import logic is otherwise ordinary. This is XML External Entity (XXE) injection, under A05 — Security Misconfiguration: the root cause is a dangerous parser setting, not a logic bug.
 
-There is no database and no second service — just the `vulnerable` app on `127.0.0.1:8018` and the `fixed` app on `127.0.0.1:8118`. Primary track is Burp; a browser track follows at the end.
+There is no database and no second service — just the `vulnerable` app on `127.0.0.1:8018` and the `fixed` app on `127.0.0.1:8118`. Primary track is Burp.
 
 ## 2. Spot the bug
 
@@ -139,14 +139,3 @@ Imported contact:
 ```
 
 No file contents, for either payload. The benign card from Step 1 still imports as `Ada Lovelace` — the feature is intact; only the file read is gone. The whole fix is those two flags flipped off. (`defusedxml` is the historical name people reach for, but its `lxml` support is deprecated — hardening the parser directly is the current advice. See the DIFF.)
-
-## 7. Exploitation via browser (secondary track, optional)
-
-For a first, low-friction pass without Burp: open <http://127.0.0.1:8018/>, clear the textarea, and paste the malicious document directly:
-
-```xml
-<!DOCTYPE contact [<!ENTITY x SYSTEM "file:///etc/passwd">]>
-<contact><name>&x;</name></contact>
-```
-
-Click **Import** and the `/etc/passwd` contents render on the result page. The browser sends the form for you (no manual encoding needed), which makes this the easiest way to *feel* the bug the first time. Then repeat against <http://127.0.0.1:8118/> and watch the name come back empty. Switch to Burp for everything after the first read-through — controlling the raw payload is the part that matters in an engagement.

@@ -2,7 +2,7 @@
 
 You are going to make the server fetch the one URL that exists on every cloud instance and pays more than any internal dashboard: the metadata endpoint at `169.254.169.254`. An unauthenticated `GET` there returns the instance's IAM credentials, and this app hands you the response body. In `ssrf-basic` you pointed the server at a generic internal service and read it; here it is the **same primitive** — fetch and show — aimed at the crown jewel. By the end you will have the instance's `AccessKeyId`, `SecretAccessKey`, and session `Token` in your Repeater response pane.
 
-There is one actor in this atom: you, the pentester. The primary track is Burp Repeater; the browser is a low-friction secondary track.
+There is one actor in this atom: you, the pentester. The primary track is Burp Repeater.
 
 ## 1. Context
 
