@@ -102,7 +102,7 @@ Legenda:
 - [x] **16.** `ssrf-blind-oob` — A10 SSRF
   - *Variante do 04:* SSRF sem resposta direta, usando canal out-of-band (Burp Collaborator, interact.sh).
 
-- [ ] **17.** `ssrf-cloud-metadata` — A10 SSRF
+- [x] **17.** `ssrf-cloud-metadata` — A10 SSRF
   - *Por que aqui:* mostra o impacto real de SSRF em AWS/GCP/Azure (metadata endpoint). Altíssimo valor em pentest cloud.
 
 - [ ] **18.** `xxe-basic` — A05 Security Misconfiguration
