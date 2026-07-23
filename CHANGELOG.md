@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added atom 16: `ssrf-blind-oob` — Blind SSRF, confirmed out-of-band via an embedded listener (A10 SSRF).
+- Added atom 17: `ssrf-cloud-metadata` — SSRF against the cloud metadata endpoint (169.254.169.254), stealing IAM credentials (A10 SSRF).
 
 ## [0.3.0] - 2026-07-20
 
