@@ -127,11 +127,7 @@ Este exploit é input de aparência legítima — uma URL — então é fácil d
 
 **Roubo de credencial IAM → account takeover na cloud.** Um atacante lê credenciais vivas do role da instância no metadata service via SSRF e então age como aquele role na conta cloud — fazendo o que a policy do role permitir (ler buckets S3, enumerar a conta, e assim por diante). Este é um dos SSRF de maior impacto do mundo real; o breach da Capital One em 2019 seguiu exatamente esta forma — SSRF → metadata endpoint → credenciais IAM → dados em S3. **Não** é RCE no servidor da aplicação em si, e *usar* as credenciais é pós-exploração, fora de escopo aqui; este átomo termina no roubo.
 
-## 7. Exploração via browser (trilha secundária, opcional)
-
-Você pode fazer tudo pelo form. Abra <http://127.0.0.1:8017/>, troque a URL por `http://169.254.169.254/latest/meta-data/iam/security-credentials/`, e clique em **Fetch** — o nome do role renderiza no `<pre>`. Depois anexe o nome do role (`.../app-instance-role`) e busque de novo pra ver as credenciais. É a primeira passada mais suave; migre pro Burp Repeater pra iterar de verdade — controle cru do corpo, edições mais rápidas, e os bytes crus da resposta.
-
-## 8. Por que o fix funciona
+## 7. Por que o fix funciona
 
 Veja [`DIFF.md`](./DIFF.md) pra mudança. Em resumo, a view `/fetch` corrigida parseia a URL com `urllib.parse.urlparse` e rejeita qualquer coisa cujo scheme não seja `http`/`https` ou cujo host não esteja numa pequena allowlist:
 

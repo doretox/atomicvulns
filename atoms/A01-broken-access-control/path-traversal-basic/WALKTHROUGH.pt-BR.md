@@ -130,7 +130,7 @@ Resolved path:
 
 O diretório base *sumiu*. `os.path.join("/app/files", "/etc/passwd")` retorna `/etc/passwd` — quando um componente é absoluto, o `os.path.join` descarta tudo antes dele. Você chegou no mesmíssimo arquivo sem um único `../`.
 
-Sente nessa. Um dev que "conserta" isso removendo `../` do input não fez nada: `/etc/passwd` passa direto. O bug nunca foi o token `../` — é que a app abre qualquer caminho que o input resolve, sem check de que ele caiu dentro da pasta. É por isso que blocklist é jogo perdido, e por isso o fix de verdade (seção 6) *resolve o caminho e confirma o destino* em vez de limpar caracteres. No `command-injection-basic` a lição paralela era "escapar metacaracteres é jogo perdido — tire o shell"; aqui é "filtrar `../` é jogo perdido — confine o caminho".
+Sente nessa. Um dev que "conserta" isso removendo `../` do input não fez nada: `/etc/passwd` passa direto. O bug nunca foi o token `../` — é que a app abre qualquer caminho que o input resolve, sem check de que ele caiu dentro da pasta. É por isso que blocklist é jogo perdido, e por isso o fix de verdade (seção 5) *resolve o caminho e confirma o destino* em vez de limpar caracteres. No `command-injection-basic` a lição paralela era "escapar metacaracteres é jogo perdido — tire o shell"; aqui é "filtrar `../` é jogo perdido — confine o caminho".
 
 ### Passo 3 — Ler além do /etc/passwd: o próprio source da app
 
@@ -184,17 +184,7 @@ Você acabou de ler `/etc/passwd` — o mesmo arquivo que o `command-injection-b
 
 Aquela última linha é por que este átomo vive em **Broken Access Control**, não Injection: nada virou código, um nome de arquivo simplesmente conduziu a app a um recurso fora do escopo. É o mesmo formato do `idor-numeric-id` — lá você trocou um ID numérico (`/notes/1` → `/notes/2`) pra ler a nota de outro usuário; aqui você navega o filesystem (`notes.txt` → `../../etc/passwd`) pra ler um arquivo que não é seu pra ver. Nos dois, a app te entregou algo que não era pra você, e nos dois o fix é o check que faltava — um ownership check lá, um confinement check aqui.
 
-## 5. Exploração via browser (trilha secundária, opcional)
-
-Os mesmos payloads funcionam direto da barra de endereços — sem Burp:
-
-1. <http://127.0.0.1:8010/view?file=../../../../etc/passwd>
-2. `http://127.0.0.1:8010/view?file=/etc/passwd`
-3. <http://127.0.0.1:8010/view?file=../app.py>
-
-O browser **não** normaliza `../` na query string (ele só colapsa dot-segments no *path* da URL), então esses passam intactos; o form encoda `/` pra `%2f` no envio e o servidor decoda de volta. Use isto pra a primeira leitura; passe pro Burp quando quiser controle byte a byte do payload, que é como você trabalharia um alvo real — e é o único lugar onde o truque de encoding `..%2f` da seção 4 é visível.
-
-## 6. Por que o fix funciona
+## 5. Por que o fix funciona
 
 Veja [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) pra a mudança. Em resumo, a view `/view` corrigida resolve o caminho requisitado pra forma canônica e confirma que ele fica dentro do diretório base antes de abrir:
 

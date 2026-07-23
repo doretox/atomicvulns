@@ -196,11 +196,7 @@ All three are "the app handed you something that wasn't yours." `idor-numeric-id
 
 Horizontal privilege escalation: you read another same-level user's receipt — her item, her amount, her purchase time. That is the honest ceiling. **It is not RCE, and not vertical escalation** — you gained no code execution and no elevated role. In a real target, receipt/order data is often PII that *chains* into further attacks, but the finding itself is the cross-user read.
 
-## 7. Exploitation via browser (secondary track, optional)
-
-For the baseline only, the browser is the low-friction first pass: open <http://127.0.0.1:8011/>, click **Create my receipt** to mint your own, open it to see its id, and read alice's `issued_at` from the dashboard table. But the browser can't set `X-User-ID`, and it certainly can't do the reconstruction arithmetic — so Steps 2–5 are Burp-plus-script, exactly as `idor-numeric-id`'s "missing check" step had no browser equivalent. Burp is the primary track.
-
-## 8. Why the fix works
+## 7. Why the fix works
 
 Run the whole chain against the fixed app on port **8111** (see [`DIFF.md`](./DIFF.md) for the change):
 

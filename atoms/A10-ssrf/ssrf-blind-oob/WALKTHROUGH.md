@@ -123,6 +123,8 @@ There it is. The server made the request you asked for — to a host your laptop
 
 That is the entire blind-SSRF skill: prove the request happened when you cannot see its result.
 
+**A note on DNS.** This lab uses an HTTP callback because it is simple and self-contained. In the field, the out-of-band signal is often a **DNS** pingback rather than HTTP: egress filtering may stop the server from opening an outbound HTTP connection, but it can almost always still *resolve a name*, and that lookup reaches your interaction server. Same idea — a request escaping to a sink you control — over a channel more likely to survive filtering. Burp Collaborator and `interactsh` catch both.
+
 ## 5. What the vuln is NOT
 
 Because the exploit produces no visible loot, it is easy to draw the wrong lesson. Nail down what this is *not*:
@@ -138,20 +140,7 @@ Blind SSRF means the server can be coerced into making arbitrary outbound reques
 
 The listener here is a tripwire, not a prize; it holds nothing to steal. This atom stops at the primitive — the confirmed callback, proof that the server made a request you chose. That is the honest ceiling: it is not RCE, and nothing here should be over-claimed beyond "I made the server reach a destination I picked, and I proved it out-of-band".
 
-## 7. Exploitation via browser (secondary track, optional)
-
-The gentlest first pass, no Burp required:
-
-1. Open <http://127.0.0.1:8016/>.
-2. Leave the field as `http://oob-listener/proof-ssrf-16` (or type it) and click **Send test ping**.
-3. The page says `Test ping sent.` — and tells you nothing else.
-4. In a terminal: `docker compose logs oob-listener` → the `OOB HIT path=/proof-ssrf-16` line.
-
-Switch to Burp for real work: Repeater makes it trivial to iterate on payloads and to control the raw request, which is what you would do in an engagement.
-
-**A note on DNS.** This lab uses an HTTP callback because it is simple and self-contained. In the field, the out-of-band signal is often a **DNS** pingback rather than HTTP: egress filtering may stop the server from opening an outbound HTTP connection, but it can almost always still *resolve a name*, and that lookup reaches your interaction server. Same idea — a request escaping to a sink you control — over a channel more likely to survive filtering. Burp Collaborator and `interactsh` catch both.
-
-## 8. Why the fix works
+## 7. Why the fix works
 
 See [`DIFF.md`](./DIFF.md) for the change. The fixed `/ping` view validates the destination against a deny-by-default allowlist *before* fetching, matched on the parsed host:
 

@@ -127,19 +127,7 @@ Response: the internal users table (id, name, email, role) for three fake employ
 
 A request that looks, at the ingress layer, like `GET /fetch?url=...` with no payload of any kind, caused the server to read internal data and return it to you. Nothing in the request was "malicious" in the SQLi/XSS sense. The whole exploit lives in *which URL* the server agreed to fetch.
 
-## 5. Exploitation via browser (secondary track, optional)
-
-The same three URLs pasted directly into the browser address bar:
-
-1. <http://127.0.0.1:8004/fetch?url=https://api.github.com/zen>
-2. <http://127.0.0.1:8004/fetch?url=http://internal/>
-3. <http://127.0.0.1:8004/fetch?url=http://internal/users>
-
-The browser URL-encodes the inner `://` and `/` characters (or doesn't — most modern browsers leave them readable in the address bar) and the rendered page shows the fetched response inside a `<pre>` block. This is the gentlest first-pass: the URL bar by itself proves that you can read internal-only content through the vulnerable app.
-
-Switch to Burp for everything after the first feel — the Repeater workflow makes it much faster to iterate on URLs and to inspect raw response bytes (which matters when the internal service returns binary, JSON, or unusual content types that the browser would try to render rather than display).
-
-## 6. Why the fix works
+## 5. Why the fix works
 
 See [`DIFF.md`](./DIFF.md) for the change. In short, the fixed `/fetch` view parses the URL with `urllib.parse.urlparse`, then rejects anything whose scheme isn't `https` or whose hostname isn't in a small allowlist (`api.github.com`, `wikipedia.org`):
 

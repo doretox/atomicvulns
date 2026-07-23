@@ -196,11 +196,7 @@ Os três são "a app te entregou algo que não era seu". O `idor-numeric-id` e e
 
 Escalação horizontal de privilégio: você leu o recibo de outra usuária do mesmo nível — o item dela, o valor, a hora da compra. Esse é o teto honesto. **Não é RCE, e não é escalação vertical** — você não ganhou execução de código nem um papel elevado. Num alvo real, dados de recibo/pedido costumam ser PII que *encadeia* pra mais ataques, mas o achado em si é a leitura cross-user.
 
-## 7. Exploração via browser (trilha secundária, opcional)
-
-Só pro baseline, o browser é a primeira passada de baixa fricção: abra <http://127.0.0.1:8011/>, clique em **Create my receipt** pra gerar o seu, abra-o pra ver o id, e leia o `issued_at` da alice na tabela do dashboard. Mas o browser não seta `X-User-ID`, e certamente não faz a aritmética da reconstrução — então os Passos 2–5 são Burp-mais-script, exatamente como o passo de "check ausente" do `idor-numeric-id` não tinha equivalente no browser. O Burp é a trilha principal.
-
-## 8. Por que o fix funciona
+## 7. Por que o fix funciona
 
 Rode a cadeia inteira contra a app fixed na porta **8111** (veja [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) pra mudança):
 

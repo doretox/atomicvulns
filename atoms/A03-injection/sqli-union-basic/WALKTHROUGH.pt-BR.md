@@ -107,16 +107,6 @@ Host: 127.0.0.1:8001
 
 Response: três linhas, uma por usuário, cada uma vazando username, hash estilo bcrypt e API key. É aqui que o bug mostra seu tamanho — a feature tinha escopo de três campos públicos de um único usuário, mas a connection do banco não. Qualquer tabela alcançável por essa connection agora é legível através do endpoint `/profile`.
 
-## 4. Exploração via browser (trilha secundária, opcional)
-
-Os mesmos três payloads colados direto na barra de endereços do browser (ou no input do form em `/`):
-
-1. `http://127.0.0.1:8001/profile?username=alice' --`
-2. `http://127.0.0.1:8001/profile?username=x' UNION SELECT '1','2','3' --`
-3. `http://127.0.0.1:8001/profile?username=x' UNION SELECT users.username, secrets.password_hash, secrets.api_key FROM users JOIN secrets ON users.id = secrets.user_id --`
-
-O browser URL-encoda os espaços (e às vezes as aspas) pra você antes de enviar, então as formas cruas acima colam limpas. O bloco "Executed query" em cada página de response deixa o caminho source → sink explícito sem precisar de Burp. Use esta trilha pra a primeira leitura; passe pro Burp em tudo depois.
-
-## 5. Por que o fix funciona
+## 4. Por que o fix funciona
 
 Veja [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) pra a mudança. Em resumo: a versão fixed chama `conn.execute("... WHERE username = ?", (username,))`. O driver do SQLite faz o parse do statement primeiro, *sem* o valor do parâmetro, e só depois liga `username` como valor literal. Nenhum caractere do input — `'`, `--`, `UNION`, `;`, newline — consegue escapar do slot de string literal pra virar sintaxe SQL. Rode qualquer payload da seção 3 contra <http://127.0.0.1:8101/profile> pra confirmar: a tabela volta vazia (nenhum usuário literalmente chamado `x' UNION SELECT ...` existe), nenhum secret vaza.

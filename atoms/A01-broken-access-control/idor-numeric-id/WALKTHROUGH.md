@@ -106,21 +106,9 @@ Response: status 200, alice's note again. Owner id: 1. **Nothing about the respo
 
 Sit with that for a moment. If the bug were "the app trusts the caller's claimed identity for authorization", then changing `X-User-ID` from `1` to `2` should change *something* — a different note, a different error, anything. It doesn't, because the `/notes/<id>` view never reads the header at all. There's nothing to spoof. The "fix" isn't "validate the header better"; the header was never part of the decision in the first place.
 
-The bug is precisely: **the authorization decision is missing**, not "the authorization decision uses bad inputs". A correct server-side check (see section 6) reads the caller's id, compares it to `note["owner_id"]`, and rejects mismatches. Whether the caller is honest about their identity is then a separate concern (and a separate atom).
+The bug is precisely: **the authorization decision is missing**, not "the authorization decision uses bad inputs". A correct server-side check (see section 5) reads the caller's id, compares it to `note["owner_id"]`, and rejects mismatches. Whether the caller is honest about their identity is then a separate concern (and a separate atom).
 
-## 5. Exploitation via browser (secondary track, optional)
-
-For steps 1–3, the same exploit works directly in the browser address bar — no Burp required:
-
-1. <http://127.0.0.1:8003/notes/1>
-2. <http://127.0.0.1:8003/notes/2>
-3. <http://127.0.0.1:8003/notes/3>
-
-The default `X-User-ID: 1` kicks in (because the browser sends no such header), so all three render as "alice viewing the note". This is the gentlest possible first-pass: it removes any doubt that the URL itself is the entire exploit.
-
-Step 4 doesn't have a browser equivalent — browsers don't let you set arbitrary request headers from the address bar. That's why Burp is the primary track: it makes the *missing-check vs wrong-identity* distinction visible. In a real engagement, every IDOR you report should look like step 4, not just step 2 — replay the request under different "identities" and document that authorization is unaffected. That's how relevance to scope is proven.
-
-## 6. Why the fix works
+## 5. Why the fix works
 
 See [`DIFF.md`](./DIFF.md) for the change. In short, the fixed `/notes/<id>` view reads `X-User-ID` and compares it to `note["owner_id"]` before returning the note — if they don't match, the request is rejected with `403 Forbidden`:
 
