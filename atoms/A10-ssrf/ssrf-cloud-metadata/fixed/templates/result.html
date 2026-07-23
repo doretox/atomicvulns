@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Result &mdash; {{ url }}</title>
+<style>body{font-family:sans-serif;max-width:960px;margin:2em auto;padding:0 1em;}pre{background:#eee;padding:0.8em;border-radius:4px;overflow:auto;max-height:480px;white-space:pre-wrap;word-break:break-all;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>Result</h1>
+<p>Fetched URL: <code>{{ url }}</code></p>
+<p>HTTP status: <strong>{{ status if status is not none else "n/a" }}</strong></p>
+<pre>{{ body }}</pre>
+<p><a href="/">&larr; Back</a></p>
+<p><em>Open with Burp proxy enabled, interact once, then work from Burp Repeater.</em></p>
+</body>
+</html>
