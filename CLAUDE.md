@@ -227,6 +227,8 @@ O walkthrough termina onde a falha foi mostrada e o fix explicado. Não inclua s
 
 **Situe a vuln na categoria OWASP Top 10 atual (2021), sem arqueologia.** Nomeie a categoria vigente (ex.: "A05 — Security Misconfiguration") quando ela ancora a lição. NÃO relate em que número a categoria caía em edições antigas ("era A4 em 2017" e afins) — é ruído histórico que não ajuda o aluno a explorar a falha.
 
+**O título nomeia a classe da vulnerabilidade, não a tecnologia.** O H1 usa o nome canônico da *classe* (ex.: "Server-side template injection (SSTI)"), não o stack onde ela foi demonstrada ("...em Jinja2"). O motor/lib/framework é detalhe de implementação: aparece no corpo do walkthrough e do DIFF, onde o mecanismo é explicado — nunca no título. Razão: o título deve ser reconhecível e transferível para qualquer pentester procurando a classe, independente da stack. (O *slug* do átomo pode qualificar a variante/motor — `ssti-jinja` — como todo slug do repo: `sqli-union-basic`, `jwt-none-alg`.)
+
 ### Referências cross-átomo
 
 Cada átomo é uma unidade auto-contida. Pode referenciar outros átomos por nome ou número, mas APENAS átomos já publicados em `atoms/` no momento da escrita.
