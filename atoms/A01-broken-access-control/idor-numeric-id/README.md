@@ -38,7 +38,7 @@ Stop with `./atom down idor-numeric-id`. If you prefer raw Docker: `cd atoms/A01
 
 ## What to read next
 
-1. [`WALKTHROUGH.md`](./WALKTHROUGH.md) — step-by-step exploitation via Burp Suite (primary) and browser (secondary).
+1. [`WALKTHROUGH.md`](./WALKTHROUGH.md) — step-by-step exploitation via Burp Suite (primary).
 2. [`DIFF.md`](./DIFF.md) — commented diff between `vulnerable/` and `fixed/`.
 
 ## Fixed version

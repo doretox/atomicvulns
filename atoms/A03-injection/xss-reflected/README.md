@@ -24,7 +24,7 @@ Stop with `./atom down xss-reflected`. If you prefer raw Docker: `cd atoms/A03-i
 
 ## What to read next
 
-1. [`WALKTHROUGH.md`](./WALKTHROUGH.md) — step-by-step exploitation via Burp Suite (primary) and browser (secondary).
+1. [`WALKTHROUGH.md`](./WALKTHROUGH.md) — step-by-step exploitation via Burp Suite (primary).
 2. [`DIFF.md`](./DIFF.md) — commented diff between `vulnerable/` and `fixed/`.
 
 ## Fixed version

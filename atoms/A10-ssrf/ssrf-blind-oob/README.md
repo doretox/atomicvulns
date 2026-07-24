@@ -49,7 +49,7 @@ Stop with `./atom down ssrf-blind-oob`. If you prefer raw Docker: `cd atoms/A10-
 
 ## What to read next
 
-1. [`WALKTHROUGH.md`](./WALKTHROUGH.md) — step-by-step exploitation via Burp Suite + logs (primary) and browser (secondary).
+1. [`WALKTHROUGH.md`](./WALKTHROUGH.md) — step-by-step exploitation via Burp Suite + logs (primary).
 2. [`DIFF.md`](./DIFF.md) — commented diff between `vulnerable/` and `fixed/`.
 
 ## Fixed version
