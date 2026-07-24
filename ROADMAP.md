@@ -108,7 +108,7 @@ Legenda:
 - [x] **18.** `xxe-basic` — A05 Security Misconfiguration
   - *Por que aqui:* introduz XML externo, leitura de arquivo via entity.
 
-- [ ] **19.** `ssti-jinja` — A03 Injection
+- [x] **19.** `ssti-jinja` — A03 Injection
   - *Por que aqui:* Template injection em Jinja2 — perfeito porque o repo inteiro usa Jinja, o contexto é familiar.
 
 - [ ] **20.** `deserialization-pickle` — A08 Data Integrity Failures
