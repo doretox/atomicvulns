@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added atom 17: `ssrf-cloud-metadata` — SSRF against the cloud metadata endpoint (169.254.169.254), stealing IAM credentials (A10 SSRF).
 - Added atom 18: `xxe-basic` — XML External Entity (XXE) injection: arbitrary file disclosure via an lxml parser that resolves external entities (A05 Security Misconfiguration).
 - Added atom 19: `ssti-jinja` — Server-side template injection (SSTI): user input sewn into a Jinja2 template is evaluated by the engine, disclosing the Flask config and SECRET_KEY (A03 Injection).
+- Added atom 20: `deserialization-pickle` — Insecure deserialization: an attacker-controlled cookie deserialized with Python's pickle executes embedded behavior via `__reduce__`, giving remote code execution (A08 Software and Data Integrity Failures).
 
 ## [0.3.0] - 2026-07-20
 
