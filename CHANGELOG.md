@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-26
+
+Server-side & Advanced (Phase 4 of the ROADMAP). Five atoms covering server-side attack surface and injection into engines beyond the database: blind and cloud-metadata SSRF, XXE file disclosure, server-side template injection, and insecure deserialization to remote code execution. Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR).
+
 ### Added
 
 - Added atom 16: `ssrf-blind-oob` — Blind SSRF, confirmed out-of-band via an embedded listener (A10 SSRF).
