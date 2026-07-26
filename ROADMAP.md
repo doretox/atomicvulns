@@ -111,7 +111,7 @@ Legenda:
 - [x] **19.** `ssti-jinja` — A03 Injection
   - *Por que aqui:* Template injection em Jinja2 — perfeito porque o repo inteiro usa Jinja, o contexto é familiar.
 
-- [ ] **20.** `deserialization-pickle` — A08 Data Integrity Failures
+- [x] **20.** `deserialization-pickle` — A08 Data Integrity Failures
   - *Por que aqui:* RCE via deserialization em Python. Fecha a fase com um bang.
 
 ---
