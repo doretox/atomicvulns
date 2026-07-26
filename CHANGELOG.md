@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added atom 21: `xss-dom` — DOM-based Cross-Site Scripting: client-side JavaScript reads an attacker-controlled URL fragment (`location.hash`) and writes it to `innerHTML`, so a crafted fragment executes in the victim's browser without ever reaching the server (A03 Injection).
+
 ## [0.4.0] - 2026-07-26
 
 Server-side & Advanced (Phase 4 of the ROADMAP). Five atoms covering server-side attack surface and injection into engines beyond the database: blind and cloud-metadata SSRF, XXE file disclosure, server-side template injection, and insecure deserialization to remote code execution. Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR).
