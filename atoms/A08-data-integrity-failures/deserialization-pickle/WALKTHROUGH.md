@@ -124,7 +124,7 @@ $ docker compose exec vulnerable ls -la /tmp/pwned
 The file exists — your cookie made the server run `touch /tmp/pwned`. Swap the command to `id` and it prints to the container's log, showing *who* you run as:
 
 ```
-$ docker compose logs vulnerable | tail -1
+$ docker compose logs vulnerable | grep uid
 vulnerable-1  | uid=0(root) gid=0(root) groups=0(root)
 ```
 
