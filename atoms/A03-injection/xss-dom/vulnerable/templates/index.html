@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Search</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>Search</h1>
+<form onsubmit="location.hash = 'q=' + document.getElementById('q').value; return false;">
+  <label>Query: <input type="text" id="q" autofocus></label>
+  <button type="submit">Search</button>
+</form>
+<p id="result"></p>
+<script>
+// Client-side search: read the term from the URL fragment (#q=...) and show it.
+// The fragment is never sent to the server -- source = location.hash.
+// VULNERABLE sink: innerHTML parses the string as HTML and fires embedded event
+// handlers (e.g. <img src=x onerror=...>), so a crafted fragment runs attacker JS.
+function render() {
+  var q = new URLSearchParams(location.hash.slice(1)).get("q") || "";
+  document.getElementById("result").innerHTML = "You searched for: " + q;
+}
+window.addEventListener("hashchange", render);
+render();
+</script>
+<p><em>Open with Burp proxy enabled, interact once, then work from Burp Repeater.</em></p>
+</body>
+</html>
