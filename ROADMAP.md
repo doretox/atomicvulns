@@ -125,7 +125,7 @@ Legenda:
 - [x] **21.** `xss-dom` — A03 Injection
   - *Por que aqui:* DOM XSS é conceitualmente mais sutil (sink no JS do cliente, não no HTML do servidor) — fica pra depois dos outros XSS internalizados.
 
-- [ ] **22.** `nosql-injection-mongo` — A03 Injection
+- [x] **22.** `nosql-injection-mongo` — A03 Injection
   - *Por que aqui:* contraparte moderna do SQLi, com sintaxe própria (`$ne`, `$gt`). Único átomo da fase que introduz MongoDB.
 
 - [ ] **23.** `csrf-basic` — A01 Broken Access Control
