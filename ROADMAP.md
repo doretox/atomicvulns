@@ -122,7 +122,7 @@ Legenda:
 
 **Milestone:** `v0.5 — Client & NoSQL`
 
-- [ ] **21.** `xss-dom` — A03 Injection
+- [x] **21.** `xss-dom` — A03 Injection
   - *Por que aqui:* DOM XSS é conceitualmente mais sutil (sink no JS do cliente, não no HTML do servidor) — fica pra depois dos outros XSS internalizados.
 
 - [ ] **22.** `nosql-injection-mongo` — A03 Injection
