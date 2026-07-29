@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Account &mdash; Log in</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>Account</h1>
+<p>Please log in (demo user).</p>
+<form method="post" action="/login">
+  <label>Username: <input type="text" name="username" value="demo" autofocus></label>
+  <label>Password: <input type="password" name="password" value="demo"></label>
+  <button type="submit">Log in</button>
+</form>
+<p><em>Open with Burp proxy enabled, interact once, then work from Burp Repeater.</em></p>
+</body>
+</html>
