@@ -1,0 +1,41 @@
+services:
+  mongo:
+    build: ./mongo
+    # No ports: -- the datastore is reachable only on the internal network,
+    # never published to the host.
+    healthcheck:
+      # Apps wait for this to pass (condition: service_healthy). Mongo runs the
+      # seed during init, before it accepts network connections, so a passing
+      # ping means the seed is done.
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - lab
+  vulnerable:
+    build: ./vulnerable
+    ports:
+      - "127.0.0.1:8022:5000"
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - lab
+  fixed:
+    build: ./fixed
+    ports:
+      - "127.0.0.1:8122:5000"
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - lab
+
+networks:
+  lab:
