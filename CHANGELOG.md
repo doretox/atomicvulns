@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added atom 21: `xss-dom` — DOM-based Cross-Site Scripting: client-side JavaScript reads an attacker-controlled URL fragment (`location.hash`) and writes it to `innerHTML`, so a crafted fragment executes in the victim's browser without ever reaching the server (A03 Injection).
 - Added atom 22: `nosql-injection-mongo` — NoSQL Injection: a login endpoint passes untrusted JSON straight into a MongoDB query filter, so an object carrying an operator (`{"$ne": null}`) instead of a string logs in as admin without the password (A03 Injection).
+- Added atom 23: `csrf-basic` — Cross-Site Request Forgery (CSRF): a state-changing POST authorizes on the session cookie the browser attaches automatically, so an auto-submitting form on another site forges an authenticated email change (account takeover); the fix is a per-session anti-CSRF token the attacker cannot read across origins (A01 Broken Access Control).
 
 ## [0.4.0] - 2026-07-26
 

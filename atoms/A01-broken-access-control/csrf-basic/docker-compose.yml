@@ -1,0 +1,18 @@
+services:
+  vulnerable:
+    build: ./vulnerable
+    ports:
+      - "127.0.0.1:8023:5000"
+  fixed:
+    build: ./fixed
+    ports:
+      - "127.0.0.1:8123:5000"
+  attacker:
+    build: ./attacker
+    # 127.0.0.2 is a DIFFERENT site from the 127.0.0.1 targets (so the forged POST
+    # is cross-site) while still being loopback (127.0.0.0/8) -- local-only, never
+    # exposed off the host. The three services never talk to each other; the
+    # victim's browser mediates every cross-site request, so there is no shared
+    # internal network, no depends_on, and no healthcheck.
+    ports:
+      - "127.0.0.2:8080:5000"
