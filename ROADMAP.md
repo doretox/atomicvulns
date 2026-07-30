@@ -128,7 +128,7 @@ Legenda:
 - [x] **22.** `nosql-injection-mongo` — A03 Injection
   - *Por que aqui:* contraparte moderna do SQLi, com sintaxe própria (`$ne`, `$gt`). Único átomo da fase que introduz MongoDB.
 
-- [ ] **23.** `csrf-basic` — A01 Broken Access Control
+- [x] **23.** `csrf-basic` — A01 Broken Access Control
   - *Por que aqui:* precisa de contexto de sessão já internalizado (fase 3).
 
 - [ ] **24.** `open-redirect` — A01 Broken Access Control
