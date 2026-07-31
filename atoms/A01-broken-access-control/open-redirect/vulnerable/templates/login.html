@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Log in</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}input{font-family:monospace;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>Log in</h1>
+<p>After you log in, you're returned to where you were &mdash; the destination in the <code>next</code> parameter.</p>
+{% if error %}<p><strong>Invalid credentials.</strong></p>{% endif %}
+<form method="post" action="/login">
+  <input type="hidden" name="next" value="{{ next }}">
+  <label>Username: <input type="text" name="username" value="demo" autofocus></label>
+  <label>Password: <input type="password" name="password" value="demo"></label>
+  <button type="submit">Log in</button>
+</form>
+<p>Credentials: <code>demo</code> / <code>demo</code></p>
+<p><em>Open with Burp proxy enabled, interact once, then work from Burp Repeater.</em></p>
+</body>
+</html>
