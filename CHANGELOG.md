@@ -5,7 +5,9 @@ All notable changes to atomicvulns will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.0] - 2026-07-29
+
+Client-side & NoSQL (Phase 5 of the ROADMAP). Five atoms covering the client side and data stores beyond SQL: DOM-based XSS through a client-side sink, NoSQL injection via an operator smuggled into a MongoDB filter, CSRF forging a state-changing request on an auto-attached cookie, an open redirect to a user-controlled destination, and mass assignment escalating a user to admin. Two recurring A01 lessons close here — the server decides, not the input, and allowlist over blocklist. Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR).
 
 ### Added
 
