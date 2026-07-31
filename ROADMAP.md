@@ -131,7 +131,7 @@ Legenda:
 - [x] **23.** `csrf-basic` — A01 Broken Access Control
   - *Por que aqui:* precisa de contexto de sessão já internalizado (fase 3).
 
-- [ ] **24.** `open-redirect` — A01 Broken Access Control
+- [x] **24.** `open-redirect` — A01 Broken Access Control
   - *Por que aqui:* simples, mas frequente em bug bounty como parte de chains (ex: OAuth stealing).
 
 - [ ] **25.** `mass-assignment` — A01 Broken Access Control
