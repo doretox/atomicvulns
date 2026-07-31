@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added atom 22: `nosql-injection-mongo` — NoSQL Injection: a login endpoint passes untrusted JSON straight into a MongoDB query filter, so an object carrying an operator (`{"$ne": null}`) instead of a string logs in as admin without the password (A03 Injection).
 - Added atom 23: `csrf-basic` — Cross-Site Request Forgery (CSRF): a state-changing POST authorizes on the session cookie the browser attaches automatically, so an auto-submitting form on another site forges an authenticated email change (account takeover); the fix is a per-session anti-CSRF token the attacker cannot read across origins (A01 Broken Access Control).
 - Added atom 24: `open-redirect` — Open Redirect: after login the app redirects to a user-controlled `next` parameter with no validation, so `next=http://evil.example` (or the protocol-relative `//evil.example`) sends the victim off-site; the fix is a server-side structural allowlist that permits only internal paths (A01 Broken Access Control, CWE-601).
+- Added atom 25: `mass-assignment` — Mass Assignment: a profile-update endpoint copies every field of the client's JSON onto the account (`account.update(data)`), so adding `"role": "admin"` escalates a normal user to admin; the fix is a server-side field allowlist that accepts only name and email (A01 Broken Access Control, CWE-915).
 
 ## [0.4.0] - 2026-07-26
 
