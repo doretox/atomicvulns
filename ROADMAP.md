@@ -134,7 +134,7 @@ Legenda:
 - [x] **24.** `open-redirect` — A01 Broken Access Control
   - *Por que aqui:* simples, mas frequente em bug bounty como parte de chains (ex: OAuth stealing).
 
-- [ ] **25.** `mass-assignment` — A01 Broken Access Control
+- [x] **25.** `mass-assignment` — A01 Broken Access Control
   - *Por que aqui:* falha comum em APIs REST que aceitam JSON direto em ORM. Fecha a categoria A01.
 
 ---
