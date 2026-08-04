@@ -43,7 +43,7 @@ Mesmas lições do `xss-reflected`, afiadas:
 
 Configure o Burp Proxy, aponte o browser pra ele e visite <http://127.0.0.1:8008/>. Submeta um comentário descartável pelo form pra o Burp capturar um `POST /comment` em **Proxy → HTTP history**; clique com o direito nele e escolha **Send to Repeater**. Esse POST é o instrumento do atacante — você edita o corpo dele e reenvia pra plantar payloads com controle total sobre os bytes exatos.
 
-### Uma nota sobre encoding do corpo
+### Uma nota sobre encoding do body
 
 O corpo do `POST /comment` é `application/x-www-form-urlencoded`: `author=<...>&body=<...>`. Ao editar à mão no Repeater, caracteres que são estruturais nesse formato precisam de encode dentro de um valor:
 

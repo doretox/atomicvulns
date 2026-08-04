@@ -39,7 +39,7 @@ Content-Length: 121
 xml=%3Ccontact%3E%0A++%3Cname%3EAda+Lovelace%3C%2Fname%3E%0A++%3Cemail%3Eada%40example.com%3C%2Femail%3E%0A%3C%2Fcontact%3E
 ```
 
-### Uma nota sobre encoding do corpo
+### Uma nota sobre encoding do body
 
 O corpo é `application/x-www-form-urlencoded`, e esse formato tem uma armadilha que pega todo mundo uma vez: **`&` separa campos.** Seu payload de XXE usa `&x;` pra referenciar a entity — se você colar cru, o `&` inicia um novo campo de form e o servidor nunca vê a sua referência de entity. Então o **valor** inteiro de `xml=` precisa ser URL-encoded: `<` → `%3C`, `>` → `%3E`, `"` → `%22`, e crucialmente `&` → `%26`.
 
