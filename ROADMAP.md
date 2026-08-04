@@ -148,7 +148,7 @@ Legenda:
 - [x] **26.** `prototype-pollution` — A08 Data Integrity Failures
   - *Primeiro átomo em Node.js.* A única vuln que realmente só faz sentido em JS.
 
-- [ ] **27.** `deserialization-node` — A08 Data Integrity Failures
+- [x] **27.** `deserialization-node` — A08 Data Integrity Failures
   - *Por que aqui:* par natural com `deserialization-pickle` (átomo 20), mas no ecossistema Node.
 
 - [ ] **28.** `ldap-injection` — A03 Injection
