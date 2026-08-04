@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added atom 26: `prototype-pollution` — Prototype pollution: a hand-written deep-merge of untrusted JSON descends through the `__proto__` key and writes onto the shared `Object.prototype`, so `{"__proto__":{"isAdmin":true}}` poisons every object in the process — a brand-new, untouched object at `GET /me` inherits `isAdmin` and is treated as admin; the fix guards the merge against the `__proto__`, `constructor`, and `prototype` keys (A08 Software and Data Integrity Failures, CWE-1321).
+- Added atom 27: `deserialization-node` — Insecure deserialization: an attacker-controlled cookie deserialized with Node's `node-serialize` library carries a `_$$ND_FUNC$$_`-tagged function that the library `eval`s on unserialize; a self-invoking function body runs during unserialize, giving remote code execution — the Node face of the flaw `deserialization-pickle` shows in Python; the fix changes the format to JSON (`JSON.parse`, data only) and drops the dependency (A08 Software and Data Integrity Failures).
 
 ## [0.5.0] - 2026-07-29
 
