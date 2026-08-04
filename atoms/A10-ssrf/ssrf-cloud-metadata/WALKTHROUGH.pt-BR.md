@@ -4,13 +4,13 @@ Você vai fazer o servidor buscar a única URL que existe em toda instância de 
 
 Há um único ator neste átomo: você, o pentester. A trilha principal é o Burp Repeater.
 
-## 1. Context
+## 1. Contexto
 
 A app é uma ferramenta "Fetch from URL". Em `/` há um form com um campo de URL; submetê-lo envia `POST /fetch`, e o servidor busca aquela URL com a biblioteca `requests` e renderiza o corpo da resposta de volta pra você dentro de um bloco `<pre>`. O valor padrão é `https://api.github.com/zen`, um endpoint público real que devolve uma linha curta de texto — bom pra confirmar que a feature funciona antes de deixar a URL interessante.
 
 Isto é **A10 — Server-Side Request Forgery (SSRF)**, apontado para o cloud metadata endpoint.
 
-## 2. About this lab's environment
+## 2. Sobre o ambiente deste lab
 
 Três containers sobem juntos (veja [`docker-compose.yml`](./docker-compose.yml)):
 
@@ -21,7 +21,7 @@ Num engagement real, `169.254.169.254` é o metadata service da própria instân
 
 `vulnerable` e `fixed` compartilham **uma** rede Docker com o `metadata-mock` aqui (o mock está fixado num IP fixo, que só pode viver numa subnet). As duas apps alcançam o mock no nível de rede — que é o que torna a recusa posterior da app fixed o seu **código de aplicação**, não a rede.
 
-## 3. Spot the bug
+## 3. Ache o bug
 
 Abra [`vulnerable/app.py`](./vulnerable/app.py). A view `/fetch` é curta:
 
@@ -46,7 +46,7 @@ O valor de form `url` flui direto pra `requests.get(url, ...)`. Não há parsing
 
 Configure o Burp Proxy e aponte seu browser pra ele. Visite <http://127.0.0.1:8017/>, submeta o form uma vez com a URL padrão pra capturar o tráfego, depois clique com o botão direito no request `POST /fetch` em **Proxy → HTTP history** e escolha **Send to Repeater**. O corpo é `url=<sua URL>`; quando você editar, o Burp recalcula o `Content-Length` pra você. (`:` e `/` sem encoding dentro do valor de form são OK — o Flask decodifica o valor como está — então você pode digitar a URL de forma legível.)
 
-### Step 1 — Confirme que a feature funciona
+### Passo 1 — Confirme que a feature funciona
 
 Request no Repeater:
 
@@ -60,7 +60,7 @@ url=https://api.github.com/zen
 
 Resposta: status `200`; o bloco `<pre>` contém uma única linha curta, ex. `Anything added dilutes everything else.` (a frase varia a cada request). Este é o seu baseline — o uso legítimo da feature. Note o mecanismo silencioso: **o Burp mostra a resposta como se o seu browser tivesse buscado `api.github.com`, mas não foi. Foi o servidor, e ele repassou o corpo de volta pra você.** (Este passo precisa de egress de internet; se o lab estiver offline você verá um `Request error` — pule pro Step 2, que mira o mock interno e não precisa de egress.)
 
-### Step 2 — Recon: peça o nome do role ao metadata endpoint
+### Passo 2 — Recon: peça o nome do role ao metadata endpoint
 
 Troque o corpo pelo diretório de credenciais do metadata endpoint:
 
@@ -80,7 +80,7 @@ app-instance-role
 
 Esse é o nome do role IAM anexado à instância. O metadata service te disse, sem autenticação, sobre HTTP puro, através da app. `169.254.169.254` é um host que sua máquina não alcança de forma útil, mas o container da app está um hop mais perto — exatamente a assimetria que o SSRF explora.
 
-### Step 3 — Loot: leia as credenciais do role
+### Passo 3 — Loot: leia as credenciais do role
 
 Anexe o nome do role ao path:
 
