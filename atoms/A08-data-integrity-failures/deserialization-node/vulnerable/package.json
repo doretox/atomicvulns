@@ -1,0 +1,11 @@
+{
+  "name": "deserialization-node",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "dependencies": {
+    "node-serialize": "0.0.4"
+  }
+}
