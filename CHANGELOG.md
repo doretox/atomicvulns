@@ -5,6 +5,12 @@ All notable changes to atomicvulns will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Added atom 26: `prototype-pollution` — Prototype pollution: a hand-written deep-merge of untrusted JSON descends through the `__proto__` key and writes onto the shared `Object.prototype`, so `{"__proto__":{"isAdmin":true}}` poisons every object in the process — a brand-new, untouched object at `GET /me` inherits `isAdmin` and is treated as admin; the fix guards the merge against the `__proto__`, `constructor`, and `prototype` keys (A08 Software and Data Integrity Failures, CWE-1321).
+
 ## [0.5.0] - 2026-07-29
 
 Client-side & NoSQL (Phase 5 of the ROADMAP). Five atoms covering the client side and data stores beyond SQL: DOM-based XSS through a client-side sink, NoSQL injection via an operator smuggled into a MongoDB filter, CSRF forging a state-changing request on an auto-attached cookie, an open redirect to a user-controlled destination, and mass assignment escalating a user to admin. Two recurring A01 lessons close here — the server decides, not the input, and allowlist over blocklist. Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR).
