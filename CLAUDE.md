@@ -288,12 +288,20 @@ Sempre em inglês, sempre kebab-case, sempre descritivo. IDs são globalmente ú
 
 ### Commits
 
-Convenção: [Conventional Commits](https://www.conventionalcommits.org/) em inglês.
+Mensagens em inglês. Duas formas coexistem, por tipo de mudança:
 
-Exemplos:
-- `feat(sqli-union-basic): add vulnerable and fixed versions`
-- `docs(xss-reflected): add pt-BR walkthrough`
-- `fix(ssrf-basic): correct port binding to 127.0.0.1`
+**Commit que introduz um átomo** (é o subject do squash-merge do PR do átomo):
+
+```
+atom <NN>: <id> — <Nome da classe da vuln>
+```
+
+O `(#<PR>)` é acrescentado automaticamente pelo GitHub no squash-merge — não o escreva à mão. Ex.: `atom 25: mass-assignment — Mass Assignment (#37)`. O `<NN>` é o número sequencial do átomo (o mesmo das portas); o `<id>` é o slug da pasta; o `<Nome da classe da vuln>` é o nome canônico da classe (o mesmo do h1 do README, sem qualificar a stack).
+
+**Todo o resto** (docs, refactor, fix, chore): [Conventional Commits](https://www.conventionalcommits.org/), com escopo curto. Exemplos:
+- `docs(changelog): release v0.5.0`
+- `docs(roadmap): mark atom 25 (mass-assignment) done`
+- `refactor(walkthrough): drop redundant browser track, Burp-only default`
 
 ### Branches
 
