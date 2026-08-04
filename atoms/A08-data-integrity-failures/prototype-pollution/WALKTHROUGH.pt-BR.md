@@ -2,7 +2,7 @@
 
 A app guarda as suas preferências: você manda um corpo JSON com campos de config pro `POST /settings`, e ela faz um *deep-merge* deles nos settings atuais — descendo recursivamente em objetos aninhados. O merge é uma função recursiva escrita à mão, e ela desce por *quaisquer* chaves que o seu JSON carregue. Uma dessas chaves é especial: `__proto__`. Mande-a e o merge, em vez de escrever num campo do objeto de settings, escreve no `Object.prototype` — o pai compartilhado por todo objeto do processo Node inteiro. A prova está num segundo endpoint que não tem nada a ver com settings: o `GET /me` cria um objeto de usuário novo e vazio e checa `if (user.isAdmin)`. Depois do ataque, esse objeto fresco — que você nunca tocou — responde admin. Tudo aqui é feito no Burp (ou `curl`); não há passo de browser, porque o JavaScript roda no **servidor** e o efeito é visível na resposta.
 
-## 1. Context
+## 1. Contexto
 
 A app `vulnerable` está em `127.0.0.1:8026` e a `fixed` em `127.0.0.1:8126`; não há banco nem segundo serviço — os settings vivem num objeto JavaScript dentro do processo Node. Dois endpoints:
 
@@ -20,7 +20,7 @@ Isto é **prototype pollution**. Como este é o primeiro átomo JavaScript do re
 
 Isto é **A08 — Software and Data Integrity Failures**; o CWE dele (Common Weakness Enumeration — o catálogo padrão de classes de fraqueza) é **CWE-1321**, "Improperly Controlled Modification of Object Prototype Attributes ('Prototype Pollution')". A exploração é feita inteiramente no Burp; `curl` é o equivalente — não há trilha browser (este átomo é API-only, e o JavaScript roda server-side).
 
-## 2. Spot the bug
+## 2. Ache o bug
 
 Abra [`vulnerable/app.js`](./vulnerable/app.js). O merge é a história inteira:
 
@@ -44,7 +44,7 @@ O loop percorre `Object.keys(source)` e, pra cada chave cujo valor é um objeto,
 
 Uma sutileza explica por que o corpo JSON é a superfície de ataque. Se você escrevesse o object-literal `{ __proto__: ... }` no código, `__proto__` seria um *setter* especial (ele seta o prototype do literal) e **não** viraria uma chave normal — um loop de merge nunca a veria. Mas o dado do atacante não é um literal; é texto que passa por `JSON.parse`, e o parser faz `__proto__` virar uma **chave própria comum**. Então `Object.keys(source)` a entrega, e o loop desce. O fix (foreshadow): fazer o merge **recusar** as chaves que alcançam um prototype, em vez de descer por elas.
 
-## 3. Exploitation via Burp Suite
+## 3. Exploração via Burp Suite
 
 Aponte o Burp pra API vulnerable em `127.0.0.1:8026` e trabalhe no Repeater. Cada request abaixo é um bloco que você cola no Repeater; as mesmas requests rodam no `curl`. (Os blocos de `POST /settings` carregam `Content-Type: application/json`; este servidor escrito à mão chama `JSON.parse` no corpo independente do header, mas mandá-lo é correto e casa com um cliente real.)
 
@@ -88,7 +88,7 @@ curl -i http://127.0.0.1:8026/settings -H 'Content-Type: application/json' \
 
 A feature funciona: o merge escreve `theme` e deixa `notifications` em paz. O `GET /me` continua `{"admin":false}` — um merge benigno não muda nada de privilégio. Daqui pra frente, só uma coisa muda — a chave de topo do JSON vira `__proto__`.
 
-### Step 1 — Poluir o prototype (o ataque)
+### Passo 1 — Poluir o prototype (o ataque)
 
 Mande um corpo cuja chave de topo é `__proto__`, carregando `isAdmin: true`:
 
@@ -113,7 +113,7 @@ curl -i http://127.0.0.1:8026/settings -H 'Content-Type: application/json' \
   -d '{"__proto__":{"isAdmin":true}}'
 ```
 
-### Step 2 — Confirmar a contaminação global
+### Passo 2 — Confirmar a contaminação global
 
 Volte pro endpoint do usuário fresco — o que nunca mencionou settings:
 
@@ -132,7 +132,7 @@ Essa é a prototype pollution. O `GET /me` cria um objeto **novo e vazio** e lê
 
 > A poluição é global ao processo e agora fica até o container reiniciar, então rode o baseline **antes** do ataque — como acima — pra ver a virada `false` → `true` limpa. Pra resetar, `./atom down prototype-pollution` e depois `./atom up prototype-pollution` (ou `docker compose restart vulnerable`).
 
-## 4. What the vuln is NOT
+## 4. O que a vuln NÃO é
 
 O exploit é uma chave num corpo JSON, então é fácil tirar a lição errada. Isole a causa real:
 
@@ -144,13 +144,13 @@ O exploit é uma chave num corpo JSON, então é fácil tirar a lição errada. 
 
 A única coisa que **é**: o merge desce por `__proto__` e muta o `Object.prototype` compartilhado, então todo objeto — inclusive o `{}` fresco do `GET /me` — herda o campo plantado. O fix é fazer o merge **recusar** as chaves que alcançam um prototype (`__proto__`, `constructor`, `prototype`).
 
-## 5. Impact
+## 5. Impacto
 
 **Contaminação global do `Object.prototype`:** qualquer código que leia uma propriedade herdada assumindo que ela é ausente — `if (user.isAdmin)` — é subvertido. O exemplo deste lab é um bypass de autorização: um objeto de usuário default, sem privilégio, responde admin. A poluição **persiste** no processo até um restart, e afeta objetos criados *depois* do ataque, longe do ponto de injeção.
 
 Esse é o teto honesto deste átomo. **Não é RCE por padrão.** Prototype pollution *pode* escalar pra remote code execution no mundo real, mas só com *gadgets* específicos — uma cadeia onde uma propriedade herdada envenenada flui pra um sink perigoso de alguma lib ou do runtime (um template engine, `child_process`, `require`). Isso depende do ecossistema em volta e não é uma propriedade da falha isolada; seria um segundo mecanismo, então fica fora de escopo aqui. O teto difere do `deserialization-pickle`, o outro átomo A08 do repo, que chega a RCE por causa própria. O valor desta classe está em quão *silenciosa e global* ela é: uma chave num corpo JSON contamina todo objeto do processo, e o dano aparece onde algum código lê uma propriedade herdada que assumia ausente.
 
-## 6. Why the fix works
+## 6. Por que o fix funciona
 
 Rode a cadeia contra a API fixed na porta **8126** (veja o [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) pra a mudança). Ela começa limpa — `GET /me` → `{"admin":false}`. Agora mande o **mesmo payload de ataque**:
 

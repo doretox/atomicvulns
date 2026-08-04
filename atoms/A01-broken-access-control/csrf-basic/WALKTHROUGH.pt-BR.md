@@ -2,7 +2,7 @@
 
 O alvo é uma página de conta com uma ação: trocar o e-mail de recuperação. Você loga, digita um novo e-mail, e o `POST /email` atualiza a conta. O servidor sabe que é você porque o browser mandou o **cookie de sessão** — o valor que ele guardou no login e reenvia automaticamente em toda request pra este site. Esse reenvio automático é o problema inteiro: o browser anexa o cookie não importa *qual site* causou a request. Uma página em outro site pode conter um `<form>` escondido que dispara um `POST /email` neste alvo a partir do browser da vítima, e o browser vai anexar o cookie de sessão da vítima nele. O servidor vê um cookie válido e troca o e-mail — como se a vítima tivesse pedido. A vítima nunca pediu, e o atacante nunca soube a senha nem leu o cookie.
 
-## 1. Context
+## 1. Contexto
 
 O `POST /email` é uma **request de mudança-de-estado** — uma que altera algo no servidor (aqui, o e-mail de recuperação da conta). O servidor a autoriza checando uma coisa: existe um **cookie de sessão** válido? Isto é **CSRF (Cross-Site Request Forgery)**: um atacante faz o browser da vítima disparar uma request de mudança-de-estado num site onde ela está logada, pegando carona na sessão dela. Dois termos nomeiam o cenário. **Cross-site** quer dizer que a request parte de um *site diferente* do alvo (um host registrável diferente — aqui `127.0.0.2` versus o `127.0.0.1` do alvo). A **Same-Origin Policy (SOP)** é a regra do browser que deixa uma origem *enviar* uma request pra outra mas proíbe *ler* a resposta — por isso o CSRF é um ataque cego, fire-and-forget: o atacante dispara a ação mas nunca vê o resultado.
 
@@ -16,7 +16,7 @@ Três serviços, e nenhum fala com o outro — o browser da vítima faz toda req
 
 Como o ato que define o CSRF é o browser anexar o cookie sozinho, o browser é onde você explora; o Burp é uma lente de apoio que mostra a request forjada na rede.
 
-## 2. Spot the bug
+## 2. Ache o bug
 
 Abra [`vulnerable/app.py`](./vulnerable/app.py). O bug inteiro é a checagem de autorização no `POST /email`:
 
@@ -39,7 +39,7 @@ Set-Cookie: session_vuln=...; Secure; HttpOnly; Path=/; SameSite=None
 
 `SameSite=None` é o sinal verde pro browser anexar este cookie em requests cross-site.
 
-## 3. Exploitation (no browser)
+## 3. Exploração (no browser)
 
 O ato que define o ataque — o browser anexar o cookie da vítima numa request cross-site — só acontece num browser, então é aqui que você explora. Passe o browser pelo proxy do Burp pra capturar o tráfego pra Seção 4.
 
@@ -79,7 +79,7 @@ O e-mail de recuperação agora é o do atacante. **Account takeover:** quem con
 
 Tudo aqui é benigno e local: uma conta fake, um endereço `@evil.example` (um TLD reservado), tudo em loopback, nada destrutivo.
 
-## 4. What Burp shows (e por que o `curl` não)
+## 4. O que o Burp mostra (e por que o `curl` não)
 
 O CSRF é disparado do browser, mas o Burp prova a mecânica. Em **Proxy → HTTP history**, ache o `POST /email` forjado que a página do atacante disparou:
 
@@ -107,7 +107,7 @@ $ curl -X POST -H "Cookie: session_vuln=<cole>" -d "email=x@evil.example" \
 
 A segunda chamada funciona, mas não é CSRF: *você* colou um cookie que já tinha. Não há vítima, não há outro site, nada foi enganado. O CSRF é justo a parte que o `curl` não consegue fazer — fazer o browser de uma *vítima* anexar o cookie *dela* a uma request que o *atacante* disparou de *outra origem*. Isso só acontece num browser, e é por isso que o exploit é browser-driven e o Burp só observa.
 
-## 5. What the vuln is NOT
+## 5. O que a vuln NÃO é
 
 O exploit é uma request de aparência legítima, então isole o que de fato deu errado:
 
@@ -117,11 +117,11 @@ O exploit é uma request de aparência legítima, então isole o que de fato deu
 
 O que **é**: o servidor autoriza uma ação de mudança-de-estado só pelo cookie — *quem* você é — sem checar *que você quis*. O fix exige uma prova de intenção que o atacante não consegue suprir.
 
-## 6. Impact
+## 6. Impacto
 
 **Account takeover via uma mudança-de-estado forçada.** O `POST` forjado troca o e-mail de recuperação da conta por um que o atacante controla; um "esqueci a senha" seguinte manda o reset pro atacante. Mais amplamente, qualquer ação de mudança-de-estado guardada só pelo cookie de sessão — trocar e-mail, trocar senha, transferir dinheiro, adicionar admin — pode ser disparada de uma página que a vítima só visita. Sem overclaim: CSRF é sobre *ações que a vítima não pediu*, não roubo de dado — a Same-Origin Policy cega o atacante pra resposta — e roda no browser da vítima, não no servidor.
 
-## 7. Why the fix works
+## 7. Por que o fix funciona
 
 Aponte a página do atacante pro alvo fixed: abra `http://127.0.0.2:8080/attack-fixed` (o form dela posta pra `127.0.0.1:8123/email`) com a vítima logada em `127.0.0.1:8123`. A request forjada retorna:
 

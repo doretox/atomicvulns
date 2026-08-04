@@ -62,7 +62,7 @@ A primitiva usada aqui é um recursive CTE pequeno, cross-joined consigo mesmo:
 
 O CTE constrói uma tabelinha `t` de `K = 18000` linhas, e então `count(*) FROM t a, t b` conta os `K²` ≈ 324 milhões de pares do cross join. Contar esses pares é trabalho puro de CPU e leva alguns segundos, mas a memória fica estável: a única coisa materializada é a tabela de `K` linhas (dezenas de KB), nunca os `K²` pares. `K = 18000` foi calibrado contra o container deste lab (SQLite 3.46.1) pra cair em torno de **3–4 segundos** por execução; o número exato é CPU-dependente, então se os seus delays voltarem bem mais curtos ou longos, ajuste `K` (o tempo cresce com `K²`, então mudanças pequenas movem bastante). O que importa nunca é o número absoluto — é o *contraste* entre segundos e milissegundos. Você vai ver esse bloco exato, por extenso, dentro de todo payload abaixo — ele nunca é abreviado.
 
-### Step 1 — Provar a injeção *e* descobrir o único canal
+### Passo 1 — Provar a injeção *e* descobrir o único canal
 
 Não há bloco de debug, nem erro, nem linha pra ler — então o primeiro probe tem que ser o próprio delay. Injete a expressão de forma incondicional e olhe o relógio.
 
@@ -90,7 +90,7 @@ Esse é o coração conceitual do átomo. No `sqli-blind-boolean`, *confirmar a 
 
 **O que isso NÃO é:** uma única resposta lenta não prova nada sozinha — poderia ser jitter de rede ou servidor ocupado. A prova é *repetibilidade e controle*. Reenvie esse payload duas ou três vezes: ele trava toda vez. Depois mande o benigno `username=alice&password=wonderland` de novo: instantâneo. O sinal de time-based blind não é "a resposta foi lenta", é "eu consigo deixar a resposta lenta sob demanda, e rápida de novo sob demanda". O Step 2 transforma esse controle num oráculo de sim/não.
 
-### Step 2 — Tornar o delay condicional (o oráculo temporal)
+### Passo 2 — Tornar o delay condicional (o oráculo temporal)
 
 Envolva o delay num `CASE` pra ele só disparar quando uma condição é verdadeira. O `CASE` do SQLite avalia só o ramo cujo `WHEN` casou, então a expressão cara no `THEN` só roda numa condição verdadeira.
 
@@ -115,7 +115,7 @@ Você agora tem os dois estados do oráculo, lidos no relógio em vez de na pág
 
 Qualquer pergunta de sim/não que você consiga expressar em SQL pode agora ser respondida colocando ela no slot `WHEN (...)` e cronometrando a resposta. É o gêmeo temporal do Step 2/3 do `sqli-blind-boolean`: a *pergunta* fica exatamente no mesmo lugar; só o que *responde* mudou — latency, não texto.
 
-### Step 3 — Extrair o comprimento da senha por timing
+### Passo 3 — Extrair o comprimento da senha por timing
 
 Troque a condição placeholder por uma sobre dado real: o comprimento da senha da alice é igual a `N`? Comece com um probe concreto que pergunta se o comprimento é 10.
 
@@ -139,7 +139,7 @@ Itere o número no mesmo lugar (no Repeater, edite só o `10`) e cronometre cada
 
 Conclusão: a senha da alice tem **10 caracteres**. Você descobriu um fato sobre um dado que não consegue ler, puramente pela latency da resposta. Fazer dois ou três probes na mão é o suficiente pra sentir o ritmo antes do próximo passo aumentar a escala.
 
-### Step 4 — Extrair um caractere por timing
+### Passo 4 — Extrair um caractere por timing
 
 Pergunta mais fina: o caractere na posição `P` é igual ao candidato `C`? `SUBSTR(password, P, 1)` extrai um caractere; a comparação transforma ele no único bit que o cronômetro revela. Comece testando o primeiro caractere (`P = 1`) contra o candidato `w`.
 
@@ -159,7 +159,7 @@ Na mão, no primeiro caractere: como enviado acima, o candidato `'w'` faz a resp
 
 Os dois argumentos numéricos do `SUBSTR` têm papéis distintos, e a distinção importa pro próximo passo. O primeiro (`1`) é a *posição* — qual caractere ler, o que você varia pra varrer a senha inteira. O segundo (`1`) é o *tamanho* — quantos caracteres ler, sempre 1.
 
-### Step 5 — Automatizar com Burp Intruder, lendo a coluna de latency
+### Passo 5 — Automatizar com Burp Intruder, lendo a coluna de latency
 
 É aqui que você reusa o `sqli-blind-boolean` quase verbatim. A configuração do Intruder é **idêntica** à daquele átomo — mesmo attack type, mesmos dois payload sets — com exatamente **uma** diferença: qual coluna você lê como oráculo. Lá, era um checkbox do Grep — Match. Aqui, toda response body é byte-a-byte idêntica, então não há string pra casar; o oráculo é a **coluna de response time**.
 

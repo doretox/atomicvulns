@@ -9,7 +9,7 @@ A app é um login mínimo baseado em token. Você visita `/`, o servidor te entr
 
 Os dois endpoints esperam o header padrão `Authorization: Bearer <jwt>`. Seu objetivo, como `alice` (usuário comum), é ler `/admin` sem ter a chave de assinatura de um admin.
 
-## 2. Anatomy of a JWT
+## 2. Anatomia de um JWT
 
 Você não consegue explorar o que não consegue ler. Antes do primeiro request, internalize o layout do JWT — os próximos passos vão editar cada peça em sequência.
 

@@ -25,7 +25,7 @@
 
 A view fixed compara o `owner` do pedido com o caller autenticado e recusa um mismatch. Esse único condicional fecha o BOLA: a classe é "o servidor devolve um objeto escopado a usuário sem checar que o caller é o dono", e a remediação é exatamente a negação disso.
 
-## Authenticated ≠ authorized — dá pra ver no diff
+## Autenticado ≠ autorizado — dá pra ver no diff
 
 Olhe a primeira linha que mudou: `_authenticate()` virou `caller = _authenticate()`. É a lição inteira numa edição.
 
