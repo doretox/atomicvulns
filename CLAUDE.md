@@ -329,6 +329,8 @@ Regras claras para evitar inconsistência:
 
 **Título h1 do `README.pt-BR.md` é idêntico ao do `README.md`** (sem tradução). O resto do documento — tagline/descrição, parágrafos, headers de seção — é traduzido normalmente. Razão: o nome canônico de uma classe de vulnerabilidade circula em inglês na comunidade de segurança ("Reflected Cross-Site Scripting", "Server-Side Request Forgery"); preservar no título evita ambiguidade terminológica, mantém consistência com IDs de átomo (que já são em inglês) e elimina a tentação de inventar uma tradução por átomo.
 
+**Headers de seção são traduzidos em TODA doc PT** — `README.pt-BR.md`, `WALKTHROUGH.pt-BR.md` e `DIFF.pt-BR.md`. A única exceção é o h1 do README, coberto pela regra acima. Termos técnicos seguem em inglês DENTRO do header traduzido: `### Passo 1 — Confirmar o injection point`, `## Por que o fix funciona`, `### Baseline — limpo, capturado primeiro`. Sinal de tradução não aplicada: um header de seção byte-idêntico ao do arquivo EN.
+
 **Sincronização:** ao editar uma versão da doc, o Claude Code deve atualizar a contraparte no mesmo commit. Nunca deixar PT e EN dessincronizados.
 
 ---
@@ -432,6 +434,7 @@ Todo átomo passa por este checklist manual antes de ir pro `main`:
 - [ ] WALKTHROUGH tem trilha Burp como principal.
 - [ ] Todas as portas bindam em `127.0.0.1`.
 - [ ] PT e EN estão sincronizados (mesma informação, mesma estrutura).
+- [ ] Nenhum header de seção (`##`/`###`/`####`) do arquivo PT é byte-idêntico ao par EN (o h1 do README é a única exceção).
 - [ ] Sem credenciais reais, sem dados sensíveis de clientes.
 - [ ] Átomo marcado como concluído em `ROADMAP.md`.
 
@@ -462,7 +465,7 @@ Para manter o escopo saudável:
 
 Este arquivo evolui com o projeto. Toda mudança estrutural (novo padrão, nova convenção, nova regra) é refletida aqui no mesmo PR que a introduz. Se o Claude Code observa conflito entre o que está aqui e o que foi pedido na sessão, ele para e pergunta.
 
-**Última revisão:** dia de criação do repositório.
+**Última revisão:** 2026-08-04.
 **Responsável:** mantenedor (Jose Renato).
 
 ## Memória de projeto
