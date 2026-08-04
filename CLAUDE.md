@@ -437,6 +437,7 @@ Todo átomo passa por este checklist manual antes de ir pro `main`:
 - [ ] Nenhum header de seção (`##`/`###`/`####`) do arquivo PT é byte-idêntico ao par EN (o h1 do README é a única exceção).
 - [ ] Sem credenciais reais, sem dados sensíveis de clientes.
 - [ ] Átomo marcado como concluído em `ROADMAP.md`.
+- [ ] O rodapé de links do `CHANGELOG.md` tem uma linha de compare para cada versão, e o `[Unreleased]` aponta da última release cortada até HEAD.
 
 ---
 
