@@ -151,7 +151,7 @@ Legenda:
 - [x] **27.** `deserialization-node` — A08 Data Integrity Failures
   - *Por que aqui:* par natural com `deserialization-pickle` (átomo 20), mas no ecossistema Node.
 
-- [ ] **28.** `ldap-injection` — A03 Injection
+- [x] **28.** `ldap-injection` — A03 Injection
   - *Por que aqui:* rara em apps modernas mas aparece em corp/AD, vale saber.
 
 - [ ] **29.** `sqli-second-order` — A03 Injection
