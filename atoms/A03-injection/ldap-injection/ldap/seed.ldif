@@ -1,0 +1,35 @@
+# Seed loaded into the directory at image build time (see ldap/Dockerfile).
+# Fake data only. Passwords are stored in PLAINTEXT: a lab simplification so the
+# naive (userPassword=<value>) equality in the login filter matches. Password
+# storage is orthogonal to the LDAP injection fix (see DIFF.md).
+
+# The organizational unit that holds the user entries.
+dn: ou=people,dc=example,dc=com
+objectClass: organizationalUnit
+ou: people
+
+# The low-privilege service account the login app binds as. It is NOT the
+# directory admin (cn=admin). The ACL (acl.ldif) grants it search access to
+# userPassword -- exactly what this search-based login design needs, nothing more.
+dn: cn=svc,dc=example,dc=com
+objectClass: organizationalRole
+objectClass: simpleSecurityObject
+cn: svc
+description: Service account the login app binds as; search-only.
+userPassword: svc-bind-pw
+
+# Two fake users. The walkthrough's honest baseline uses admin's real password
+# (visible here); the attack logs in without it.
+dn: uid=admin,ou=people,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: admin
+cn: Directory Admin
+sn: Admin
+userPassword: s3cr3t-admin-pw
+
+dn: uid=jdoe,ou=people,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: jdoe
+cn: Jane Doe
+sn: Doe
+userPassword: jdoe-pw

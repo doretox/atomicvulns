@@ -1,0 +1,47 @@
+services:
+  ldap:
+    build: ./ldap
+    # No ports: -- the directory is reachable only on the internal network,
+    # never published to the host.
+    healthcheck:
+      # Confirm the SEED is present, not just that port 389 is open: an anonymous
+      # search for a known entry. It only passes once the directory answers with
+      # data, so the apps (depends_on: service_healthy) never race the seed.
+      test: ["CMD-SHELL", "ldapsearch -x -H ldap://127.0.0.1:389 -b 'ou=people,dc=example,dc=com' '(uid=admin)' uid | grep -q '^uid: admin'"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - lab
+  vulnerable:
+    build: ./vulnerable
+    ports:
+      - "127.0.0.1:8028:5000"
+    environment:
+      - LDAP_URL=ldap://ldap:389
+      - LDAP_BIND_DN=cn=svc,dc=example,dc=com
+      - LDAP_BIND_PW=svc-bind-pw
+      - LDAP_PEOPLE_DN=ou=people,dc=example,dc=com
+    depends_on:
+      ldap:
+        condition: service_healthy
+    networks:
+      - lab
+  fixed:
+    build: ./fixed
+    ports:
+      - "127.0.0.1:8128:5000"
+    environment:
+      - LDAP_URL=ldap://ldap:389
+      - LDAP_BIND_DN=cn=svc,dc=example,dc=com
+      - LDAP_BIND_PW=svc-bind-pw
+      - LDAP_PEOPLE_DN=ou=people,dc=example,dc=com
+    depends_on:
+      ldap:
+        condition: service_healthy
+    networks:
+      - lab
+
+networks:
+  lab:
