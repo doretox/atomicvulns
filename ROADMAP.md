@@ -154,7 +154,7 @@ Legenda:
 - [x] **28.** `ldap-injection` — A03 Injection
   - *Por que aqui:* rara em apps modernas mas aparece em corp/AD, vale saber.
 
-- [ ] **29.** `sqli-second-order` — A03 Injection
+- [x] **29.** `sqli-second-order` — A03 Injection
   - *Por que aqui:* SQLi sofisticado onde o payload é guardado em um ponto e triggado em outro. Exige os SQLis anteriores internalizados.
 
 - [ ] **30.** `xxe-blind-oob` — A05 Security Misconfiguration
