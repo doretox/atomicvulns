@@ -157,7 +157,7 @@ Legenda:
 - [x] **29.** `sqli-second-order` — A03 Injection
   - *Por que aqui:* SQLi sofisticado onde o payload é guardado em um ponto e triggado em outro. Exige os SQLis anteriores internalizados.
 
-- [ ] **30.** `xxe-blind-oob` — A05 Security Misconfiguration
+- [x] **30.** `xxe-blind-oob` — A05 Security Misconfiguration
   - *Variante do 18:* XXE sem resposta direta, via out-of-band.
 
 ---
