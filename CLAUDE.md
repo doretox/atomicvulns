@@ -441,7 +441,30 @@ Todo átomo passa por este checklist manual antes de ir pro `main`:
 
 ---
 
-## 12. O que NÃO entra no projeto
+## 12. Release de fim de fase
+
+Cada fase concluída do `ROADMAP.md` (os 5 átomos `[x]` em `main`) vira uma release versionada. É trabalho de mantenedor, pós-merge — nenhum átomo individual corta release. O procedimento, em ordem:
+
+1. **Promover o CHANGELOG.** O bloco `## [Unreleased]` (que acumulou as linhas `### Added` dos átomos da fase) vira `## [X.Y.0] - <data>` (data real via `date +%Y-%m-%d`, nunca inventada). Acima das linhas `### Added` — que se movem inalteradas —, escrever um parágrafo-resumo da fase no estilo dos resumos anteriores: o arco da fase e o fio condutor dos átomos, fechando com a frase-padrão "Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR)." Recriar um `## [Unreleased]` vazio no topo.
+
+2. **Atualizar o rodapé de links do CHANGELOG.** Adicionar a linha da nova versão e reapontar o Unreleased — o `[Unreleased]` passa a comparar de `vX.Y.0...HEAD`, e uma linha nova `[X.Y.0]` compara de `<versão anterior>...vX.Y.0`. Cada versão cortada tem a sua linha de `compare`; o `[Unreleased]` aponta sempre da última release até `HEAD`. (É o que o checklist da Seção 11 verifica.)
+
+3. **Merge da promoção do CHANGELOG** como um PR próprio (`docs(changelog): release vX.Y.0`), squash, antes de taggear — a tag tem que apontar pro commit que já contém o CHANGELOG promovido.
+
+4. **Tag anotada.** `git tag -a vX.Y.0 -m "vX.Y.0 — <Nome da fase>"`, apontando pro commit de merge na `main`. Sempre anotada (nunca leve). O push da tag é **explícito** (`git push origin vX.Y.0`) — não vai junto de um push normal.
+
+5. **GitHub release.** `gh release create vX.Y.0 --title "vX.Y — <Nome da fase>" --notes-file <arquivo> --latest`. As notas são **mais ricas que o CHANGELOG**: título da fase, uma seção "New atoms" com um bullet por átomo (id + classe + 1 linha), uma seção "What this phase covers" narrando os arcos, a frase-padrão de fechamento, e um `Full changelog:` com o link de `compare`. Copiar o formato do `gh release view` da release anterior.
+
+**Convenções de nomenclatura, para consistência com o histórico:**
+- **Tag:** semver completo — `vX.Y.0` (ex.: `v0.6.0`).
+- **Título do release e da tag anotada:** forma de fase — `vX.Y — <Nome da fase>` (ex.: `v0.6 — Rare but Deadly`), não o semver seco.
+- **`Full changelog:`** no rodapé das notas: sempre presente.
+
+A revisão manual de dependências (Seção 8, regra 7) acontece aqui, no fim da fase, com smoke test dos átomos antes do merge da release.
+
+---
+
+## 13. O que NÃO entra no projeto
 
 Para manter o escopo saudável:
 
@@ -454,7 +477,7 @@ Para manter o escopo saudável:
 
 ---
 
-## 13. Licença e atribuição
+## 14. Licença e atribuição
 
 - Licença: MIT.
 - Atribuição obrigatória se alguém forkar pra material didático.
@@ -462,11 +485,11 @@ Para manter o escopo saudável:
 
 ---
 
-## 14. Estado deste documento
+## 15. Estado deste documento
 
 Este arquivo evolui com o projeto. Toda mudança estrutural (novo padrão, nova convenção, nova regra) é refletida aqui no mesmo PR que a introduz. Se o Claude Code observa conflito entre o que está aqui e o que foi pedido na sessão, ele para e pergunta.
 
-**Última revisão:** 2026-08-04.
+**Última revisão:** 2026-08-14.
 **Responsável:** mantenedor (Jose Renato).
 
 ## Memória de projeto
