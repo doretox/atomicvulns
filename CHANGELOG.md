@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-14
+
+Rare but Deadly (Phase 6 of the ROADMAP). Five atoms covering what shows up rarely and does enormous damage when it does, and the phase that brings Node.js into the repo: prototype pollution writing onto the shared `Object.prototype` through a deep merge, insecure deserialization in Node as the JavaScript face of the pickle atom, LDAP injection rewriting a search filter through an unescaped metacharacter, second-order SQL injection planted in one flow and detonated in another, and blind XXE confirmed out-of-band. Two lessons recur here — injection sinks live in query languages well beyond SQL, and a payload's effect need not land in the request that carried it. Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR).
+
 ### Added
 
 - Added atom 26: `prototype-pollution` — Prototype pollution: a hand-written deep-merge of untrusted JSON descends through the `__proto__` key and writes onto the shared `Object.prototype`, so `{"__proto__":{"isAdmin":true}}` poisons every object in the process — a brand-new, untouched object at `GET /me` inherits `isAdmin` and is treated as admin; the fix guards the merge against the `__proto__`, `constructor`, and `prototype` keys (A08 Software and Data Integrity Failures, CWE-1321).
@@ -92,7 +96,8 @@ First public release — MVP Pentester (Phase 1 of the ROADMAP).
 - Established bilingual documentation requirement: every atom ships EN + PT-BR versions of `README.md`, `WALKTHROUGH.md`, and `DIFF.md`, kept in sync within the same commit.
 - Established Burp Suite as the primary exploration path in every walkthrough; UI is context only.
 
-[Unreleased]: https://github.com/doretox/atomicvulns/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/doretox/atomicvulns/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/doretox/atomicvulns/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/doretox/atomicvulns/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/doretox/atomicvulns/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/doretox/atomicvulns/compare/v0.2.0...v0.3.0
