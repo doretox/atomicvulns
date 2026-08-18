@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added atom 31: `crypto-weak-hash` — Insecure password storage (weak hashing): a login app stores the admin's password as an unsalted MD5 digest, so a hash leaked in a database dump is recovered offline with a pre-computed rainbow table (rtgen/rtsort/rcrack) and replayed to log in as the victim; the fix swaps the primitive for bcrypt — slow and salted, a primitive against which no rainbow table can even be built (A02 Cryptographic Failures, CWE-916).
+- Added atom 32: `crypto-ecb-mode` — Encryption with an insecure mode of operation: a login app issues a session badge carrying `role=user` encrypted with AES-ECB, a deterministic mode that encrypts each 16-byte block independently, so identical plaintext blocks leak as identical ciphertext blocks and whole blocks can be cut and pasted between badges — the attacker aligns `admin` into its own block via a chosen email, lifts that ciphertext block from the login response, splices it over the `user` block, and GET /me treats the forged badge as admin without ever touching the key; the fix swaps the mode for authenticated AES-GCM, whose per-message nonce removes the determinism and whose authentication tag makes the tampered badge fail verification and be rejected before the role is read (A02 Cryptographic Failures, CWE-327, CWE-353).
 
 ## [0.6.0] - 2026-08-14
 
