@@ -168,7 +168,7 @@ Legenda:
 
 **Milestone:** `v1.0 — Full OWASP Top 10 Coverage`
 
-- [ ] **31.** `crypto-weak-hash` — A02 Cryptographic Failures
+- [x] **31.** `crypto-weak-hash` — A02 Cryptographic Failures
   - *Por que aqui:* MD5/SHA1 em password storage, brute force com rainbow table/hashcat.
 
 - [ ] **32.** `crypto-ecb-mode` — A02 Cryptographic Failures
