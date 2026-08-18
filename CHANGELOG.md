@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added atom 31: `crypto-weak-hash` — Insecure password storage (weak hashing): a login app stores the admin's password as an unsalted MD5 digest, so a hash leaked in a database dump is recovered offline with a pre-computed rainbow table (rtgen/rtsort/rcrack) and replayed to log in as the victim; the fix swaps the primitive for bcrypt — slow and salted, a primitive against which no rainbow table can even be built (A02 Cryptographic Failures, CWE-916).
+
 ## [0.6.0] - 2026-08-14
 
 Rare but Deadly (Phase 6 of the ROADMAP). Five atoms covering what shows up rarely and does enormous damage when it does, and the phase that brings Node.js into the repo: prototype pollution writing onto the shared `Object.prototype` through a deep merge, insecure deserialization in Node as the JavaScript face of the pickle atom, LDAP injection rewriting a search filter through an unescaped metacharacter, second-order SQL injection planted in one flow and detonated in another, and blind XXE confirmed out-of-band. Two lessons recur here — injection sinks live in query languages well beyond SQL, and a payload's effect need not land in the request that carried it. Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR).
