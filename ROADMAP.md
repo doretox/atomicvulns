@@ -171,7 +171,7 @@ Legenda:
 - [x] **31.** `crypto-weak-hash` — A02 Cryptographic Failures
   - *Por que aqui:* MD5/SHA1 em password storage, brute force com rainbow table/hashcat.
 
-- [ ] **32.** `crypto-ecb-mode` — A02 Cryptographic Failures
+- [x] **32.** `crypto-ecb-mode` — A02 Cryptographic Failures
   - *Por que aqui:* ECB penguin, bit-flipping, padding oracle lite.
 
 - [ ] **33.** `debug-enabled` — A05 Security Misconfiguration
