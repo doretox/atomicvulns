@@ -16,6 +16,8 @@ services:
   attacker:
     build: ./attacker
     # Attacker origin. A DIFFERENT site from the victim (attacker.localhost vs
-    # victim.localhost) so the fetch is cross-origin; still loopback, local-only.
+    # victim.localhost) so the fetch is cross-origin; still loopback, local-only. Port
+    # 82NN (8234) extends the repo's 80NN/81NN convention to the third service, and
+    # avoids 8080 -- Burp Suite's default proxy port, which this repo assumes is running.
     ports:
-      - "127.0.0.1:8080:5000"
+      - "127.0.0.1:8234:5000"
