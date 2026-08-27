@@ -174,7 +174,7 @@ Legenda:
 - [x] **32.** `crypto-ecb-mode` — A02 Cryptographic Failures
   - *Por que aqui:* ECB penguin, bit-flipping, padding oracle lite.
 
-- [ ] **33.** `debug-enabled` — A05 Security Misconfiguration
+- [x] **33.** `debug-enabled` — A05 Security Misconfiguration
   - *Por que aqui:* Flask `debug=True` com Werkzeug console. Simples e devastador.
 
 - [ ] **34.** `cors-wildcard` — A05 Security Misconfiguration
