@@ -1,0 +1,15 @@
+services:
+  vulnerable:
+    build: ./vulnerable
+    # Victim origin (vulnerable). Bound to 127.0.0.1; reached in the browser as
+    # http://victim.localhost:8034 (*.localhost resolves to loopback). The services never
+    # talk to each other -- the victim's browser makes every cross-origin request -- so
+    # there is no internal network, no depends_on, and no healthcheck.
+    ports:
+      - "127.0.0.1:8034:5000"
+  attacker:
+    build: ./attacker
+    # Attacker origin. A DIFFERENT site from the victim (attacker.localhost vs
+    # victim.localhost) so the fetch is cross-origin; still loopback, local-only.
+    ports:
+      - "127.0.0.1:8080:5000"

