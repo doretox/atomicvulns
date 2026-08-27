@@ -7,6 +7,12 @@ services:
     # there is no internal network, no depends_on, and no healthcheck.
     ports:
       - "127.0.0.1:8034:5000"
+  fixed:
+    build: ./fixed
+    # Victim origin (fixed). Same code as vulnerable except the CORS policy (exact-match
+    # allowlist) and the cookie name; reached as http://victim.localhost:8134.
+    ports:
+      - "127.0.0.1:8134:5000"
   attacker:
     build: ./attacker
     # Attacker origin. A DIFFERENT site from the victim (attacker.localhost vs
