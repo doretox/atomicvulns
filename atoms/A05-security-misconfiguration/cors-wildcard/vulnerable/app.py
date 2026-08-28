@@ -9,7 +9,7 @@ app.secret_key = "changeme"  # dummy dev-only key (CLAUDE.md §8.3)
 # attacker's CREDENTIALED cross-origin fetch; Secure is required by SameSite=None and
 # works over plain HTTP because *.localhost is a secure context (loopback origins are
 # treated as trustworthy). This block is IDENTICAL in fixed/ -- only SESSION_COOKIE_NAME
-# differs, so vulnerable (:8034) and fixed (:8134), both on victim.localhost, do not
+# differs, so vulnerable (:8034) and fixed (:8134), both on api.lab.localhost, do not
 # share a login, since cookies ignore the port. The CORS policy in add_cors() below is
 # the ONLY security difference between the two apps.
 app.config.update(

@@ -8,11 +8,12 @@
 <body>
 <p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
 <h1>Attacker page</h1>
-<p>Each link opens a page whose JavaScript makes a credentialed cross-origin
-   <code>fetch</code> to the target's <code>/account</code> and shows whatever it can read:</p>
+<p>This is a hostile sibling subdomain (<code>evil.lab.localhost</code>). Each link opens a
+   page whose JavaScript makes a credentialed cross-origin <code>fetch</code> to the victim
+   API at <code>api.lab.localhost</code> and shows whatever it can read:</p>
 <ul>
-  <li><a href="/attack-vuln">Read the vulnerable target's account (victim.localhost:8034)</a></li>
-  <li><a href="/attack-fixed">Read the fixed target's account (victim.localhost:8134)</a></li>
+  <li><a href="/attack-vuln">Read the vulnerable target's account (api.lab.localhost:8034)</a></li>
+  <li><a href="/attack-fixed">Read the fixed target's account (api.lab.localhost:8134)</a></li>
 </ul>
 <p><em>Open with Burp proxy enabled to see the request on the wire; the read itself only happens in the browser.</em></p>
 </body>

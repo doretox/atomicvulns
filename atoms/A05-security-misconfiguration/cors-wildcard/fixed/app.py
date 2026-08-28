@@ -7,7 +7,7 @@ app.secret_key = "changeme"  # dummy dev-only key (CLAUDE.md §8.3)
 
 # IDENTICAL session-cookie config to vulnerable/ (SameSite=None; Secure) -- only
 # SESSION_COOKIE_NAME differs, so vulnerable (:8034) and fixed (:8134), both on
-# victim.localhost, do not share a login, since cookies ignore the port. That name is
+# api.lab.localhost, do not share a login, since cookies ignore the port. That name is
 # plumbing, NOT a security change. The CORS policy in add_cors() below is the ONLY
 # security difference between the two apps.
 app.config.update(
@@ -21,11 +21,12 @@ app.config.update(
 ACCOUNT = {"user": "demo", "email": "demo@example.com", "balance": "USD 42,000.00"}
 
 # Exact-match allowlist of the origins this API actually trusts to read its responses
-# cross-origin -- here, one legitimate partner site. It is NOT run in this lab; it stands
-# in for a real cross-origin consumer of the API. The point is that the API DOES need
-# some CORS (so the fix is not "delete CORS"), but it names SPECIFIC trusted origins --
-# and the attacker's origin is not one of them.
-ALLOWED_ORIGINS = {"http://partner.localhost:9000"}
+# cross-origin -- here, one legitimate SIBLING subdomain (partner.lab.localhost). It is
+# NOT run in this lab; it stands in for a real cross-origin consumer under the same site.
+# The point is that the API DOES need some CORS (so the fix is not "delete CORS"), and
+# that NOT every sibling under lab.localhost is trustworthy: it names the SPECIFIC trusted
+# origin, and the hostile sibling evil.lab.localhost is not one of them.
+ALLOWED_ORIGINS = {"http://partner.lab.localhost:9000"}
 
 
 @app.route("/")
@@ -61,13 +62,14 @@ def account():
 @app.after_request
 def add_cors(resp):
     # FIXED: only echo the Origin if it is EXACTLY in the allowlist. An untrusted origin
-    # (the attacker) gets NO CORS header at all, so the browser blocks the cross-origin
-    # read. Exact match is the point -- NOT origin.endswith("partner.localhost")/substring
-    # (bypassable with evil-partner.localhost or partner.localhost.evil.com), NOT dropping
-    # credentials while still reflecting (public data would still leak to any origin), and
-    # NOT the literal * (which the browser refuses together with credentials anyway). The
-    # trusted partner still works; the attacker's origin is not in the set, so it cannot
-    # read the response.
+    # (the hostile sibling evil.lab.localhost) gets NO CORS header at all, so the browser
+    # blocks the cross-origin read. Exact match is the point -- NOT origin.endswith(
+    # ".lab.localhost") (that "trust the whole subdomain family" check waves the sibling
+    # evil.lab.localhost straight in, and is bypassable with lab.localhost.evil.example
+    # anyway), NOT dropping credentials while still reflecting (public data would still
+    # leak), and NOT the literal * (which the browser refuses together with credentials).
+    # The legitimate sibling partner.lab.localhost still works; the attacker's origin is
+    # not in the set, so it cannot read the response.
     origin = request.headers.get("Origin")
     if origin in ALLOWED_ORIGINS:
         resp.headers["Access-Control-Allow-Origin"] = origin

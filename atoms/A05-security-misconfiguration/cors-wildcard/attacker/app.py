@@ -6,12 +6,15 @@ app = Flask(__name__)
 
 # The attacker site serves a page whose JavaScript makes a CREDENTIALED cross-origin
 # fetch to the victim's /account and shows whatever it can read. The attacker origin
-# (attacker.localhost) is a DIFFERENT site from the victim (victim.localhost), which is
-# what makes the fetch cross-origin. The attacker never talks to the victim itself --
-# the victim's browser makes every cross-origin request.
+# (evil.lab.localhost) is a hostile SIBLING subdomain of the victim (api.lab.localhost):
+# a DIFFERENT origin, so CORS still governs the read, but the SAME site (both under
+# lab.localhost), so the browser's third-party-cookie partitioning does NOT strip the
+# victim's cookie from the request -- think a compromised/forgotten subdomain or a
+# subdomain takeover. The attacker never talks to the victim itself; the victim's browser
+# makes every cross-origin request.
 TARGETS = {
-    "vuln": "http://victim.localhost:8034/account",
-    "fixed": "http://victim.localhost:8134/account",
+    "vuln": "http://api.lab.localhost:8034/account",
+    "fixed": "http://api.lab.localhost:8134/account",
 }
 
 
