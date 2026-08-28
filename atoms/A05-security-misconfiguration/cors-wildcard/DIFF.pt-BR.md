@@ -37,7 +37,7 @@ A reflexão deixa entrar um *irmão* — `evil.lab.localhost` é um subdomínio 
 
 ```python
 # AINDA VULNERÁVEL -- não faça isto
-if origin and origin.endswith("lab.localhost:8234") or origin.endswith(".lab.localhost"):
+if origin and origin.endswith(".lab.localhost"):
     resp.headers["Access-Control-Allow-Origin"] = origin
 ```
 

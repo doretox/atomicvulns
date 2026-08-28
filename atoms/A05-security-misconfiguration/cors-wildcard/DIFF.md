@@ -37,7 +37,7 @@ The reflection lets in a *sibling* — `evil.lab.localhost` is a subdomain of th
 
 ```python
 # STILL VULNERABLE -- do not do this
-if origin and origin.endswith("lab.localhost:8234") or origin.endswith(".lab.localhost"):
+if origin and origin.endswith(".lab.localhost"):
     resp.headers["Access-Control-Allow-Origin"] = origin
 ```
 
