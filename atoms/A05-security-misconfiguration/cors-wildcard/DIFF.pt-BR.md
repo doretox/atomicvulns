@@ -5,7 +5,7 @@ O fix é uma coisa só: trocar a **reflexão da origem** por uma **allowlist de 
 ## A mudança — `app.py`
 
 ```diff
-+ALLOWED_ORIGINS = {"http://partner.localhost:9000"}
++ALLOWED_ORIGINS = {"http://partner.lab.localhost:9000"}
 +
  @app.after_request
  def add_cors(resp):
@@ -19,11 +19,11 @@ O fix é uma coisa só: trocar a **reflexão da origem** por uma **allowlist de 
      return resp
 ```
 
-`SESSION_COOKIE_NAME` também difere (`session_vuln` vs `session_fixed`) por um motivo não-relacionado à segurança: as duas vítimas moram em `victim.localhost`, e cookie ignora a porta, então um nome de cookie único seria compartilhado entre `:8034` e `:8134`. Nomes distintos mantêm os dois logins separados. Os dois atributos de cookie relevantes pra segurança — `SESSION_COOKIE_SAMESITE="None"` e `SESSION_COOKIE_SECURE=True` — são idênticos nos dois lados, e `GET /account`, `POST /login`, os imports, os dados da conta, o `Dockerfile` e o `requirements.txt` são byte-a-byte idênticos.
+`SESSION_COOKIE_NAME` também difere (`session_vuln` vs `session_fixed`) por um motivo não-relacionado à segurança: as duas vítimas moram em `api.lab.localhost`, e cookie ignora a porta, então um nome de cookie único seria compartilhado entre `:8034` e `:8134`. Nomes distintos mantêm os dois logins separados. Os dois atributos de cookie relevantes pra segurança — `SESSION_COOKIE_SAMESITE="None"` e `SESSION_COOKIE_SECURE=True` — são idênticos nos dois lados, e `GET /account`, `POST /login`, os imports, os dados da conta, o `Dockerfile` e o `requirements.txt` são byte-a-byte idênticos.
 
 ## Por que isto corrige o bug
 
-A política vulnerável respondia "sim, você pode ler esta resposta, com os cookies da vítima" pra *qualquer origem que perguntasse*, porque espelhava a `Origin` do request em `Access-Control-Allow-Origin`. A política corrigida responde isso só pra uma origem que ela foi instruída a confiar. Quando a origem do atacante (`http://attacker.localhost:8234`) não está em `ALLOWED_ORIGINS`, a resposta não traz **nenhum cabeçalho `Access-Control-Allow-Origin`**, e o navegador se recusa a entregar a resposta ao script do atacante.
+A política vulnerável respondia "sim, você pode ler esta resposta, com os cookies da vítima" pra *qualquer origem que perguntasse*, porque espelhava a `Origin` do request em `Access-Control-Allow-Origin`. A política corrigida responde isso só pra uma origem que ela foi instruída a confiar. Quando a origem do irmão hostil (`http://evil.lab.localhost:8234`) não está em `ALLOWED_ORIGINS`, a resposta não traz **nenhum cabeçalho `Access-Control-Allow-Origin`**, e o navegador se recusa a entregar a resposta ao script do atacante.
 
 O ponto a guardar: a requisição ainda chega ao servidor. No app corrigido o fetch credenciado ainda chega com o cookie da vítima, e o servidor ainda devolve o dado privado (`200`). O que o navegador se recusa a fazer é *ler* essa resposta em nome de um script de uma origem que o servidor não autorizou. A defesa não é parar a requisição — é declinar de *autorizar a leitura*, nomeando exatamente quem pode fazê-la.
 
@@ -31,17 +31,17 @@ O ponto a guardar: a requisição ainda chega ao servidor. No app corrigido o fe
 
 A leitura errada mais comum é que o endpoint "esqueceu de autenticar". Não esqueceu: `GET /account` exige o cookie de sessão e devolve o dado só a um usuário logado — a leitura same-origin da própria vítima prova que a auth funciona. Também não é que o dado seja "sensível demais pra devolver" — o endpoint *deve* devolvê-lo, ao dono. A falha é a *política* de resposta que diz ao navegador pra deixar **qualquer origem** ler essa resposta, cookies e tudo. Prova de isolamento: leia `/account` same-origin nos dois apps e você recebe o dado idêntico; só a leitura *cross-origin* difere — o app vulnerável a entrega ao script do atacante, o corrigido não. A causa é a política de CORS, nada mais.
 
-## Armadilha: "só checar se a `Origin` termina com o nosso domínio"
+## Armadilha: "só confiar na nossa própria família de subdomínios"
 
-Um meio-fix tentador é validar a origem de forma frouxa — aceitar qualquer coisa que *contenha* ou *termine com* o seu domínio:
+A reflexão deixa entrar um *irmão* — `evil.lab.localhost` é um subdomínio do mesmo site que a vítima. Então o meio-fix tentador é confiar na família: aceitar qualquer origem sob `lab.localhost`.
 
 ```python
 # AINDA VULNERÁVEL -- não faça isto
-if origin and origin.endswith("partner.localhost:9000"):
+if origin and origin.endswith("lab.localhost:8234") or origin.endswith(".lab.localhost"):
     resp.headers["Access-Control-Allow-Origin"] = origin
 ```
 
-Checagens de substring e sufixo são contornáveis. `http://evil-partner.localhost:9000` **termina com** `partner.localhost:9000`; `http://partner.localhost:9000.evil.example` **contém** o valor. Um atacante que controle uma dessas origens passa na checagem e ganha o cabeçalho refletido. O teste tem que ser uma **correspondência exata** contra um conjunto de origens completas (`origin in ALLOWED_ORIGINS`), não uma comparação frouxa de string.
+É exatamente o erro. **Nem todo subdomínio irmão é confiável.** `http://evil.lab.localhost:8234` termina com `.lab.localhost` — então passa — e é o atacante: um subdomínio comprometido, esquecido, ou vítima de takeover do seu próprio site é justamente a origem pra quem você **não** pode entregar respostas credenciadas. "Confiar na família inteira" acena pro irmão hostil entrar direto. Checagens de sufixo ainda são frágeis por cima disso — sem o ponto inicial, `http://evil-lab.localhost` também termina com `lab.localhost`; um host forjado como `http://lab.localhost.evil.example` é montado pra enganar um contains-check descuidado. O teste tem que ser uma **correspondência exata** contra um conjunto de origens completas (`origin in ALLOWED_ORIGINS`) — você nomeia os irmãos específicos em que confia (aqui `partner.lab.localhost`), você não confia na família.
 
 ## Armadilha: "só tirar as credenciais"
 
@@ -57,7 +57,7 @@ Existe um fix mais simples que uma allowlist, quando ele se aplica: se um endpoi
 
 ## O impacto é exfiltração — e é o espelho do CSRF
 
-A política vulnerável deixa um script de outra origem **ler** a resposta autenticada da vítima — exfiltração de dado cross-origin. Sem overclaim: é uma leitura, não uma escrita; o atacante não consegue mudar a conta, e não há execução de código. A classe que ela espelha é o CSRF — os dois quebram a Same-Origin Policy na fronteira de origem — então o contraste vale ser traçado com nitidez:
+A política vulnerável deixa um script de outra origem — aqui um subdomínio irmão hostil (`evil.lab.localhost`) — **ler** a resposta autenticada da vítima cross-origin. Sem overclaim: é uma leitura, não uma escrita; o atacante não consegue mudar a conta, e não há execução de código. O cenário realista é um subdomínio comprometido ou vítima de takeover da mesma organização (clássico em relatórios de bug bounty). A classe que ela espelha é o CSRF — os dois quebram a Same-Origin Policy na fronteira de origem — então o contraste vale ser traçado com nitidez:
 
 | | **CSRF** (`csrf-basic`) | **CORS misconfiguration** (este átomo) |
 |---|---|---|

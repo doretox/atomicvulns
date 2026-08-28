@@ -5,7 +5,7 @@ The fix is one thing: replace **origin reflection** with an **exact-match allowl
 ## The change — `app.py`
 
 ```diff
-+ALLOWED_ORIGINS = {"http://partner.localhost:9000"}
++ALLOWED_ORIGINS = {"http://partner.lab.localhost:9000"}
 +
  @app.after_request
  def add_cors(resp):
@@ -19,11 +19,11 @@ The fix is one thing: replace **origin reflection** with an **exact-match allowl
      return resp
 ```
 
-`SESSION_COOKIE_NAME` also differs (`session_vuln` vs `session_fixed`) for a non-security reason: both victims live on `victim.localhost`, and cookies ignore the port, so a single cookie name would be shared between `:8034` and `:8134`. Distinct names keep the two logins apart. The two security-relevant cookie attributes — `SESSION_COOKIE_SAMESITE="None"` and `SESSION_COOKIE_SECURE=True` — are identical on both sides, and `GET /account`, `POST /login`, the imports, the account data, the `Dockerfile`, and `requirements.txt` are byte-for-byte identical.
+`SESSION_COOKIE_NAME` also differs (`session_vuln` vs `session_fixed`) for a non-security reason: both victims live on `api.lab.localhost`, and cookies ignore the port, so a single cookie name would be shared between `:8034` and `:8134`. Distinct names keep the two logins apart. The two security-relevant cookie attributes — `SESSION_COOKIE_SAMESITE="None"` and `SESSION_COOKIE_SECURE=True` — are identical on both sides, and `GET /account`, `POST /login`, the imports, the account data, the `Dockerfile`, and `requirements.txt` are byte-for-byte identical.
 
 ## Why this fixes the bug
 
-The vulnerable policy answered "yes, you may read this response, with the victim's cookies" to *whatever origin asked*, because it mirrored the request's `Origin` into `Access-Control-Allow-Origin`. The fixed policy answers that only for an origin it was told to trust. When the attacker's origin (`http://attacker.localhost:8234`) is not in `ALLOWED_ORIGINS`, the response carries **no `Access-Control-Allow-Origin` header at all**, and the browser refuses to hand the response to the attacker's script.
+The vulnerable policy answered "yes, you may read this response, with the victim's cookies" to *whatever origin asked*, because it mirrored the request's `Origin` into `Access-Control-Allow-Origin`. The fixed policy answers that only for an origin it was told to trust. When the hostile sibling's origin (`http://evil.lab.localhost:8234`) is not in `ALLOWED_ORIGINS`, the response carries **no `Access-Control-Allow-Origin` header at all**, and the browser refuses to hand the response to the attacker's script.
 
 The point to hold onto: the request still reaches the server. On the fixed app the credentialed fetch still arrives with the victim's cookie, and the server still returns the private data (`200`). What the browser refuses to do is *read* that response on behalf of a script from an origin the server did not allow. The defense is not stopping the request — it is declining to *authorize the read*, by naming exactly who may perform it.
 
@@ -31,17 +31,17 @@ The point to hold onto: the request still reaches the server. On the fixed app t
 
 The most common misreading is that the endpoint "forgot to authenticate." It did not: `GET /account` requires the session cookie and returns the data only to a logged-in user — the victim's own same-origin read proves the auth works. It is also not that the data is "too sensitive to return" — the endpoint is *supposed* to return it, to its owner. The flaw is the response *policy* that tells the browser to let **any origin** read that response, cookies and all. Isolation proof: read `/account` same-origin on both apps and you get identical data; only the *cross-origin* read differs — the vulnerable app hands it to the attacker's script, the fixed app does not. The cause is the CORS policy, nothing else.
 
-## Trap: "just check the `Origin` ends with our domain"
+## Trap: "just trust our own subdomain family"
 
-A tempting half-fix is to validate the origin loosely — accept anything that *contains* or *ends with* your domain:
+The reflection lets in a *sibling* — `evil.lab.localhost` is a subdomain of the same site as the victim. So the tempting half-fix is to trust the family: accept any origin under `lab.localhost`.
 
 ```python
 # STILL VULNERABLE -- do not do this
-if origin and origin.endswith("partner.localhost:9000"):
+if origin and origin.endswith("lab.localhost:8234") or origin.endswith(".lab.localhost"):
     resp.headers["Access-Control-Allow-Origin"] = origin
 ```
 
-Substring and suffix checks are bypassable. `http://evil-partner.localhost:9000` **ends with** `partner.localhost:9000`; `http://partner.localhost:9000.evil.example` **contains** it. An attacker who controls one of those origins passes the check and gets the reflected header. The test has to be an **exact match** against a set of full origins (`origin in ALLOWED_ORIGINS`), not a fuzzy string comparison.
+This is exactly the mistake. **Not every sibling subdomain is trustworthy.** `http://evil.lab.localhost:8234` ends with `.lab.localhost` — so it passes — and it is the attacker: a compromised, forgotten, or taken-over subdomain of your own site is precisely the origin you must *not* hand credentialed responses to. "Trust the whole family" waves the hostile sibling straight in. Suffix checks are fragile on top of that — without a leading dot, `http://evil-lab.localhost` also ends with `lab.localhost`; a crafted host like `http://lab.localhost.evil.example` is built to fool a careless contains-check. The test has to be an **exact match** against a set of full origins (`origin in ALLOWED_ORIGINS`) — you name the specific siblings you trust (here `partner.lab.localhost`), you do not trust the family.
 
 ## Trap: "just drop the credentials"
 
@@ -57,7 +57,7 @@ There is a simpler fix than an allowlist, when it applies: if an endpoint has **
 
 ## The impact is exfiltration — and it is the mirror of CSRF
 
-The vulnerable policy lets a script on another origin **read** the victim's authenticated response — cross-origin data exfiltration. No overclaim: it is a read, not a write; the attacker cannot change the account, and there is no code execution. The class it mirrors is CSRF — both break the Same-Origin Policy at the origin boundary — so the contrast is worth drawing sharply:
+The vulnerable policy lets a script on another origin — here a hostile sibling subdomain (`evil.lab.localhost`) — **read** the victim's authenticated response cross-origin. No overclaim: it is a read, not a write; the attacker cannot change the account, and there is no code execution. The realistic setting is a compromised or taken-over subdomain of the same organization (a staple of bug-bounty reports). The class it mirrors is CSRF — both break the Same-Origin Policy at the origin boundary — so the contrast is worth drawing sharply:
 
 | | **CSRF** (`csrf-basic`) | **CORS misconfiguration** (this atom) |
 |---|---|---|
