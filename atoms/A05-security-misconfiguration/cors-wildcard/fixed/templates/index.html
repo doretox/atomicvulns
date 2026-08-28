@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Account portal</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:2em auto;padding:0 1em;}pre{background:#f4f4f4;padding:1em;white-space:pre-wrap;}</style>
+</head>
+<body>
+<p><strong>&#9888; Intentionally vulnerable. Run locally only.</strong></p>
+<h1>Account portal</h1>
+<p>Log in as the demo user and read your account &mdash; both from this page, so the
+   browser never opens its raw-JSON viewer on the API. <code>/login</code> and
+   <code>/account</code> stay JSON; this page just calls them for you.</p>
+<p>
+  <button id="login" type="button">Log in (demo)</button>
+  <button id="view" type="button">View my account</button>
+</p>
+<pre id="out">Not logged in yet.</pre>
+<p><em>Then open the attacker page and watch it read this same account from another origin.</em></p>
+<script>
+  // In-page fetches only -- no form navigates away to the JSON endpoints, and there is no
+  // user input here (the requests are hard-coded), so this page adds no second flaw.
+  const out = document.getElementById("out");
+  document.getElementById("login").onclick = async () => {
+    const r = await fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "username=demo&password=demo",
+      credentials: "include",
+    });
+    out.textContent = r.ok ? 'Logged in. Now click “View my account”.' : "Login failed.";
+  };
+  document.getElementById("view").onclick = async () => {
+    const r = await fetch("/account", { credentials: "include" });
+    out.textContent = await r.text();
+  };
+</script>
+</body>
+</html>

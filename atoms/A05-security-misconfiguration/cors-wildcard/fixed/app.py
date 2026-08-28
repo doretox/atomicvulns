@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, jsonify, request, session
+from flask import Flask, jsonify, render_template, request, session
 
 app = Flask(__name__)
 app.secret_key = "changeme"  # dummy dev-only key (CLAUDE.md §8.3)
@@ -30,15 +30,12 @@ ALLOWED_ORIGINS = {"http://partner.localhost:9000"}
 
 @app.route("/")
 def index():
-    # JSON warning banner (CLAUDE.md §8) -- the victim origin is API-only. Not injectable.
-    return jsonify(
-        {
-            "warning": "⚠️ Intentionally vulnerable. Run locally only. "
-            "Never expose to the internet or a shared network.",
-            "hint": "POST /login (demo/demo) sets a session cookie; GET /account returns "
-            "the private account data. The flaw is the CORS policy, not the endpoint.",
-        }
-    )
+    # A minimal HTML portal. It is IDENTICAL in vulnerable/ and fixed/, so it is NOT part
+    # of the security diff (the only delta is the CORS policy + the cookie name). It lets
+    # you log in and read your own account from this page via in-page fetch, so the browser
+    # never navigates onto the raw JSON API (whose JSON viewer's CSP would block those
+    # fetches). /login and /account stay JSON. There is no injectable input here.
+    return render_template("index.html")
 
 
 @app.route("/login", methods=["POST"])
