@@ -1,0 +1,25 @@
+services:
+  vulnerable:
+    build: ./vulnerable
+    # Victim origin (vulnerable). Bound to 127.0.0.1; reached in the browser as
+    # http://api.lab.localhost:8034 (*.lab.localhost resolves to loopback). The services
+    # never talk to each other -- the victim's browser makes every cross-origin request --
+    # so there is no internal network, no depends_on, and no healthcheck.
+    ports:
+      - "127.0.0.1:8034:5000"
+  fixed:
+    build: ./fixed
+    # Victim origin (fixed). Same code as vulnerable except the CORS policy (exact-match
+    # allowlist) and the cookie name; reached as http://api.lab.localhost:8134.
+    ports:
+      - "127.0.0.1:8134:5000"
+  attacker:
+    build: ./attacker
+    # Attacker origin. A hostile SIBLING subdomain of the victim (evil.lab.localhost vs
+    # api.lab.localhost): a different origin (so CORS applies) but the SAME site
+    # (lab.localhost), so the browser does not strip the victim's cookie from the
+    # credentialed cross-origin fetch. Still loopback, local-only. Port 82NN (8234)
+    # extends the repo's 80NN/81NN convention to the third service, and avoids 8080 --
+    # Burp Suite's default proxy port, which this repo assumes is running.
+    ports:
+      - "127.0.0.1:8234:5000"
