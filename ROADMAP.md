@@ -177,7 +177,7 @@ Legenda:
 - [x] **33.** `debug-enabled` — A05 Security Misconfiguration
   - *Por que aqui:* Flask `debug=True` com Werkzeug console. Simples e devastador.
 
-- [ ] **34.** `cors-wildcard` — A05 Security Misconfiguration
+- [x] **34.** `cors-wildcard` — A05 Security Misconfiguration
   - *Por que aqui:* CORS mal configurado permitindo credenciais. Frequente em APIs.
 
 - [ ] **35.** `race-condition-basic` — A04 Insecure Design
