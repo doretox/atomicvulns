@@ -30,6 +30,17 @@ services:
         condition: service_healthy
     networks:
       - lab
+  fixed:
+    build: ./fixed
+    ports:
+      - "127.0.0.1:8135:5000"
+    environment:
+      - DATABASE_URL=postgresql://lab:changeme@db:5432/labdb
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - lab
 
 networks:
   lab:
