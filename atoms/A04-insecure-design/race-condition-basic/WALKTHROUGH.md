@@ -57,7 +57,7 @@ The first withdrawal succeeds (balance 100 → 0); the second, over a balance of
 
 That is the **single-packet attack**: a technique (PortSwigger's) that makes N requests hit the server at the same instant, neutralizing network jitter. Over HTTP/2 it packs the final bytes of 20–30 requests into a single TCP packet; over HTTP/1.1 — which this Flask dev server speaks — Turbo Intruder uses the equivalent **last-byte synchronization**: it sends all but the final byte of each request, holds them at a *gate*, then releases the last bytes together. Either way, the requests complete at once. Install **Turbo Intruder** from Burp's **BApp Store** (Extensions → BApp Store) — this is the one extension the atom needs, and the reason is the lesson itself: a race only reproduces with genuinely simultaneous requests.
 
-Send a single withdrawal to Turbo Intruder (in Repeater or Proxy history, right-click → **Extensions → Turbo Intruder → Send to turbo intruder**). The request is just the legitimate one:
+Open **Turbo Intruder** from Burp's top menu and choose **Run script** — its window opens pre-filled with an `example.com`, port `443`, `https` example. Correct those connection fields for this atom: set **Host** to `127.0.0.1`, **Port** to `8035`, and **Protocol** to `http`. Paste the request into the request panel and the script into the script panel. The request is just the legitimate withdrawal:
 
 ```
 POST /withdraw HTTP/1.1
@@ -68,16 +68,16 @@ Content-Length: 15
 {"amount": 100}
 ```
 
-Use the single-packet race script (Turbo Intruder ships it as an example; this is the whole thing):
+For the script panel, use the gate-based race script below. Paste **only the script body** — from the `def queueRequests` line onward — and **not** the surrounding code fence: a stray backtick pasted in makes Turbo Intruder fail with `SyntaxError: expecting BACKQUOTE`.
 
-```python
+```
 def queueRequests(target, wordlists):
     engine = RequestEngine(endpoint=target.endpoint,
-                           concurrentConnections=1,
-                           engine=Engine.BURP2)
+                           concurrentConnections=30,
+                           engine=Engine.THREADED)
     for i in range(20):
-        engine.queue(target.req, gate='race1')   # withhold each request at the gate
-    engine.openGate('race1')                      # release all 20 together
+        engine.queue(target.req, gate='race1')
+    engine.openGate('race1')
 
 def handleResponse(req, interesting):
     table.add(req)
@@ -112,14 +112,16 @@ What it **is**: a check-then-act split into separate steps, with a window betwee
 
 ## 7. Why the fix works
 
-Point Turbo Intruder at the fixed app (`127.0.0.1:8135`), reset, and run the **same** 20-request burst. Now the results table shows exactly **one** `200` and nineteen `409`s, and the balance lands where it should:
+Now confirm the fix — with one caveat about the setup. **Both apps share the same `accounts` table** in the same `db` container, so `GET /balance` reflects whatever the last burst left, no matter which app received it. To test the fixed app cleanly you must therefore do two things: **reset the balance on `:8135`** (`POST /reset` to `http://127.0.0.1:8135/reset` → `{"balance":100}`) *before* the burst, and **change the Port in the Turbo Intruder window from `8035` to `8135`** — otherwise the burst still lands on the vulnerable app and you will see `−1900` in `/balance` even though you meant to point at the fixed one.
+
+With the balance reset and the port set to `8135`, run the **same** 20-request script. Now the results table shows exactly **one** `200` and nineteen `409`s, and the balance lands where it should:
 
 ```
 $ curl -s 127.0.0.1:8135/balance
 {"balance":0}
 ```
 
-One withdrawal succeeded from a balance of 100; the balance is `0`. The fix ([`fixed/app.py`](./fixed/app.py)) makes the check-and-act a single, indivisible statement:
+That combination — one `200`, nineteen `409`s, and a final balance of `0` on `:8135` — is the proof the fix holds: one withdrawal succeeded from a balance of 100, and every other was correctly refused. The fix ([`fixed/app.py`](./fixed/app.py)) makes the check-and-act a single, indivisible statement:
 
 ```python
 cur.execute(

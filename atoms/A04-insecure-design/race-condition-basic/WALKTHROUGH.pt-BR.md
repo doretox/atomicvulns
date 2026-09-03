@@ -57,7 +57,7 @@ O primeiro saque passa (saldo 100 → 0); o segundo, sobre um saldo de 0, é rec
 
 Isso é o **single-packet attack**: uma técnica (da PortSwigger) que faz N requisições baterem no servidor no mesmo instante, neutralizando o jitter da rede. Sobre HTTP/2 ela empacota os bytes finais de 20–30 requisições num único pacote TCP; sobre HTTP/1.1 — que é o que este dev server do Flask fala — o Turbo Intruder usa a **last-byte synchronization** equivalente: manda todos os bytes de cada requisição menos o último, segura num *gate*, e libera os últimos bytes juntos. De qualquer forma, as requisições completam de uma vez. Instale o **Turbo Intruder** pelo **BApp Store** do Burp (Extensions → BApp Store) — é a única extensão que o átomo precisa, e a razão é a própria lição: uma corrida só reproduz com requisições genuinamente simultâneas.
 
-Mande um saque único pro Turbo Intruder (no Repeater ou no histórico do Proxy, botão direito → **Extensions → Turbo Intruder → Send to turbo intruder**). A requisição é só a legítima:
+Abra o **Turbo Intruder** pelo menu superior do Burp e escolha **Run script** — a janela dele abre pré-preenchida com um exemplo `example.com`, porta `443`, `https`. Corrija esses campos de conexão pra este átomo: ponha **Host** `127.0.0.1`, **Port** `8035`, e **Protocol** `http`. Cole a requisição no painel de requisição e o script no painel de script. A requisição é só o saque legítimo:
 
 ```
 POST /withdraw HTTP/1.1
@@ -68,16 +68,16 @@ Content-Length: 15
 {"amount": 100}
 ```
 
-Use o script de corrida single-packet (o Turbo Intruder já traz como exemplo; é ele inteiro):
+No painel de script, use o script de corrida baseado em gate abaixo. Cole **só o corpo do script** — da linha `def queueRequests` em diante — e **não** a cerca de código em volta: um backtick perdido colado junto faz o Turbo Intruder falhar com `SyntaxError: expecting BACKQUOTE`.
 
-```python
+```
 def queueRequests(target, wordlists):
     engine = RequestEngine(endpoint=target.endpoint,
-                           concurrentConnections=1,
-                           engine=Engine.BURP2)
+                           concurrentConnections=30,
+                           engine=Engine.THREADED)
     for i in range(20):
-        engine.queue(target.req, gate='race1')   # withhold each request at the gate
-    engine.openGate('race1')                      # release all 20 together
+        engine.queue(target.req, gate='race1')
+    engine.openGate('race1')
 
 def handleResponse(req, interesting):
     table.add(req)
@@ -112,14 +112,16 @@ O que ela **é**: um check-then-act partido em passos separados, com uma fresta 
 
 ## 7. Por que o fix funciona
 
-Aponte o Turbo Intruder pro app fixed (`127.0.0.1:8135`), resete, e rode a **mesma** rajada de 20 requisições. Agora a tabela de resultados mostra exatamente **um** `200` e dezenove `409`s, e o saldo para onde deveria:
+Agora confirme o fix — com uma ressalva sobre o setup. **Os dois apps compartilham a mesma tabela `accounts`** no mesmo container `db`, então o `GET /balance` reflete o que a última rajada deixou, seja qual app a recebeu. Pra testar o app fixed de forma limpa você tem que fazer duas coisas: **resetar o saldo no `:8135`** (`POST /reset` pra `http://127.0.0.1:8135/reset` → `{"balance":100}`) *antes* da rajada, e **trocar o Port na janela do Turbo Intruder de `8035` pra `8135`** — senão a rajada ainda cai no app vulnerable e você vai ver `−1900` no `/balance` mesmo achando que apontou pro fixed.
+
+Com o saldo resetado e o Port em `8135`, rode o **mesmo** script de 20 requisições. Agora a tabela de resultados mostra exatamente **um** `200` e dezenove `409`s, e o saldo para onde deveria:
 
 ```
 $ curl -s 127.0.0.1:8135/balance
 {"balance":0}
 ```
 
-Um saque passou de um saldo de 100; o saldo é `0`. O fix ([`fixed/app.py`](./fixed/app.py)) faz o checar-e-agir um único statement indivisível:
+Essa combinação — um `200`, dezenove `409`s, e um saldo final de `0` no `:8135` — é a prova de que o fix segura: um saque passou de um saldo de 100, e todos os outros foram recusados corretamente. O fix ([`fixed/app.py`](./fixed/app.py)) faz o checar-e-agir um único statement indivisível:
 
 ```python
 cur.execute(
