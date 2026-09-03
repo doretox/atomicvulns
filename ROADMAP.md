@@ -180,7 +180,7 @@ Legenda:
 - [x] **34.** `cors-wildcard` — A05 Security Misconfiguration
   - *Por que aqui:* CORS mal configurado permitindo credenciais. Frequente em APIs.
 
-- [ ] **35.** `race-condition-basic` — A04 Insecure Design
+- [x] **35.** `race-condition-basic` — A04 Insecure Design
   - *Por que aqui:* TOCTOU em lógica de negócio (ex: resgatar cupom 2x simultâneo). Único átomo de A04.
 
 - [ ] **36.** `cve-demo` — A06 Vulnerable Components
