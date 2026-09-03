@@ -1,0 +1,46 @@
+services:
+  db:
+    build: ./db
+    # No ports: -- the datastore is reachable only on the internal network,
+    # never published to the host.
+    environment:
+      - POSTGRES_USER=lab
+      - POSTGRES_PASSWORD=changeme        # dummy, lab-only (CLAUDE.md §8)
+      - POSTGRES_DB=labdb
+    healthcheck:
+      # Apps wait for this (condition: service_healthy). The check forces a TCP
+      # connection (-h 127.0.0.1): during init Postgres serves only a local socket
+      # while it runs the seed, so a passing TCP check means the real server is up
+      # and the seed is done.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U lab -d labdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - lab
+  vulnerable:
+    build: ./vulnerable
+    ports:
+      - "127.0.0.1:8035:5000"
+    environment:
+      - DATABASE_URL=postgresql://lab:changeme@db:5432/labdb
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - lab
+  fixed:
+    build: ./fixed
+    ports:
+      - "127.0.0.1:8135:5000"
+    environment:
+      - DATABASE_URL=postgresql://lab:changeme@db:5432/labdb
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - lab
+
+networks:
+  lab:
