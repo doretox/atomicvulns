@@ -183,7 +183,7 @@ Legenda:
 - [x] **35.** `race-condition-basic` — A04 Insecure Design
   - *Por que aqui:* TOCTOU em lógica de negócio (ex: resgatar cupom 2x simultâneo). Único átomo de A04.
 
-- [ ] **36.** `cve-demo` — A06 Vulnerable Components
+- [x] **36.** `cve-demo` — A06 Vulnerable Components
   - *Por que aqui:* átomo diferente — aponta pra CVE concreta em lib específica, mostra o exploit público rodando.
 
 - [ ] **37.** `weak-password-reset` — A07 Auth Failures
