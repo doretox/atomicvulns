@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-11
+
+Full OWASP Top 10 2021 Coverage (Phase 7 of the ROADMAP, and the 1.0 milestone). Eight atoms closing the remaining Top 10 categories — pure cryptographic failures, insecure design, the rest of security misconfiguration, vulnerable components, the rest of authentication failures, and logging and monitoring — and with them the repository now covers all ten 2021 categories, A01 through A10. This phase adds: weak password hashing broken with a rainbow table and ECB block cut-and-paste (A02); a TOCTOU withdrawal race won with a single-packet attack (A04); Flask debug mode reachable for RCE and CORS origin reflection leaking authenticated data (A05); a real dependency CVE whose entire fix is a version bump, not a code change (A06); a clock-seeded reset token predicted for account takeover (A07); and the atypical closer where the flaw is the absence of a security log and the proof is the contrast between two logs, not something appearing (A09). Recurring lessons here — a security fix is not always in your code (it can be a dependency version), and detection is a distinct discipline from prevention. Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR).
+
 ### Added
 
 - Added atom 31: `crypto-weak-hash` — Insecure password storage (weak hashing): a login app stores the admin's password as an unsalted MD5 digest, so a hash leaked in a database dump is recovered offline with a pre-computed rainbow table (rtgen/rtsort/rcrack) and replayed to log in as the victim; the fix swaps the primitive for bcrypt — slow and salted, a primitive against which no rainbow table can even be built (A02 Cryptographic Failures, CWE-916).
