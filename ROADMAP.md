@@ -189,7 +189,7 @@ Legenda:
 - [x] **37.** `weak-password-reset` — A07 Auth Failures
   - *Por que aqui:* token previsível ou reusável em reset de senha.
 
-- [ ] **38.** `logging-failures-demo` — A09 Logging Failures
+- [x] **38.** `logging-failures-demo` — A09 Logging Failures
   - *Por que por último:* átomo atípico, mais demonstrativo do que explorável. Mostra como a ausência de log deixa ataque invisível.
 
 ---
