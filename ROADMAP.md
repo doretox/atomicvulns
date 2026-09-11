@@ -186,7 +186,7 @@ Legenda:
 - [x] **36.** `cve-demo` — A06 Vulnerable Components
   - *Por que aqui:* átomo diferente — aponta pra CVE concreta em lib específica, mostra o exploit público rodando.
 
-- [ ] **37.** `weak-password-reset` — A07 Auth Failures
+- [x] **37.** `weak-password-reset` — A07 Auth Failures
   - *Por que aqui:* token previsível ou reusável em reset de senha.
 
 - [ ] **38.** `logging-failures-demo` — A09 Logging Failures
