@@ -88,7 +88,7 @@ Este átomo fica a um eixo de distância de três vizinhos, e os contrastes são
 Diferente do `crypto-weak-hash`, cujo fix traz uma biblioteca (`bcrypt`), o fix aqui não adiciona nada ao `requirements.txt`:
 
 ```
-Flask==3.0.0
+Flask==3.1.3
 ```
 
 — byte-idêntico nos dois lados. `random` e `secrets` são ambos da biblioteca padrão do Python, então trocar um pelo outro muda só o `app.py`. A ferramenta certa para um segredo impossível de adivinhar já estava na caixa; o lado vulnerável só pegou o módulo errado.

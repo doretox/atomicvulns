@@ -52,7 +52,7 @@ Você não re-roda o crack contra o hash corrigido pra provar o fix; dá pra ver
 Incomum para este repo, `vulnerable/requirements.txt` e `fixed/requirements.txt` não são idênticos:
 
 ```diff
- Flask==3.0.0
+ Flask==3.1.3
 +bcrypt==4.2.1
 ```
 

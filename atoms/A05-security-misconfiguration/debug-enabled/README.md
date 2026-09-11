@@ -20,7 +20,7 @@ This atom sits in **A05 — Security Misconfiguration**, alongside its siblings 
 
 ## Stack note — single-container, no database, identical dependencies
 
-Each side is a single Flask container with no datastore: there is nothing to seed — the app only exposes one route that crashes on bad input, so there is no user, session, or data. And the two sides share an **identical** `requirements.txt`: the fix is one flag in the code (`debug=True` → `debug=False`, plus dropping the `WERKZEUG_DEBUG_PIN=off` line), not a dependency. `Werkzeug` is **pinned explicitly** (`==3.1.8`) next to `Flask==3.0.0` because the interactive debugger — the whole point of this atom — is Werkzeug's, and its console protocol is version-specific; pinning keeps the lab reproducible.
+Each side is a single Flask container with no datastore: there is nothing to seed — the app only exposes one route that crashes on bad input, so there is no user, session, or data. And the two sides share an **identical** `requirements.txt`: the fix is one flag in the code (`debug=True` → `debug=False`, plus dropping the `WERKZEUG_DEBUG_PIN=off` line), not a dependency. `Werkzeug` is **pinned explicitly** (`==3.1.8`) next to `Flask==3.1.3` because the interactive debugger — the whole point of this atom — is Werkzeug's, and its console protocol is version-specific; pinning keeps the lab reproducible.
 
 ## API only — no HTML, no browser
 

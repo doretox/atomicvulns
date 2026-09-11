@@ -88,7 +88,7 @@ This atom sits one axis away from three neighbours, and the contrasts are the le
 Unlike `crypto-weak-hash`, whose fix pulls in a library (`bcrypt`), the fix here adds nothing to `requirements.txt`:
 
 ```
-Flask==3.0.0
+Flask==3.1.3
 ```
 
 — byte-identical on both sides. `random` and `secrets` are both in the Python standard library, so swapping one for the other changes only `app.py`. The right tool for an unguessable secret was already in the box; the vulnerable side just reached for the wrong module.

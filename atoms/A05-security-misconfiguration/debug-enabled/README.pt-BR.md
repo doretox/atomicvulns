@@ -20,7 +20,7 @@ Este átomo mora em **A05 — Security Misconfiguration**, ao lado dos irmãos [
 
 ## Nota de stack — single-container, sem banco de dados, dependências idênticas
 
-Cada lado é um único container Flask sem datastore: não há nada pra semear — a app só expõe uma rota que quebra com input ruim, então não há usuário, sessão, nem dado. E os dois lados compartilham um `requirements.txt` **idêntico**: o fix é uma flag no código (`debug=True` → `debug=False`, mais remover a linha `WERKZEUG_DEBUG_PIN=off`), não uma dependência. O `Werkzeug` é **pinado explicitamente** (`==3.1.8`) ao lado do `Flask==3.0.0` porque o debugger interativo — o ponto inteiro deste átomo — é do Werkzeug, e o protocolo do console dele é específico da versão; pinar mantém o lab reproduzível.
+Cada lado é um único container Flask sem datastore: não há nada pra semear — a app só expõe uma rota que quebra com input ruim, então não há usuário, sessão, nem dado. E os dois lados compartilham um `requirements.txt` **idêntico**: o fix é uma flag no código (`debug=True` → `debug=False`, mais remover a linha `WERKZEUG_DEBUG_PIN=off`), não uma dependência. O `Werkzeug` é **pinado explicitamente** (`==3.1.8`) ao lado do `Flask==3.1.3` porque o debugger interativo — o ponto inteiro deste átomo — é do Werkzeug, e o protocolo do console dele é específico da versão; pinar mantém o lab reproduzível.
 
 ## Só API — sem HTML, sem browser
 

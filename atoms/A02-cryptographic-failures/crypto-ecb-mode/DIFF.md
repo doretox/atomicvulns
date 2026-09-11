@@ -52,7 +52,7 @@ ECB has no IV or nonce, so it is **deterministic**: the same plaintext always en
 Unlike `crypto-weak-hash`, whose fix pulled in a new library (`bcrypt`), here `vulnerable/requirements.txt` and `fixed/requirements.txt` are **identical**:
 
 ```
-Flask==3.0.0
+Flask==3.1.3
 pycryptodome==3.21.0
 ```
 

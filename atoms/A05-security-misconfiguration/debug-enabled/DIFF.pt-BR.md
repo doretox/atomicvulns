@@ -44,7 +44,7 @@ Mais uma coisa, e esta **não** é armadilha — é contexto de deploy legítimo
 Diferente do `crypto-weak-hash`, cujo fix trouxe uma lib nova (`bcrypt`), aqui `vulnerable/requirements.txt` e `fixed/requirements.txt` são **idênticos**:
 
 ```
-Flask==3.0.0
+Flask==3.1.3
 Werkzeug==3.1.8
 ```
 

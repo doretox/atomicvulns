@@ -44,7 +44,7 @@ One more thing, and this one is **not** a trap — it is legitimate deployment c
 Unlike `crypto-weak-hash`, whose fix pulled in a new library (`bcrypt`), here `vulnerable/requirements.txt` and `fixed/requirements.txt` are **identical**:
 
 ```
-Flask==3.0.0
+Flask==3.1.3
 Werkzeug==3.1.8
 ```
 
