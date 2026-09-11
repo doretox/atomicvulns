@@ -2,11 +2,12 @@
   <img src="docs/assets/banner.svg" alt="atomicvulns — one vuln per app. nothing more." width="100%">
 </p>
 
-<!-- Badges — placeholders iniciais; mais virão (CI, coverage, release, etc.) -->
+<!-- Badges -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-![Status](https://img.shields.io/badge/status-em%20desenvolvimento%20inicial-orange)
-![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+[![Release](https://img.shields.io/github/v/release/doretox/atomicvulns)](https://github.com/doretox/atomicvulns/releases/latest)
+![Atoms](https://img.shields.io/badge/atoms-38-blue)
 ![OWASP Top 10](https://img.shields.io/badge/OWASP-Top%2010%202021-red)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 
 > ⚠️ **Código intencionalmente vulnerável. Rode apenas localmente. Nunca exponha à internet ou a uma rede compartilhada.**
 
@@ -14,9 +15,28 @@
 
 ## O que é o atomicvulns?
 
+> **Marco — v1.0:** o atomicvulns agora cobre **todas as dez categorias do OWASP Top 10 2021 (A01–A10)**, em **38 átomos**. Veja a [release v1.0](https://github.com/doretox/atomicvulns/releases/tag/v1.0.0).
+
 `atomicvulns` é uma coleção de aplicações web *atômicas* — cada uma minúscula, isolada e focada em **uma única vulnerabilidade** do OWASP Top 10. Todo átomo entrega a app vulnerável, a versão corrigida, um diff comentado entre as duas e um walkthrough prático do exploit.
 
 Este projeto **não** é mais um DVWA ou Juice Shop. Apps vulneráveis monolíticas já existem. O diferencial do atomicvulns é o *atomismo radical*: uma app por falha, rápida de ler, rápida de explorar. Você mapeia código causal → request/response → exploit sem precisar entender uma aplicação inteira antes.
+
+## Cobertura
+
+Todas as dez categorias do OWASP Top 10 2021 estão cobertas — 38 átomos no total:
+
+| Categoria | Átomos |
+|---|---|
+| **A01 — Broken Access Control** | `idor-numeric-id`, `path-traversal-basic`, `idor-uuid-guessable`, `bola-rest`, `csrf-basic`, `open-redirect`, `mass-assignment` |
+| **A02 — Cryptographic Failures** | `jwt-none-alg`, `jwt-weak-secret`, `jwt-key-confusion`, `crypto-weak-hash`, `crypto-ecb-mode` |
+| **A03 — Injection** | `sqli-union-basic`, `xss-reflected`, `sqli-blind-boolean`, `sqli-blind-time`, `xss-stored`, `command-injection-basic`, `ssti-jinja`, `xss-dom`, `nosql-injection-mongo`, `ldap-injection`, `sqli-second-order` |
+| **A04 — Insecure Design** | `race-condition-basic` |
+| **A05 — Security Misconfiguration** | `xxe-basic`, `xxe-blind-oob`, `debug-enabled`, `cors-wildcard` |
+| **A06 — Vulnerable and Outdated Components** | `cve-demo` |
+| **A07 — Identification and Authentication Failures** | `session-fixation`, `weak-password-reset` |
+| **A08 — Software and Data Integrity Failures** | `deserialization-pickle`, `prototype-pollution`, `deserialization-node` |
+| **A09 — Security Logging and Monitoring Failures** | `logging-failures-demo` |
+| **A10 — Server-Side Request Forgery (SSRF)** | `ssrf-basic`, `ssrf-blind-oob`, `ssrf-cloud-metadata` |
 
 ## Público-alvo
 
