@@ -155,7 +155,9 @@ Cada gêmeo (`vulnerable/` e `fixed/`) é um build-context Docker **self-contain
 └── burp/                 # opcional: requests exportados do Burp
 ```
 
-- **`Dockerfile` idêntico entre as versões** (só o build-context difere): `COPY package.json package-lock.json ./` + **`npm ci`** (nunca `npm install` — build reprodutível e auditável). Base Node 24 slim com **tag de patch exata** (nunca `latest` nem a tag móvel `node:24-slim`), `ENV HOST=0.0.0.0`, `EXPOSE <PORT>`.
+- **`Dockerfile` idêntico entre as versões** (só o build-context difere): `COPY package.json package-lock.json ./` + **`npm ci`** (nunca `npm install` — build reprodutível e auditável), e **`USER node`** após a instalação (não-root; ver abaixo). Base Node 24 slim com **tag de patch exata** (nunca `latest` nem a tag móvel `node:24-slim`), `ENV HOST=0.0.0.0`, `EXPOSE <PORT>`.
+- **`tsconfig.json` especificado na spec, não improvisado na geração:** ESM `nodenext` (casando com `"type": "module"` e o `tsx`), `strict: true`, **`noUncheckedIndexedAccess: true`** (o acesso indexado vira `T | undefined`, então a guarda de existência passa a ser exigida pelo tipo, não educação do autor), `noEmit: true` (o `tsx` executa; o `tsc` só confere). Escreva o bloco completo na spec.
+- **Container roda como não-root:** `USER node` (a imagem `node:*` já traz o usuário) **após** o `npm ci`, com o `chown` necessário pra o `node` ser dono de `/app`. É o Dockerfile de referência da série — não deixe rodando como root.
 - **`docker-compose.yml`** com duas services, bind **só** em `127.0.0.1`.
 
 ---
@@ -166,9 +168,12 @@ Mínimo possível (CLAUDE.md §3.6 — só inclua a lib se serve à falha ou ao 
 
 ```json
 {
-  "dependencies": { "express": "<exata — ex.: 5.2.1>" },
+  "dependencies": {
+    "express": "<exata — ex.: 5.2.1>",
+    "tsx": "<exata — runtime: é o entrypoint do container>"
+  },
   "devDependencies": {
-    "tsx": "<exata>",
+    "typescript": "<exata — ex.: 7.0.2>",
     "@types/express": "<exata — ex.: 5.0.6>",
     "@types/node": "<exata, casando com a major do Node — ex.: 24.13.5>"
   }
@@ -176,6 +181,8 @@ Mínimo possível (CLAUDE.md §3.6 — só inclua a lib se serve à falha ou ao 
 ```
 
 Sem `requirements.txt` (isso é a série web). **Versões EXATAS** (sem `^`, `~` ou `x`), **resolvidas e verificadas ao escrever a spec** (via `npm view`) — **nunca** faixa, **nunca** adiadas pra geração. `package-lock.json` **commitado por gêmeo**; Dockerfile com `npm ci`. Updates são manuais (CLAUDE.md §8.7). Adicione libs além destas só se a vuln/fix exige.
+
+**Classificação de dependência segue o RUNTIME, não o hábito.** O que **executa** no container vai em **`dependencies`** — o entrypoint `tsx` é runtime, então mora em `dependencies`, não em devDeps. `typescript` e os `@types/*` são build/checagem → **`devDependencies`** (`typescript` habilita o `tsc` do script `"typecheck": "tsc --noEmit"`). A classificação **define a cobertura** do gate `npm audit --omit=dev`: ele ignora devDeps, então tudo que roda no container precisa estar em `dependencies` pra ser auditado.
 
 ---
 
@@ -215,6 +222,9 @@ Referência suplementar (opcional, na descrição do README): a página oficial 
 - **Docs EN + PT sincronizadas no mesmo commit.** Headers de seção **traduzidos** no PT — nenhum header PT byte-idêntico ao par EN, **exceto** o h1 do README. Termos técnicos (BOLA, token, Bearer, payload, sink, enumeration oracle) seguem em **inglês** dentro do texto PT.
 - **`npm audit --omit=dev` por gêmeo** na geração, com os advisories esperados **registrados** — o átomo é vulnerável na **lógica**, não nas dependências; a distinção fica escrita pra não confundir a lição com débito de dependência.
 - **Frase-âncora mora numa casa só:** nenhuma citação/quote memorável aparece em **dois** documentos (ex.: WALKTHROUGH **e** DIFF) — cada uma tem um único lar.
+- **`npm run typecheck` (`tsc --noEmit`) verde nos DOIS gêmeos**, inclusive o `vulnerable/` (vulnerável na **lógica**, não no **tipo**) — gate de validação de todo átomo da série.
+- **Container roda como usuário não-root** (`USER node`): validar que build e runtime (`tsx`) sobem sem erro de permissão.
+- **Referência interna a checklist é por NOME de seção**, nunca por número de item (o número envelhece quando o checklist cresce).
 
 ---
 
@@ -234,5 +244,6 @@ Instruções que saem do padrão da série. Exemplos:
 - "O handler vulnerável **chama** `authenticate()` mas descarta a identidade — não transformar isso em 'falha de autenticação'."
 - "Cross-ref: só átomos **já publicados**. Se nenhum átomo de API está publicado, **não** cite outro átomo de API; contraste com átomos **web** publicados é bem-vindo (CLAUDE.md §5, 'Referências cross-átomo')."
 - "**Afirmação factual sobre outro átomo se verifica LENDO o átomo** na hora de escrever (contagem de usuários, rotas, forma do fix, prefixo de path, etc.), **nunca de memória de sessão** — esses números viram texto público em EN e PT."
+- "**Toda afirmação do material é verdadeira sobre o código.** Diferença **cosmética** em relação a outro átomo (prefixo de path, nome de variável, layout de arquivo) **NÃO** se promove a lição — descreva-a como o que é (escolha mínima/estilística), não como contraste pedagógico."
 
 Se não há nada de especial, escrever "Nenhuma — seguir padrões da série API e do átomo-bandeira `bola-sequential-id`."
