@@ -6,7 +6,7 @@
 >
 > Preenchimento alvo: ~10 minutos. Se estiver levando mais que isso, provavelmente há complexidade escondida que vale discutir antes de implementar.
 >
-> **Herança da série (não repetir por átomo — já é lei):** stack TS/Express/`tsx`; imagem base **Node 24 slim, tag pinada — nunca `latest`**; `vulnerable/` e `fixed/` são build-contexts Docker **self-contained** (cada um com seu `package.json` + `tsconfig.json`, **sem módulo compartilhado**); **sem `templates/`, sem HTML, sem browser** (respostas JSON); bind **`127.0.0.1`**; docs **EN + PT sincronizadas**; **Theory primer** obrigatório. Este template captura só as decisões *específicas* deste átomo.
+> **Herança da série (não repetir por átomo — já é lei):** stack TS/Express/`tsx`; imagem base **Node 24 slim com tag de patch EXATA — nunca `latest` nem tag móvel**; **dependências e imagem em versão EXATA, resolvidas ao escrever a spec (nunca faixa, nunca adiadas pra geração)**; `vulnerable/` e `fixed/` são build-contexts Docker **self-contained** (cada um com seu `package.json` + `package-lock.json` + `tsconfig.json`, **sem módulo compartilhado**); **sem `templates/`, sem HTML, sem browser** (respostas JSON); bind **`127.0.0.1`**; docs **EN + PT sincronizadas**; **Theory primer** obrigatório. Este template captura só as decisões *específicas* deste átomo.
 
 ---
 
@@ -54,6 +54,8 @@ Descreva o modelo de identidade deste átomo. Padrão da série:
 
 Liste os usuários seedados e seus papéis (ex.: atacante/você + vítima(s)). Sem senha real, sem PII real — dado fake óbvio (CLAUDE.md §8.3).
 
+**Atalhos deliberados vão pro README.** Todo atalho de laboratório que **não é** a vulnerabilidade (login sem senha, ausência de hashing, identidade auto-declarada, etc.) é **declarado como atalho** no README (EN+PT), pra não ser confundido com a lição — uma frase, sem citar átomo.
+
 > **Exceção:** se o átomo é sobre a *própria* autenticação (ex.: token previsível, ausência de lockout), o modelo de auth **é** a superfície do bug — descreva a falha aqui, não a mitigue.
 
 ---
@@ -73,7 +75,7 @@ Lembrete: dados fake óbvios — endereços/nomes claramente de teste (`Example 
 
 ## Rotas
 
-Imports necessários no topo (ex.: `import express from "express";`, `import { randomBytes } from "node:crypto";`). Constantes e helpers **idênticos** entre `vulnerable/` e `fixed/`.
+Imports necessários no topo (ex.: `import express from "express";`, `import { randomBytes } from "node:crypto";`). **Bootstrap obrigatório e idêntico entre os gêmeos:** `const app = express();` e — quando algum endpoint recebe corpo JSON — `app.use(express.json());` (Express 5 traz o middleware embutido, mas **NÃO** montado; sem ele `req.body` é `undefined` e o handler quebra). Constantes e helpers **idênticos** entre `vulnerable/` e `fixed/`.
 
 ### `<MÉTODO> <path>`
 
@@ -101,6 +103,8 @@ O que muda entre `vulnerable/` e `fixed/`. Idealmente um diff de 1-5 linhas, **e
 ```
 
 Se a classe é de **lógica/autorização** (BOLA, BFLA, BOPLA, mass assignment), diga qual é a *leitura correta* do fix — não "acrescentou um if", mas *o que a operação passou a garantir*. Registre a escolha de **status code** e por quê (ex.: 404 indistinguível vs. 403 explícito; ancore no RFC 9110 / mundo real quando a existência do objeto for sensível).
+
+**A leitura correta tem que ser VERDADEIRA sobre o código, não retórica.** Se o texto disser que a operação mudou, o diff tem que **mostrar** a operação mudando. **Não** construa contraste de forma com outro átomo que o código não sustente (ex.: afirmar "aqui a busca autoriza" quando o fix, na verdade, só acrescenta um predicado a uma guarda que já testava depois da busca).
 
 ---
 
@@ -141,6 +145,7 @@ Cada gêmeo (`vulnerable/` e `fixed/`) é um build-context Docker **self-contain
 │   ├── Dockerfile
 │   ├── app.ts            # app Express mínima, vulnerável
 │   ├── package.json      # próprio (sem módulo compartilhado)
+│   ├── package-lock.json # commitado por gêmeo (build reprodutível + npm audit)
 │   └── tsconfig.json     # próprio
 ├── fixed/                # mesma forma; só o eixo do fix muda em app.ts
 ├── docker-compose.yml    # sobe vulnerable (82NN) + fixed (83NN), bind 127.0.0.1
@@ -150,7 +155,7 @@ Cada gêmeo (`vulnerable/` e `fixed/`) é um build-context Docker **self-contain
 └── burp/                 # opcional: requests exportados do Burp
 ```
 
-- **`Dockerfile` idêntico entre as versões** (só o build-context difere). Base `node:24-slim` (tag pinada — nunca `latest`), `ENV HOST=0.0.0.0`, `EXPOSE <PORT>`.
+- **`Dockerfile` idêntico entre as versões** (só o build-context difere): `COPY package.json package-lock.json ./` + **`npm ci`** (nunca `npm install` — build reprodutível e auditável). Base Node 24 slim com **tag de patch exata** (nunca `latest` nem a tag móvel `node:24-slim`), `ENV HOST=0.0.0.0`, `EXPOSE <PORT>`.
 - **`docker-compose.yml`** com duas services, bind **só** em `127.0.0.1`.
 
 ---
@@ -161,16 +166,16 @@ Mínimo possível (CLAUDE.md §3.6 — só inclua a lib se serve à falha ou ao 
 
 ```json
 {
-  "dependencies": { "express": "<5.x pinada>" },
+  "dependencies": { "express": "<exata — ex.: 5.2.1>" },
   "devDependencies": {
-    "tsx": "<pinada>",
-    "@types/express": "<5.x pinada>",
-    "@types/node": "<24.x pinada>"
+    "tsx": "<exata>",
+    "@types/express": "<exata — ex.: 5.0.6>",
+    "@types/node": "<exata, casando com a major do Node — ex.: 24.13.5>"
   }
 }
 ```
 
-Sem `requirements.txt` (isso é a série web). Versões **pinadas** e confirmadas na geração (CLAUDE.md §8.7 — updates manuais). Adicione libs além destas só se a vuln/fix exige.
+Sem `requirements.txt` (isso é a série web). **Versões EXATAS** (sem `^`, `~` ou `x`), **resolvidas e verificadas ao escrever a spec** (via `npm view`) — **nunca** faixa, **nunca** adiadas pra geração. `package-lock.json` **commitado por gêmeo**; Dockerfile com `npm ci`. Updates são manuais (CLAUDE.md §8.7). Adicione libs além destas só se a vuln/fix exige.
 
 ---
 
@@ -208,12 +213,16 @@ Referência suplementar (opcional, na descrição do README): a página oficial 
 - **Bind `127.0.0.1`** no `docker-compose.yml` e no `app.listen(...)` (default 127.0.0.1).
 - **Dado fake óbvio**, sem PII/credencial/segredo real (CLAUDE.md §8.3).
 - **Docs EN + PT sincronizadas no mesmo commit.** Headers de seção **traduzidos** no PT — nenhum header PT byte-idêntico ao par EN, **exceto** o h1 do README. Termos técnicos (BOLA, token, Bearer, payload, sink, enumeration oracle) seguem em **inglês** dentro do texto PT.
+- **`npm audit --omit=dev` por gêmeo** na geração, com os advisories esperados **registrados** — o átomo é vulnerável na **lógica**, não nas dependências; a distinção fica escrita pra não confundir a lição com débito de dependência.
+- **Frase-âncora mora numa casa só:** nenhuma citação/quote memorável aparece em **dois** documentos (ex.: WALKTHROUGH **e** DIFF) — cada uma tem um único lar.
 
 ---
 
 ## Decisões que podem gerar dúvida durante implementação
 
 Capture aqui qualquer ambiguidade (ex.: "o fix retorna 401 ou 404?", "o store é `Map` ou `Record`?", "id parseado com `Number()` — não-numérico vira 404?"). Evita que o Claude Code improvise em momento crítico.
+
+**Armadilha de stack recorrente (Express 5) — retorno `Response` vs `void`:** `return res.sendStatus(...)` pode fazer o TS reclamar de devolver `Response` onde se espera `void`, quando o handler é tipado com retorno explícito. Forma segura: **`res.sendStatus(...); return;`** (statement + `return` vazio). Registre na spec do átomo pra o gerador não descobrir isso no meio da geração.
 
 ---
 
@@ -224,5 +233,6 @@ Instruções que saem do padrão da série. Exemplos:
 - "Primeiro átomo TS do repo — **não há** átomo TS in-repo pra espelhar; estabeleça o padrão seguindo este template + CLAUDE.md §3."
 - "O handler vulnerável **chama** `authenticate()` mas descarta a identidade — não transformar isso em 'falha de autenticação'."
 - "Cross-ref: só átomos **já publicados**. Se nenhum átomo de API está publicado, **não** cite outro átomo de API; contraste com átomos **web** publicados é bem-vindo (CLAUDE.md §5, 'Referências cross-átomo')."
+- "**Afirmação factual sobre outro átomo se verifica LENDO o átomo** na hora de escrever (contagem de usuários, rotas, forma do fix, prefixo de path, etc.), **nunca de memória de sessão** — esses números viram texto público em EN e PT."
 
 Se não há nada de especial, escrever "Nenhuma — seguir padrões da série API e do átomo-bandeira `bola-sequential-id`."
