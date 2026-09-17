@@ -60,13 +60,11 @@ O bug **não é** "input virou código" (injection). É **"um request legítimo 
 **Ponto de honestidade pedagógica:** o web `bola-rest` (Flask) já é BOLA e já ensinou o núcleo — "authenticated ≠ authorized", o fix `404` indistinguível, o "id público por design". Este átomo **não finge inventar** nada disso; ele **credita `bola-rest`** e acrescenta **quatro eixos novos**, que são a razão de ele existir na série API:
 
 1. **Stack TS/Express — o átomo-bandeira da série API.** Primeiro TypeScript/Express/`tsx` do repo. Estabelece o padrão de código, container e docs da série. Por si só isso justifica o átomo: a série API precisa de um átomo de referência de estilo, e BOLA (API1) é o começo natural do OWASP API Top 10.
-2. **Escala → "a base vazou", não "um objeto vazou".** O `bola-rest` tinha 2 usuários, 3 pedidos, **uma** vítima, e parava em "3 leituras provam o bug". Aqui são **4 usuários, 12 pedidos, distribuição DESIGUAL**, o atacante dono de **exatamente 1**, e os outros 11 espalhados entre **três** vítimas. A enumeração revela **múltiplas vítimas** — o salto de "um objeto vazou" pra "a base inteira vazou".
+2. **Escala → "a base vazou", não "um objeto vazou".** O `bola-rest` tinha 2 usuários, 3 pedidos, **uma** vítima, e demonstrava o bug numa **única leitura cross-user** (o pedido `41`). Aqui são **4 usuários, 12 pedidos, distribuição DESIGUAL**, o atacante dono de **exatamente 1**, e os outros 11 espalhados entre **três** vítimas. A enumeração revela **múltiplas vítimas** — o salto de "um objeto vazou" pra "a base inteira vazou".
 3. **PII — o achado que dói na screenshot.** Cada pedido carrega **nome e endereço de entrega** da pessoa (fake óbvio, §8.3), além de item e valor. O `bola-rest` só tinha item+valor. O que faz o achado doer numa screenshot é o **dado pessoal**, não o `order_id`. Isso ancora o impacto real de BOLA (dados de pedido/conta carregam PII).
 4. **Enumeração no Intruder — o movimento-assinatura.** O walkthrough **varre** a faixa `1001–1012` no Burp Intruder e mostra a coleção inteira saindo; depois repete a varredura contra o `fixed/` e mostra a **tela chapada** de `404` idênticos. É o beat que o `bola-rest` (Repeater-only) não tinha, e é o que torna concreto "a base vazou".
 
-E um refinamento no **fix** (ver "Fix"): onde o `bola-rest` **acrescentou um `if`** de dono depois da busca, aqui a leitura correta é que **a própria busca passou a responder "esse pedido, deste dono"** em vez de "esse pedido" — o predicado de posse entra **na** busca. Diferença de forma que carrega a lição "o fix não é um remendo, é a operação certa".
-
-> **Frame quotável (cravar no fechamento do WALKTHROUGH e no DIFF):** *No Flask, o `bola-rest` mostrou o bug num objeto só. Aqui, numa API de verdade, o mesmo check ausente não vaza um pedido — vaza a base: nome, endereço e compra de cada cliente, um `for` de ids de distância. O token prova que você é você; ele não diz de quem é este pedido.*
+> **Frame quotável (cravar no fechamento do WALKTHROUGH — uma casa só):** *O mesmo check ausente não vaza um pedido: vaza a base — o nome, o endereço e a compra de cada cliente. O token prova que você é você; não diz de quem é este pedido.*
 
 ---
 
@@ -94,6 +92,8 @@ Sugestão de geração (a Fase 2 confirma a forma idiomática): `randomBytes(24)
 - **`alice`, `bob`, `carol`** — as **vítimas**. Entre as três dividem os outros **11** pedidos, de forma **desigual** (ver "Store").
 
 **Disciplina cravada (no WALKTHROUGH e no DIFF):** o ataque deixa o token **INTACTO e VÁLIDO** — nunca é decodificado, adulterado nem forjado. O alvo é o **endpoint que serve o objeto sem checar dono**. **PROIBIDO** mencionar técnicas de ataque a token (decode, forjar, `alg:none`, trocar `sub`): não é a lição, e não há átomo de JWT/token publicado pra referenciar.
+
+**Requisito de README (EN+PT) — declarar o atalho:** o README **diz explicitamente** que o login sem senha é um **atalho deliberado do laboratório, não a vulnerabilidade**, e que a autenticação em si **é imposta** (token ruim → `401`). Uma frase, **sem citar nenhum átomo** (publicado ou não). Motivo: numa série de API onde authentication é uma categoria própria, sem essa frase o aluno pode ler o atalho sem senha como parte da falha.
 
 ---
 
@@ -143,11 +143,15 @@ const ORDERS: Record<number, Order> = {
 
 ## Rotas
 
-Imports: `import express from "express";` e `import { randomBytes } from "node:crypto";`. Constantes e helpers (`USERS`, `TOKENS`, `issueToken`, `authenticate`, `ORDERS`) **idênticos** entre `vulnerable/` e `fixed/`.
+Imports: `import express from "express";` e `import { randomBytes } from "node:crypto";`. Bootstrap (`const app = express()` + `app.use(express.json())`), constantes e helpers (`USERS`, `TOKENS`, `issueToken`, `authenticate`, `ORDERS`) **idênticos** entre `vulnerable/` e `fixed/`.
 
-Helpers (idênticos nas duas versões):
+Bootstrap + helpers (idênticos nas duas versões):
 
 ```ts
+const app = express();
+app.use(express.json());  // Express 5 traz express.json() embutido, mas NÃO montado —
+                          // sem esta linha req.body é undefined e todo POST /login cai em 400.
+
 const USERS = new Set(["dana", "alice", "bob", "carol"]); // dana = attacker (you)
 const TOKENS = new Map<string, string>();                 // opaque token -> username (in-memory; NOT a JWT)
 
@@ -214,18 +218,18 @@ app.get("/orders/:id", (req, res) => {
 
 ---
 
-## Fix — o predicado de posse entra NA busca
+## Fix — posse e existência viram a mesma guarda
 
-O gêmeo `fixed/` difere **APENAS no predicado de posse** da busca do `GET /orders/:id`. **Nenhuma outra linha muda** — `POST /login`, `GET /orders`, helpers, imports, `Dockerfile`, `package.json`, `tsconfig.json` são **idênticos**.
+O gêmeo `fixed/` difere **APENAS no predicado de posse** acrescentado à guarda que segue a busca no `GET /orders/:id`. **Nenhuma outra linha muda** — `POST /login`, `GET /orders`, helpers, imports, `Dockerfile`, `package.json`, `package-lock.json`, `tsconfig.json` são **idênticos**.
 
 ```ts
 app.get("/orders/:id", (req, res) => {
   const caller = authenticate(req);
   if (caller === null) return res.sendStatus(401);
   const order = ORDERS[Number(req.params.id)];
-  // FIXED: the lookup now answers "this order, of this owner" — not just "this order".
-  // 404 (not 403), identical to the not-found 404 below, so "exists but not yours" is
-  // indistinguishable from "doesn't exist": with sequential ids a 403 would be an oracle.
+  // FIXED: existence and ownership are ONE guard with ONE exit — a missing order and
+  // someone else's order both hit the same sendStatus(404), so "doesn't exist" and
+  // "not yours" are byte-identical by construction (a 403 here would be an enumeration oracle).
   if (!order || order.owner !== caller) return res.sendStatus(404);
   res.json(order);
 });
@@ -239,14 +243,14 @@ Diff mínimo (o eixo único):
 -  // VULNERABLE: authenticated, but the order is returned WITHOUT checking that
 -  // order.owner is the caller. Authenticated is not authorized for THIS object.
 -  res.json(order);                                        // BOLA — no object-level check
-+  // FIXED: the lookup now answers "this order, of this owner" — not just "this order".
-+  // 404 (not 403), identical to the not-found 404, so "exists but not yours" is
-+  // indistinguishable from "doesn't exist": with sequential ids a 403 would be an oracle.
++  // FIXED: existence and ownership are ONE guard with ONE exit — a missing order and
++  // someone else's order both hit the same sendStatus(404), so "doesn't exist" and
++  // "not yours" are byte-identical by construction (a 403 here would be an enumeration oracle).
 +  if (!order || order.owner !== caller) return res.sendStatus(404);
 +  res.json(order);
 ```
 
-**A leitura correta do fix (cravar no DIFF):** **não** é "acrescentou um `if`". É que a **busca passou a responder "esse pedido, deste dono"** em vez de "esse pedido". O predicado de posse (`order.owner !== caller`) entra **na mesma linha de guarda** da existência (`!order`) — as duas negações compartilham o mesmo `return res.sendStatus(404)`, então "não é seu" e "não existe" são **o mesmo código, o mesmo status, o mesmo corpo, o mesmo shape**, por construção. É a diferença de forma em relação ao web `bola-rest`, que adicionou um `if` de dono **separado** depois da busca; aqui a autorização é **a própria busca**, não um remendo posterior.
+**A leitura correta do fix (cravar no DIFF):** posse e existência viraram a **MESMA guarda, com a MESMA saída**. `!order` e `order.owner !== caller` compartilham um único `return res.sendStatus(404)`. Consequência: "não existe" e "não é seu" são o mesmo código, o mesmo status e o mesmo corpo **POR CONSTRUÇÃO** — a indistinguibilidade não é um detalhe que alguém lembrou de arranjar, é **estrutural**. A lição é que **autorização por objeto é condição de guarda no mesmo nível que existência**, não uma conferida opcional depois. Isso amarra o fix diretamente à discussão do oráculo de enumeração (seção seguinte), em vez de competir com o átomo web.
 
 **CRAVAR no DIFF (o que o fix NÃO faz):** ele **não** troca o id sequencial por UUID, **não** o randomiza, **não** o esconde. O id permanece exatamente tão público e sequencial quanto antes. **O id ser trivial/sequencial é PARTE da lição** (eixo 1 = descoberta), e a correção é **só** a autorização por objeto (eixo 2 = causa). Trocar o id seria consertar o eixo errado.
 
@@ -290,9 +294,10 @@ Trabalhado **100% no Burp** (Repeater + Intruder), `curl` como equivalente — *
 - Token opaco via `POST /login` (**sem senha** — atalho de auth fora de escopo). O token é **real, emitido pelo servidor, cripto-forte** (`randomBytes`), mapeado ao seu usuário. Dois pontos: (i) a **autenticação É imposta** (token ruim → `401`); (ii) se a identidade do token é **usada pra autorizar o objeto** é outra pergunta — e o vulnerable não usa. **Disciplina cravada:** o ataque **não toca** o token (não decodifica, não adultera) — fica válido e da dana o tempo todo.
 
 ### 4. Baseline — capturar os tokens e ver o escopo correto
-- `POST /login` com `{"user":"dana"}` → `{"token":"<dana-token>"}`. Bloco colável (request-line + `Content-Type: application/json` + corpo). *(O maintainer pediu login com "as duas contas": logar também como uma vítima — ex.: `{"user":"alice"}` → `<alice-token>` — pra ter, lado a lado, o token de quem PODE ver o pedido e o de quem NÃO pode. Serve ao contraste do Step 3.)*
+- `POST /login` com `{"user":"dana"}` → `{"token":"<dana-token>"}`, e de novo com `{"user":"alice"}` → `{"token":"<alice-token>"}`. Bloco colável (request-line + `Content-Type: application/json` + corpo). Capturar **os dois** tokens — o da atacante e o de uma vítima.
 - `GET /orders` com `Authorization: Bearer <dana-token>` → `200`, **só** o pedido da dana (`1007`). É a prova de que a API **sabe exatamente quem você é** e te escopa certo.
 - `GET /orders/1007` com o Bearer da dana → `200`, o próprio pedido. A feature faz o que promete.
+- `GET /orders/1001` com o Bearer da **alice** → `200`, o pedido dela (a alice é dona de `1001`). **É assim que o acesso autorizado a `1001` se parece** — guarde essa resposta pro contraste do Step 1.
 
 ### 5. Step 1 — Read another owner's order (BOLA confirmado)
 - A `GET /orders` te deu o id `1007`; ids são um **contador global contíguo**, então `1001…1012` existem e são de outros clientes. **Sem adivinhar, sem reconstruir** — você leu seu id e olhou os vizinhos.
@@ -303,6 +308,7 @@ Trabalhado **100% no Burp** (Repeater + Intruder), `curl` como equivalente — *
   Authorization: Bearer <dana-token>
   ```
 - Você leu o pedido de outro usuário — **com PII** — usando **o seu próprio token válido**, só trocando o id. Isso é **BOLA**.
+- **Mesmo objeto, dois chamadores, os dois `200`:** o `1001` que a **alice** leu legitimamente no baseline volta `200` também pra **dana**. O servidor não distingue as duas requests porque **nunca** checa o dono — pra ele, a da dana é tão válida quanto a da alice. É exatamente aí que mora o BOLA.
 
 ### 6. Step 2 — What the vuln is NOT (passo de contraste OBRIGATÓRIO — CLAUDE.md §5)
 Três requests que **isolam a causa** (é o desenho exato pedido pelo mantenedor):
@@ -330,7 +336,7 @@ Repetir a **mesma varredura** do Intruder (`1001–1012`, Bearer da dana) contra
 
 ## Anatomia dos gêmeos e container
 
-`app.ts` + `package.json` + `tsconfig.json` em **cada** gêmeo, **self-contained, sem módulo compartilhado**. `app.ts` **difere** só no predicado de posse do `GET /orders/:id`; **todo o resto é idêntico** entre as versões, incluindo `Dockerfile`, `package.json`, `tsconfig.json`.
+`app.ts` + `package.json` + `package-lock.json` + `tsconfig.json` em **cada** gêmeo, **self-contained, sem módulo compartilhado** — o `package-lock.json` é **commitado** em cada gêmeo (build reprodutível e `npm audit` por átomo). `app.ts` **difere** só no predicado de posse do `GET /orders/:id`; **todo o resto é idêntico** entre as versões, incluindo `Dockerfile`, `package.json`, `package-lock.json`, `tsconfig.json`.
 
 Rodapé do `app.ts` (idêntico nas duas versões):
 
@@ -340,13 +346,13 @@ const HOST = process.env.HOST ?? "127.0.0.1";  // default 127.0.0.1 (CLAUDE.md �
 app.listen(PORT, HOST);
 ```
 
-`Dockerfile` (idêntico entre as versões; base Node 24 slim, **tag pinada — nunca `latest`**):
+`Dockerfile` (idêntico entre as versões; base **`node:24.21.0-slim`** — Node 24 LTS "Krypton", patch exato; **nunca `latest`**):
 
 ```dockerfile
-FROM node:24-slim
+FROM node:24.21.0-slim
 WORKDIR /app
-COPY package.json .
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY tsconfig.json .
 COPY app.ts .
 # Bind 0.0.0.0 inside the container so Docker port-forwarding reaches Express;
@@ -370,9 +376,9 @@ services:
       - "127.0.0.1:8301:3000"
 ```
 
-- `package.json` de cada gêmeo tem `"type": "module"` e `"scripts": { "start": "tsx app.ts" }` (entrypoint `tsx` — roda TS direto, sem step de build).
+- `package.json` de cada gêmeo tem `"type": "module"` e `"scripts": { "start": "tsx app.ts" }` (entrypoint `tsx` — roda TS direto, sem step de build). O `package-lock.json` é **gerado e commitado** por gêmeo; o Dockerfile usa **`npm ci`** (nunca `npm install`) — instala exatamente o lockfile, build reprodutível e auditável.
 - **Sem `templates/`, sem `COPY templates`** (API-only). Sem `apt`, sem banco.
-- **Pin exato do patch do Node** (`node:24-slim` pina o major/variante; a Fase 2 pode pinar mais fino, ex.: `node:24.x-slim`) — **nunca** `latest` nem `node` cru.
+- **Base image pinada exata:** `node:24.21.0-slim` (Node 24 LTS "Krypton", último patch, verificado no Docker Hub nesta fase). **Nunca** `latest`, **nunca** a tag móvel `node:24-slim`, **nunca** `node` cru.
 
 ---
 
@@ -380,17 +386,17 @@ services:
 
 ```json
 {
-  "dependencies": { "express": "5.x" },
+  "dependencies": { "express": "5.2.1" },
   "devDependencies": {
-    "tsx": "<pinada>",
-    "@types/express": "5.x",
-    "@types/node": "24.x"
+    "tsx": "4.23.13",
+    "@types/express": "5.0.6",
+    "@types/node": "24.13.5"
   }
 }
 ```
 
-- **Express 5.x** com **`@types/express` 5.x** (o mantenedor cravou a major 5). `tsx` como entrypoint. `@types/node` casando com Node 24. `crypto` é **nativo do Node** (`node:crypto`) — não é dependência de pip/npm.
-- **Versões pinadas e confirmadas na geração** (CLAUDE.md §8.7 — updates manuais). **Nada** além disto (CLAUDE.md §3.6): sem ORM, sem body-parser externo (Express 5 tem `express.json()` embutido), sem lib de token (é `randomBytes` nativo).
+- **Versões exatas** (sem `^`, `~` ou `x`), verificadas por `npm view` **nesta fase**: **express 5.2.1**, **tsx 4.23.13**, **@types/express 5.0.6**, **@types/node 24.13.5**. `crypto` é **nativo do Node** (`node:crypto`) — não é dependência npm.
+- **Pin exato travado no `package-lock.json`** (commitado por gêmeo); Dockerfile com `npm ci`. Updates são **manuais** (CLAUDE.md §8.7). **Nada** além disto (CLAUDE.md §3.6): sem ORM, sem body-parser externo (Express 5 tem `express.json()` embutido), sem lib de token (`randomBytes` nativo).
 
 ---
 
@@ -430,7 +436,7 @@ Formato exato PT:
 
 - **NENHUM átomo da série API está publicado.** Portanto **NÃO** citar nenhum outro átomo de API — por número, nome ou descrição (`bola-uuid-leaked`, `bola-nested-resource`, `bfla-*`, etc. são **proibidos**: forward reference).
 - **Cross-ref a átomos WEB publicados é bem-vindo e esperado.** Contraste **explícito** com:
-  - **`bola-rest`** (web/Flask, mesma classe) — o gêmeo web; creditar o núcleo (authenticated ≠ authorized, `404` indistinguível) e contrastar o que ESTE acrescenta (escala, PII, Intruder, stack TS, fix "na busca").
+  - **`bola-rest`** (web/Flask, mesma classe) — o gêmeo web; creditar o núcleo (authenticated ≠ authorized, `404` indistinguível) e contrastar o que ESTE acrescenta (escala, PII, Intruder, stack TS). **Não** contrastar sobre o *fix* — o código dos dois testa a posse depois da busca; não há "a busca autoriza".
   - **`idor-numeric-id`** (web/Flask) — o avô do arco; reusar "o bug é a checagem ausente" e o passo de contraste.
 - **Sobre id não-adivinhável:** enunciar em **UMA frase** que reduz descoberta sem consertar o check (eixo 1 vs eixo 2). **NÃO** demonstrar, **NÃO** montar variante UUID, **NÃO** citar nenhum átomo (web ou API) que trate de UUID/id opaco — o seam onde essa variante mora na série API é átomo **não-publicado**; mantê-lo fora do frame.
 - Termos técnicos (BOLA, IDOR, token, Bearer, object-level authorization, ownership check, enumeration oracle, PII, Trigger, payload) **não** se traduzem no PT (CLAUDE.md §7).
@@ -444,7 +450,7 @@ Formato exato PT:
 | Categoria (pasta / API Top 10 2023) | **API1 — Broken Object Level Authorization** | O #1 do OWASP API Security Top 10. Request legítimo alcançou objeto fora do escopo (autorização), não injection. |
 | Nome / classe (H1) | **Broken Object Level Authorization (BOLA)** — idêntico EN/PT | O título nomeia a classe; o slug (`bola-sequential-id`) qualifica a variante. Mesmo H1 do web `bola-rest` de propósito (mesma classe). |
 | Papel na série | **Átomo-bandeira + referência de estilo TS/Express** | Primeiro TS do repo; estabelece o padrão da série API. Não há espelho TS in-repo. |
-| Stack | **TypeScript / Express 5.x / `tsx`**, Node 24 slim pinado | Lei da série API (CLAUDE.md §3.1). |
+| Stack | **TypeScript / Express 5.2.1 / `tsx` 4.23.13**, base `node:24.21.0-slim` | Lei da série API (CLAUDE.md §3.1). Versões exatas verificadas nesta fase. |
 | Store | **Em memória (`Record`/`Map`/`Set`), sem banco** | BOLA não depende do storage; store em memória é o típico da série API. |
 | Token | **Opaco, `crypto.randomBytes`; NÃO JWT** | Cripto-forte pra não ser 2ª vuln. JWT puxaria foco pra atacar o token (não é a lição). O ataque não toca o token. |
 | Usuários / dados | **`dana` (atacante, 1 pedido) + alice/bob/carol (vítimas)** | Atacante escopado a exatamente 1 prova "a app sabe quem você é"; três vítimas → múltiplas pessoas na enumeração. |
@@ -452,12 +458,19 @@ Formato exato PT:
 | PII | **nome + endereço de entrega por pedido (fake óbvio §8.3)** | O achado que dói na screenshot é o dado pessoal, não o `order_id`. Ancora o impacto real de BOLA. |
 | Rotas | `POST /login`, `GET /orders` (lista escopada — correto nas 2), `GET /orders/:id` (vuln) | REST mínimo. Sem prefixo `/api` (contraste de forma com o web `bola-rest`, que usa `/api/orders`). |
 | O bug | **Object-level authorization AUSENTE** em `GET /orders/:id` | Ausência de código, não payload. O endpoint autentica mas descarta a identidade na autorização. |
-| Fix (eixo único) | **Predicado de posse DENTRO da busca:** `if (!order \|\| order.owner !== caller) 404` | A busca passa a responder "esse pedido, deste dono". Não "acrescentou um if" (contraste de forma com o `bola-rest`). O id sequencial fica intacto. |
+| Fix (eixo único) | **Posse na mesma guarda da existência:** `if (!order \|\| order.owner !== caller) 404` | Uma guarda, uma saída (`sendStatus(404)`) → indistinguibilidade **estrutural**; autorização por objeto no mesmo nível que existência. O id sequencial fica intacto. |
 | Status code do fix | **`404`** (não `403`), idêntico ao `404` de inexistente | Id sequencial → `403` viraria oráculo de enumeração. `404` esconde existência. Ancorar: GitHub repo privado `404`; RFC 9110 prevê a troca; `403` legítimo quando existência não é sensível. |
+| Corpo dos erros — `sendStatus` | **`res.sendStatus(...)` (text/plain) nos erros; sucesso via `res.json(...)`** | A identidade byte-a-byte entre o `404` de inexistente e o de alheio é a lição; `sendStatus` garante isso **por construção**. Um corpo JSON de erro exigiria garantir a identidade à mão nos dois ramos. Respostas de **sucesso** são JSON. |
 | Padrão de prova | **Trigger** (não Payload) | Não há sink; o exploit é dado legítimo (trocar id). → passo de contraste obrigatório. |
 | Trilha | **100% Burp (Repeater + Intruder) / curl; SEM browser** | API-only (CLAUDE.md §3.3). Intruder é o beat de enumeração (a base vazando). |
 | Impacto | **Escalação HORIZONTAL** — ler pedido+PII de outros usuários do mesmo nível | Honesto, sem overclaim. Não é RCE, não é escalação vertical. |
 | Theory primer | **PortSwigger IDOR (bloco) + OWASP API1:2023 (suplementar)** | CLAUDE.md manda PortSwigger; BOLA = IDOR em API. URLs verificadas por fetch nesta fase. |
+
+---
+
+## Decisões que podem gerar dúvida durante implementação
+
+- **Tipos do Express 5 — retorno `Response` vs `void`.** Os samples desta spec usam callbacks contextualmente tipados como `RequestHandler` (retorno `void`), onde `return res.sendStatus(...)` **passa** (regra de void-assignability do TS). MAS se o gerador **anotar o retorno do handler explicitamente** (ex.: `(req, res): void => { ... }`), o TS reclama de devolver `Response` onde se espera `void`. Se aparecer, a forma segura é **`res.sendStatus(401); return;`** (statement + `return` vazio), **nunca** `return res.sendStatus(...)`. Registrado aqui pra o gerador não descobrir isso no meio da geração.
 
 ---
 
@@ -477,6 +490,7 @@ Formato exato PT:
 12. **Portas:** `8201` (vulnerable) / `8301` (fixed); porta interna `3000` coerente entre `EXPOSE`, `app.listen` e o mapeamento do compose.
 13. **Docs EN+PT sincronizadas** no mesmo commit; **nenhum header de seção PT byte-idêntico ao par EN** (exceto o h1 do README); banner de aviso em todo README.
 14. **Theory primer:** re-confirmar as duas URLs por fetch na geração (podem mudar); confirmar os números de seção do RFC 9110 antes de cravar no DIFF.
+15. **`npm audit --omit=dev` em cada gêmeo** (vulnerable e fixed), com **registro dos advisories esperados**. O átomo é intencionalmente vulnerável na **LÓGICA** (object-level authorization ausente), **não nas dependências** — deixar essa distinção escrita pra ninguém confundir a lição com débito de dependência. Meta: **zero** advisory de runtime (`--omit=dev` ignora devDeps); se algum aparecer, documentar por que é aceitável ou atualizar a lib (updates manuais, CLAUDE.md §8.7).
 
 **Bloqueante remanescente:** nenhum. Design fechado pelo mantenedor; as duas URLs do primer verificadas nesta fase. Resto é validação na geração.
 
@@ -489,7 +503,7 @@ Formato exato PT:
 - **Dois eixos, sempre separados:** id sequencial = **descoberta**; check ausente = **causa**. O fix age no eixo 2 e deixa o eixo 1 intacto. A frase sobre id não-adivinhável é **uma só**, sem demonstração, sem UUID, sem citar átomo.
 - **Token cripto-forte, intocado:** `randomBytes`; o ataque **nunca** decodifica/adultera/forja o token. **PROIBIDO** mencionar técnicas de ataque a token — não é a lição e não há átomo de token publicado.
 - **O handler vulnerable CHAMA `authenticate()`** mas descarta a identidade — **não** transformar isso em "falha de autenticação". A distinção auth/authz é o ponto técnico frágil; seguir o passo de contraste à risca.
-- **Fix "na busca", não "um if a mais":** o predicado de posse entra na linha de guarda da existência, compartilhando o `404`. É o contraste de forma com o `bola-rest`. Cravar a leitura "a busca passou a responder 'esse pedido, deste dono'".
+- **Fix — posse e existência numa guarda só:** o predicado de posse entra na guarda da existência, compartilhando o mesmo `sendStatus(404)` → indistinguibilidade **estrutural**, autorização por objeto no mesmo nível que existência. Amarrar ao oráculo de enumeração. **NÃO** construir contraste de forma com o `bola-rest` sobre o fix — o código dos dois testa a posse depois da busca; a tese "a busca autoriza" é falsa.
 - **`404` (não `403`):** cravar o oráculo de enumeração (id sequencial), o âncora GitHub, o RFC 9110 (confirmar §§ por fetch), e que `403` é legítimo quando a existência não é sensível. **Não** copiar `403` por reflexo.
 - **Enumeração no Intruder é o beat que distingue este átomo:** "a base vazou", não "um objeto vazou". A varredura contra o `fixed/` (tela chapada de `404`) é a prova do fix.
 - **Impacto honesto:** escalação **horizontal** + exposição de **PII**; **não** chamar de RCE nem vertical. BOLA ser #1 do OWASP API Top 10 é enquadramento, não inflação.
