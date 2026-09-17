@@ -44,7 +44,7 @@ Pentest students and AppSec learners who already know the basics of HTTP and the
 
 ## Running an atom
 
-Each atom lives in its own folder under `atoms/A0X-<category>/<atom-id>/` and ships with a `docker-compose.yml`. A root wrapper script, `./atom`, drives them:
+Each atom lives in its own folder under `atoms/web/A0X-<category>/<atom-id>/` and ships with a `docker-compose.yml`. A root wrapper script, `./atom`, drives them:
 
 ```bash
 ./atom list                 # show all available atoms
@@ -65,7 +65,7 @@ Every atom binds to `127.0.0.1` only. **Never** change that — these apps are i
 
 ## Documentation
 
-- **[ROADMAP.md](./ROADMAP.md)** — ordered implementation plan and progress checklist.
+- **[ROADMAP.md](./atoms/web/ROADMAP.md)** — ordered implementation plan and progress checklist.
 - **[CLAUDE.md](./CLAUDE.md)** — *for contributors:* project briefing, conventions, and ground rules.
 
 ## License

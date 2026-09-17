@@ -10,7 +10,7 @@ Thanks for your interest. This document explains how to contribute effectively.
 - **Translations** of existing atom content (PT-BR, or new languages)
 - **Improvements to walkthroughs and DIFFs** — clarity, accuracy, pedagogical value
 - **Wrapper script (`./atom`) improvements**
-- **CI and infrastructure work** listed under "Infraestrutura e governança" in [ROADMAP.md](./ROADMAP.md)
+- **CI and infrastructure work** listed under "Infraestrutura e governança" in [ROADMAP.md](./atoms/web/ROADMAP.md)
 - **Bug fixes in lab infrastructure** (compose, networking, wrapper)
 
 ## What is NOT welcome
@@ -24,13 +24,13 @@ Thanks for your interest. This document explains how to contribute effectively.
 ## Before opening an issue
 
 - **Design discussion or proposal:** open a Discussion, not an Issue
-- **New atom proposal:** check [ROADMAP.md](./ROADMAP.md) first — it may already be planned. If not, open a Discussion to propose
+- **New atom proposal:** check [ROADMAP.md](./atoms/web/ROADMAP.md) first — it may already be planned. If not, open a Discussion to propose
 - **Bug in lab infrastructure** (wrapper, compose, networking): open an Issue with reproduction steps
 - **Security issue:** see [SECURITY.md](./SECURITY.md)
 
 ## How to propose a new atom
 
-1. Check [ROADMAP.md](./ROADMAP.md) for the atom you want to build, or for the next available slot
+1. Check [ROADMAP.md](./atoms/web/ROADMAP.md) for the atom you want to build, or for the next available slot
 2. Open a Discussion to confirm scope and approach with the maintainer
 3. Once aligned, follow the workflow in [CLAUDE.md §10](./CLAUDE.md). This project is built with Claude Code, but you don't need it — the same template and conventions apply to human contributors
 4. The atom must include: working `vulnerable/` + `fixed/` versions, `WALKTHROUGH.md` (EN+PT), `DIFF.md` (EN+PT), `README.md` (EN+PT), `docker-compose.yml`, and the Theory primer block linking PortSwigger Academy (see [CLAUDE.md §5](./CLAUDE.md))
