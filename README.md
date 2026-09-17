@@ -5,9 +5,11 @@
 <!-- Badges -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Release](https://img.shields.io/github/v/release/doretox/atomicvulns)](https://github.com/doretox/atomicvulns/releases/latest)
-![Atoms](https://img.shields.io/badge/atoms-38-blue)
+![Web atoms](https://img.shields.io/badge/web%20atoms-38-blue)
 ![OWASP Top 10](https://img.shields.io/badge/OWASP-Top%2010%202021-red)
-![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+![OWASP API Top 10](https://img.shields.io/badge/OWASP%20API-2023%20planned-lightgrey)
+![web stack](https://img.shields.io/badge/web-Python%203.11%2B%2FFlask-blue)
+![api stack](https://img.shields.io/badge/api-TypeScript%2FExpress-blue)
 
 > ⚠️ **Intentionally vulnerable. Run locally only. Never expose to the internet or a shared network.**
 
@@ -15,7 +17,7 @@
 
 ## What is atomicvulns?
 
-> **Milestone — v1.0:** atomicvulns now covers **all ten OWASP Top 10 2021 categories (A01–A10)**, across **38 atoms**. See the [v1.0 release](https://github.com/doretox/atomicvulns/releases/tag/v1.0.0).
+> **Milestone — v1.0:** the **web series** now covers **all ten OWASP Top 10 2021 categories (A01–A10)**, across **38 atoms**. See the [v1.0 release](https://github.com/doretox/atomicvulns/releases/tag/v1.0.0).
 
 `atomicvulns` is a collection of *atomic* web applications — each one tiny, isolated, and focused on **a single vulnerability** from the OWASP Top 10. Every atom ships with the vulnerable app, the fixed version, a commented diff between the two, and a hands-on walkthrough of the exploit.
 
@@ -23,7 +25,7 @@ This is **not** another DVWA or Juice Shop. Monolithic vulnerable apps already e
 
 ## Coverage
 
-All ten OWASP Top 10 2021 categories are covered — 38 atoms in total:
+The **web series** (Python/Flask) covers all ten OWASP Top 10 2021 categories — 38 atoms in total:
 
 | Category | Atoms |
 |---|---|
@@ -37,6 +39,8 @@ All ten OWASP Top 10 2021 categories are covered — 38 atoms in total:
 | **A08 — Software and Data Integrity Failures** | `deserialization-pickle`, `prototype-pollution`, `deserialization-node` |
 | **A09 — Security Logging and Monitoring Failures** | `logging-failures-demo` |
 | **A10 — Server-Side Request Forgery (SSRF)** | `ssrf-basic`, `ssrf-blind-oob`, `ssrf-cloud-metadata` |
+
+The **API series** (TypeScript/Express) is planned against the OWASP API Security Top 10 2023 — no atoms are published yet; see its [ROADMAP](./atoms/api/ROADMAP.md).
 
 ## Target audience
 
@@ -65,7 +69,8 @@ Every atom binds to `127.0.0.1` only. **Never** change that — these apps are i
 
 ## Documentation
 
-- **[ROADMAP.md](./atoms/web/ROADMAP.md)** — ordered implementation plan and progress checklist.
+- **[Web series ROADMAP](./atoms/web/ROADMAP.md)** — ordered plan and progress for the web series (Python/Flask).
+- **[API series ROADMAP](./atoms/api/ROADMAP.md)** — ordered plan for the API series (TypeScript/Express).
 - **[CLAUDE.md](./CLAUDE.md)** — *for contributors:* project briefing, conventions, and ground rules.
 
 ## License

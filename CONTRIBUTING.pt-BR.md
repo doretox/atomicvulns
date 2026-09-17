@@ -17,7 +17,7 @@ Obrigado pelo interesse. Este documento explica como contribuir de forma efetiva
 
 - "Consertar" as vulnerabilidades dos átomos — elas são intencionais
 - Átomos que combinam múltiplas vulnerabilidades — viola o atomismo; separe em átomos diferentes
-- Reescritas com framework pesado (Django em vez de Flask, TypeScript em vez de Python) — o projeto escolheu a stack de propósito (ver CLAUDE.md §3)
+- Reescritas que trocam a stack designada de uma série por outro framework (ex.: Django em vez de Flask na série web, ou usar algo além de TypeScript/Express na série API) — cada série escolheu sua stack de propósito; a única exceção é uma linguagem idiomática à própria vulnerabilidade (ver CLAUDE.md §3)
 - Otimizações de performance — apps de lab são intencionalmente simples, não rápidas
 - Melhorias de UI além do mínimo de HTML que o projeto permite (ver CLAUDE.md §3.3)
 
@@ -46,6 +46,7 @@ Obrigado pelo interesse. Este documento explica como contribuir de forma efetiva
 ## Estilo
 
 - **Python:** PEP 8. Sem linter formal — a codebase é minúscula, julgamento vale mais que ferramenta
+- **TypeScript:** estilo idiomático, formatação consistente; sem linter formal — mesmo princípio, julgamento acima de ferramenta
 - **Markdown:** quebra de linha por volta dos 80 caracteres quando razoável; não force a quebra quando a prosa flui melhor com linha longa
 - **Mensagens de commit:** Conventional Commits em inglês (`feat(scope): ...`, `docs: ...`, etc.)
 - **Idioma da documentação:** código em inglês, docs em inglês + PT-BR, sincronizadas no mesmo commit (ver [CLAUDE.md §7](./CLAUDE.md))
