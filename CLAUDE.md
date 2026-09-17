@@ -185,8 +185,12 @@ atomicvulns/
 └── docs/
     ├── assets/                    # imagens públicas (banner do README, etc.)
     │   └── banner.svg
-    └── templates/                 # template de spec pra novos átomos
-        └── ATOM-SPEC-TEMPLATE.md
+    ├── specs/                     # specs de átomo, por série
+    │   ├── web/                   # specs da série web
+    │   └── api/                   # specs da série API
+    └── templates/                 # templates de spec, por série
+        ├── ATOM-SPEC-TEMPLATE-WEB.md
+        └── ATOM-SPEC-TEMPLATE-API.md
 ```
 
 **Nota sobre categorização:** a série web segue a OWASP Top 10 2021 e a série API a OWASP API Security Top 10 2023 — a edição estável mais atual de cada. Se surgir uma nova edição durante o projeto, revisamos o mapeamento sem reescrever os átomos — só movemos as pastas.
