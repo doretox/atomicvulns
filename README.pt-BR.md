@@ -44,7 +44,7 @@ Estudantes de pentest e de AppSec que já sabem o básico de HTTP e terminal, us
 
 ## Rodando um átomo
 
-Cada átomo vive em sua própria pasta sob `atoms/A0X-<categoria>/<atom-id>/` e vem com um `docker-compose.yml`. Um script wrapper na raiz, `./atom`, dirige os átomos:
+Cada átomo vive em sua própria pasta sob `atoms/web/A0X-<categoria>/<atom-id>/` e vem com um `docker-compose.yml`. Um script wrapper na raiz, `./atom`, dirige os átomos:
 
 ```bash
 ./atom list                 # lista todos os átomos disponíveis
@@ -65,7 +65,7 @@ Todo átomo faz bind apenas em `127.0.0.1`. **Nunca** altere isso — essas apps
 
 ## Documentação
 
-- **[ROADMAP.md](./ROADMAP.md)** — plano ordenado de implementação e checklist de progresso.
+- **[ROADMAP.md](./atoms/web/ROADMAP.md)** — plano ordenado de implementação e checklist de progresso.
 - **[CLAUDE.md](./CLAUDE.md)** — *para contribuidores:* briefing do projeto, convenções e regras de base.
 
 ## Licença

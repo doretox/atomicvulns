@@ -10,7 +10,7 @@ Obrigado pelo interesse. Este documento explica como contribuir de forma efetiva
 - **Traduções** de conteúdo existente (PT-BR ou idiomas novos)
 - **Melhorias em walkthroughs e DIFFs** — clareza, precisão, valor pedagógico
 - **Melhorias no script wrapper (`./atom`)**
-- **Trabalho de CI e infraestrutura** listado em "Infraestrutura e governança" no [ROADMAP.md](./ROADMAP.md)
+- **Trabalho de CI e infraestrutura** listado em "Infraestrutura e governança" no [ROADMAP.md](./atoms/web/ROADMAP.md)
 - **Bug fixes na infraestrutura dos labs** (compose, networking, wrapper)
 
 ## O que NÃO é bem-vindo
@@ -24,13 +24,13 @@ Obrigado pelo interesse. Este documento explica como contribuir de forma efetiva
 ## Antes de abrir uma issue
 
 - **Discussão de design ou proposta:** abra uma Discussion, não uma Issue
-- **Proposta de átomo novo:** confira o [ROADMAP.md](./ROADMAP.md) primeiro — pode já estar planejado. Se não estiver, abra uma Discussion para propor
+- **Proposta de átomo novo:** confira o [ROADMAP.md](./atoms/web/ROADMAP.md) primeiro — pode já estar planejado. Se não estiver, abra uma Discussion para propor
 - **Bug na infraestrutura dos labs** (wrapper, compose, networking): abra uma Issue com passos de reprodução
 - **Issue de segurança:** ver [SECURITY.md](./SECURITY.md)
 
 ## Como propor um átomo novo
 
-1. Confira o [ROADMAP.md](./ROADMAP.md) pelo átomo que você quer construir, ou pelo próximo slot disponível
+1. Confira o [ROADMAP.md](./atoms/web/ROADMAP.md) pelo átomo que você quer construir, ou pelo próximo slot disponível
 2. Abra uma Discussion para alinhar escopo e abordagem com o mantenedor
 3. Uma vez alinhado, siga o workflow da [CLAUDE.md §10](./CLAUDE.md). Este projeto é construído com Claude Code, mas você não precisa usar — o mesmo template e convenções valem para contribuidores humanos
 4. O átomo deve incluir: versões `vulnerable/` + `fixed/` funcionais, `WALKTHROUGH.md` (EN+PT), `DIFF.md` (EN+PT), `README.md` (EN+PT), `docker-compose.yml` e o bloco Theory primer linkando a PortSwigger Academy (ver [CLAUDE.md §5](./CLAUDE.md))

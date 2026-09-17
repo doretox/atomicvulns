@@ -23,7 +23,7 @@ def find_atoms():
     atoms = {}
     if not ATOMS_DIR.is_dir():
         return atoms
-    for compose in sorted(ATOMS_DIR.glob("*/*/docker-compose.yml")):
+    for compose in sorted(ATOMS_DIR.glob("*/*/*/docker-compose.yml")):
         atom_id = compose.parent.name
         if atom_id in atoms:
             sys.exit(
@@ -156,7 +156,7 @@ def cmd_doctor():
     check(
         f"atoms discovered ({len(atoms)})",
         len(atoms) > 0,
-        "no docker-compose.yml files found under atoms/*/*/",
+        "no docker-compose.yml files found under atoms/*/*/*/",
     )
 
     print("\n" + ("all checks passed." if ok else "some checks failed."))
