@@ -308,7 +308,7 @@ Trabalhado **100% no Burp** (Repeater + Intruder), `curl` como equivalente — *
   Authorization: Bearer <dana-token>
   ```
 - Você leu o pedido de outro usuário — **com PII** — usando **o seu próprio token válido**, só trocando o id. Isso é **BOLA**.
-- **Mesmo objeto, dois chamadores, os dois `200`:** o `1001` que a **alice** leu legitimamente no baseline volta `200` também pra **dana**. O servidor não distingue as duas requests porque **nunca** checa o dono — pra ele, a da dana é tão válida quanto a da alice. É exatamente aí que mora o BOLA.
+- **Mesmo objeto, dois chamadores, os dois `200`:** o `1001` que a **alice** leu legitimamente no baseline volta `200` também pra **dana**. O servidor **resolve corretamente duas identidades diferentes** (`authenticate()` devolve `alice` numa request e `dana` na outra) e **entrega o mesmo objeto às duas** — porque a identidade, embora conhecida, **nunca entra na decisão de acesso**. É exatamente aí que mora o BOLA.
 
 ### 6. Step 2 — What the vuln is NOT (passo de contraste OBRIGATÓRIO — CLAUDE.md §5)
 Três requests que **isolam a causa** (é o desenho exato pedido pelo mantenedor):
@@ -346,7 +346,30 @@ const HOST = process.env.HOST ?? "127.0.0.1";  // default 127.0.0.1 (CLAUDE.md �
 app.listen(PORT, HOST);
 ```
 
-`Dockerfile` (idêntico entre as versões; base **`node:24.21.0-slim`** — Node 24 LTS "Krypton", patch exato; **nunca `latest`**):
+`tsconfig.json` (idêntico entre as versões — ESM `nodenext` casando com `"type": "module"` e o `tsx`):
+
+```json
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2024",
+    "lib": ["es2024"],
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "noEmit": true
+  }
+}
+```
+
+- **`noUncheckedIndexedAccess: true` é deliberado e didático:** faz `ORDERS[Number(req.params.id)]` ter tipo `Order | undefined`, então a guarda `!order` passa a ser **exigida pelo compilador**, não educação do autor — sem ela, `order.owner` no `fixed/` dá `error TS18048: 'order' is possibly 'undefined'`. Verificado nesta fase (ligando e desligando a flag).
+- **`noEmit: true`:** o `tsx` executa o TS direto; o `tsc` aqui só **confere** os tipos (`npm run typecheck`), não gera JS.
+- **NÃO habilitar `noImplicitReturns`:** ele briga com o `return res.sendStatus(...)` dos handlers (o ramo de sucesso não retorna valor) — ver "Decisões que podem gerar dúvida durante implementação".
+- **Validado nesta fase:** `tsc --noEmit` (typescript 7.0.2) contra os samples dos dois gêmeos sai **limpo** (exit 0).
+
+`Dockerfile` (idêntico entre as versões; base **`node:24.21.0-slim`** — Node 24 LTS "Krypton", patch exato; **nunca `latest`**; roda como **não-root**):
 
 ```dockerfile
 FROM node:24.21.0-slim
@@ -355,6 +378,10 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY tsconfig.json .
 COPY app.ts .
+# Drop root: the node:* images ship a non-root `node` user. chown so it owns the
+# install + sources — tsx writes its transpile cache under /app at runtime.
+RUN chown -R node:node /app
+USER node
 # Bind 0.0.0.0 inside the container so Docker port-forwarding reaches Express;
 # host exposure stays restricted to 127.0.0.1 by docker-compose.yml.
 ENV HOST=0.0.0.0
@@ -376,9 +403,10 @@ services:
       - "127.0.0.1:8301:3000"
 ```
 
-- `package.json` de cada gêmeo tem `"type": "module"` e `"scripts": { "start": "tsx app.ts" }` (entrypoint `tsx` — roda TS direto, sem step de build). O `package-lock.json` é **gerado e commitado** por gêmeo; o Dockerfile usa **`npm ci`** (nunca `npm install`) — instala exatamente o lockfile, build reprodutível e auditável.
+- `package.json` de cada gêmeo tem `"type": "module"` e `"scripts": { "start": "tsx app.ts", "typecheck": "tsc --noEmit" }` (entrypoint `tsx` — roda TS direto, sem step de build; `typecheck` roda o `tsc` só pra conferir tipos). O `package-lock.json` é **gerado e commitado** por gêmeo; o Dockerfile usa **`npm ci`** (nunca `npm install`) — instala exatamente o lockfile, build reprodutível e auditável.
 - **Sem `templates/`, sem `COPY templates`** (API-only). Sem `apt`, sem banco.
 - **Base image pinada exata:** `node:24.21.0-slim` (Node 24 LTS "Krypton", último patch, verificado no Docker Hub nesta fase). **Nunca** `latest`, **nunca** a tag móvel `node:24-slim`, **nunca** `node` cru.
+- **Roda como não-root:** `USER node` (usuário que a imagem `node:*` já traz) **após** o `npm ci`; um `chown -R node:node /app` garante que o `node` seja dono do install e das fontes (o `tsx` grava cache de transpile em `/app`). Não abre nada aqui (bind `127.0.0.1`, sem volume, sem escrita externa), mas é o Dockerfile que 20 átomos vão copiar. **Validado nesta fase:** build OK e o container sobe como `node` (`whoami` → `node`), `tsx` sem erro de permissão, endpoints respondendo.
 
 ---
 
@@ -386,16 +414,21 @@ services:
 
 ```json
 {
-  "dependencies": { "express": "5.2.1" },
+  "dependencies": {
+    "express": "5.2.1",
+    "tsx": "4.23.13"
+  },
   "devDependencies": {
-    "tsx": "4.23.13",
+    "typescript": "7.0.2",
     "@types/express": "5.0.6",
     "@types/node": "24.13.5"
   }
 }
 ```
 
-- **Versões exatas** (sem `^`, `~` ou `x`), verificadas por `npm view` **nesta fase**: **express 5.2.1**, **tsx 4.23.13**, **@types/express 5.0.6**, **@types/node 24.13.5**. `crypto` é **nativo do Node** (`node:crypto`) — não é dependência npm.
+- **Versões exatas** (sem `^`, `~` ou `x`), verificadas por `npm view` **nesta fase**: **express 5.2.1**, **tsx 4.23.13**, **typescript 7.0.2**, **@types/express 5.0.6**, **@types/node 24.13.5**. `crypto` é **nativo do Node** (`node:crypto`) — não é dependência npm.
+- **Classificação segue o RUNTIME, não o hábito.** `tsx` fica em **`dependencies`** — é o **entrypoint que executa** no container (`CMD` → `npm start` → `tsx app.ts`), logo runtime. `typescript` e os `@types/*` ficam em **`devDependencies`** (compilam/checam, não rodam). Isso **não é gosto**: o gate combinado é **`npm audit --omit=dev`**, que **ignora** devDeps — com o `tsx` (o que roda dentro do container) em devDeps, o audit passaria verde **sem nunca olhar o runtime**. Com `tsx` em `dependencies`, o `--omit=dev` cobre exatamente o que executa.
+- **`scripts` de cada gêmeo:** `"start": "tsx app.ts"` (runtime) e `"typecheck": "tsc --noEmit"` (gate de tipos — ver checklist).
 - **Pin exato travado no `package-lock.json`** (commitado por gêmeo); Dockerfile com `npm ci`. Updates são **manuais** (CLAUDE.md §8.7). **Nada** além disto (CLAUDE.md §3.6): sem ORM, sem body-parser externo (Express 5 tem `express.json()` embutido), sem lib de token (`randomBytes` nativo).
 
 ---
@@ -456,7 +489,7 @@ Formato exato PT:
 | Usuários / dados | **`dana` (atacante, 1 pedido) + alice/bob/carol (vítimas)** | Atacante escopado a exatamente 1 prova "a app sabe quem você é"; três vítimas → múltiplas pessoas na enumeração. |
 | Seed de ids | **`1001–1012` contíguos; split 6/3/2/1 desigual; dana=1007 no meio** | Contador global (id sequencial = descoberta barata); split desigual → "a base vazou, não um objeto". |
 | PII | **nome + endereço de entrega por pedido (fake óbvio §8.3)** | O achado que dói na screenshot é o dado pessoal, não o `order_id`. Ancora o impacto real de BOLA. |
-| Rotas | `POST /login`, `GET /orders` (lista escopada — correto nas 2), `GET /orders/:id` (vuln) | REST mínimo. Sem prefixo `/api` (contraste de forma com o web `bola-rest`, que usa `/api/orders`). |
+| Rotas | `POST /login`, `GET /orders` (lista escopada — correto nas 2), `GET /orders/:id` (vuln) | REST mínimo. O prefixo de path (`/orders` vs `/api/orders`) é cosmético — nenhum comportamento depende dele; não é lição. |
 | O bug | **Object-level authorization AUSENTE** em `GET /orders/:id` | Ausência de código, não payload. O endpoint autentica mas descarta a identidade na autorização. |
 | Fix (eixo único) | **Posse na mesma guarda da existência:** `if (!order \|\| order.owner !== caller) 404` | Uma guarda, uma saída (`sendStatus(404)`) → indistinguibilidade **estrutural**; autorização por objeto no mesmo nível que existência. O id sequencial fica intacto. |
 | Status code do fix | **`404`** (não `403`), idêntico ao `404` de inexistente | Id sequencial → `403` viraria oráculo de enumeração. `404` esconde existência. Ancorar: GitHub repo privado `404`; RFC 9110 prevê a troca; `403` legítimo quando existência não é sensível. |
@@ -483,14 +516,15 @@ Formato exato PT:
 5. **Enumeração:** Intruder sobre `1001–1012` com o Bearer da dana → **12 × `200`** no vulnerable (11 de outros donos, 3 vítimas distintas).
 6. **Fixed:** a **mesma** varredura → `1007` = `200`, os outros 11 = **`404` idênticos**; `1013`/`1000` (inexistentes) também `404` (indistinguível — sem oráculo); `GET /orders/1007` = `200`; sem/ruim token = `401`.
 7. **`Number(req.params.id)`** aceita os ids; não-numérico → `NaN` → lookup falha → `404`.
-8. **`app.ts` DIFERE só no predicado de posse** do `GET /orders/:id`. `POST /login`, `GET /orders`, helpers, imports, `Dockerfile`, `package.json`, `tsconfig.json` **idênticos** entre as versões.
+8. **`app.ts` DIFERE só no predicado de posse** do `GET /orders/:id`. `POST /login`, `GET /orders`, helpers, imports, `Dockerfile`, `package.json`, `package-lock.json`, `tsconfig.json` **idênticos** entre as versões.
 9. **Nenhum vazamento de token** em resposta alguma: `order` serializado tem só `id/owner/customer/address/item/amount`; `GET /orders` não devolve pedidos nem token de outro usuário. **Um bug só** (BOLA).
 10. **API-only confirmado:** **sem** `templates/`, Dockerfile **sem** `COPY templates`, `app.ts` **sem** render de HTML; todas as respostas de sucesso em `application/json`.
 11. **Bind:** `app.listen` default `127.0.0.1`; compose bind **só** `127.0.0.1:8201`/`8301`; container `ENV HOST=0.0.0.0`.
 12. **Portas:** `8201` (vulnerable) / `8301` (fixed); porta interna `3000` coerente entre `EXPOSE`, `app.listen` e o mapeamento do compose.
 13. **Docs EN+PT sincronizadas** no mesmo commit; **nenhum header de seção PT byte-idêntico ao par EN** (exceto o h1 do README); banner de aviso em todo README.
 14. **Theory primer:** re-confirmar as duas URLs por fetch na geração (podem mudar); confirmar os números de seção do RFC 9110 antes de cravar no DIFF.
-15. **`npm audit --omit=dev` em cada gêmeo** (vulnerable e fixed), com **registro dos advisories esperados**. O átomo é intencionalmente vulnerável na **LÓGICA** (object-level authorization ausente), **não nas dependências** — deixar essa distinção escrita pra ninguém confundir a lição com débito de dependência. Meta: **zero** advisory de runtime (`--omit=dev` ignora devDeps); se algum aparecer, documentar por que é aceitável ou atualizar a lib (updates manuais, CLAUDE.md §8.7).
+15. **`npm audit --omit=dev` em cada gêmeo** (vulnerable e fixed), com **registro dos advisories esperados**. O átomo é intencionalmente vulnerável na **LÓGICA** (object-level authorization ausente), **não nas dependências** — deixar essa distinção escrita pra ninguém confundir a lição com débito de dependência. Meta: **zero** advisory de runtime (`--omit=dev` ignora devDeps, e o `tsx` — runtime — está em `dependencies`, então é coberto); se algum aparecer, documentar por que é aceitável ou atualizar a lib (updates manuais, CLAUDE.md §8.7).
+16. **`npm run typecheck` (`tsc --noEmit`, typescript 7.0.2) passa nos DOIS gêmeos, sem erro** — inclusive o `vulnerable/`, que é vulnerável na **lógica**, não no **tipo**. Validado nesta fase contra os samples: `tsc --noEmit` sai limpo (exit 0) nos dois; `noUncheckedIndexedAccess` força a guarda `!order` (sem ela, `order.owner` → `TS18048`).
 
 **Bloqueante remanescente:** nenhum. Design fechado pelo mantenedor; as duas URLs do primer verificadas nesta fase. Resto é validação na geração.
 
@@ -510,5 +544,5 @@ Formato exato PT:
 - **Bilíngue PT+EN no mesmo commit** (README, WALKTHROUGH, DIFF). H1 idêntico: `# bola-sequential-id — Broken Object Level Authorization (BOLA)`. Headers de seção **traduzidos** no PT; termos técnicos em inglês.
 - **CHANGELOG.md (Fase 2, NÃO agora):** em `[Unreleased] / Added`, linha do átomo no padrão da série (id + classe + 1 linha), quando o mantenedor cortar a fase.
 - **ROADMAP.md (`atoms/api/ROADMAP.md`):** marcar o átomo 01 como `[x]` **só na geração+validação** (proposta ao mantenedor, CLAUDE.md §10.4). **Não** alterar nesta fase de spec.
-- **Validar manualmente na Fase 2** (CLAUDE.md §11): itens 1–14 acima. Se as portas host não forem alcançáveis do sandbox, validar via `docker exec` + `node`/`curl` de dentro do container.
+- **Validar manualmente na Fase 2** (CLAUDE.md §11): **todos os itens do checklist da seção anterior**. Se as portas host não forem alcançáveis do sandbox, validar via `docker exec` + `node`/`curl` de dentro do container.
 - **Portas:** `127.0.0.1:8201` (vulnerable), `127.0.0.1:8301` (fixed). Bind **só** em `127.0.0.1`.
