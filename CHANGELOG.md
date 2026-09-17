@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Kicked off the **API series** (`atoms/api/`) — a second atom series built on the OWASP API Security Top 10 2023, with its own ordered `ROADMAP.md`. No API atoms are published yet; the series is planned.
+
+### Changed
+
+- Relocated the existing web atom series under `atoms/web/` (was `atoms/A0X-…/` at the repo root) so the tree can host parallel series; `git mv` preserved history, and the `./atom` wrapper now discovers both series.
+- Amended the project constitution (`CLAUDE.md`) to be **bi-stack**: stack is now law per series — the web series stays Python 3.11+/Flask, the API series is TypeScript/Express/tsx — with anatomy, repository structure, and port ranges (web `80NN`/`81NN`, API `82NN`/`83NN`) documented for both.
+
 ## [1.0.0] - 2026-09-11
 
 Full OWASP Top 10 2021 Coverage (Phase 7 of the ROADMAP, and the 1.0 milestone). Eight atoms closing the remaining Top 10 categories — pure cryptographic failures, insecure design, the rest of security misconfiguration, vulnerable components, the rest of authentication failures, and logging and monitoring — and with them the repository now covers all ten 2021 categories, A01 through A10. This phase adds: weak password hashing broken with a rainbow table and ECB block cut-and-paste (A02); a TOCTOU withdrawal race won with a single-packet attack (A04); Flask debug mode reachable for RCE and CORS origin reflection leaking authenticated data (A05); a real dependency CVE whose entire fix is a version bump, not a code change (A06); a clock-seeded reset token predicted for account takeover (A07); and the atypical closer where the flaw is the absence of a security log and the proof is the contrast between two logs, not something appearing (A09). Recurring lessons here — a security fix is not always in your code (it can be a dependency version), and detection is a distinct discipline from prevention. Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR).

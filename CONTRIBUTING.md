@@ -17,7 +17,7 @@ Thanks for your interest. This document explains how to contribute effectively.
 
 - "Fixing" the vulnerabilities in atoms — they're intentional
 - Atoms that bundle multiple vulnerabilities — violates atomism; split them
-- Heavy-framework rewrites (Django instead of Flask, TypeScript instead of Python) — the project picked its stack on purpose (see CLAUDE.md §3)
+- Rewrites that swap a series' designated stack for another framework (e.g. Django for Flask in the web series, or using something other than TypeScript/Express in the API series) — each series picked its stack on purpose; the only exception is a language idiomatic to the vulnerability itself (see CLAUDE.md §3)
 - Performance optimizations — lab apps are intentionally simple, not fast
 - UI improvements beyond the minimum HTML the project allows (see CLAUDE.md §3.3)
 
@@ -46,6 +46,7 @@ Thanks for your interest. This document explains how to contribute effectively.
 ## Style
 
 - **Python:** PEP 8. No formal linter — the codebase is tiny, judgment beats tooling
+- **TypeScript:** idiomatic style, consistent formatting; no formal linter — same principle, judgment over tooling
 - **Markdown:** wrap lines around 80 chars where reasonable; don't fight the wrap when prose flows better long
 - **Commit messages:** Conventional Commits in English (`feat(scope): ...`, `docs: ...`, etc.)
 - **Documentation language:** English code, English + PT-BR docs, synchronized in the same commit (see [CLAUDE.md §7](./CLAUDE.md))

@@ -5,9 +5,11 @@
 <!-- Badges -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Release](https://img.shields.io/github/v/release/doretox/atomicvulns)](https://github.com/doretox/atomicvulns/releases/latest)
-![Atoms](https://img.shields.io/badge/atoms-38-blue)
+![Web atoms](https://img.shields.io/badge/web%20atoms-38-blue)
 ![OWASP Top 10](https://img.shields.io/badge/OWASP-Top%2010%202021-red)
-![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+![OWASP API Top 10](https://img.shields.io/badge/OWASP%20API-2023%20planned-lightgrey)
+![web stack](https://img.shields.io/badge/web-Python%203.11%2B%2FFlask-blue)
+![api stack](https://img.shields.io/badge/api-TypeScript%2FExpress-blue)
 
 > ⚠️ **Código intencionalmente vulnerável. Rode apenas localmente. Nunca exponha à internet ou a uma rede compartilhada.**
 
@@ -15,7 +17,7 @@
 
 ## O que é o atomicvulns?
 
-> **Marco — v1.0:** o atomicvulns agora cobre **todas as dez categorias do OWASP Top 10 2021 (A01–A10)**, em **38 átomos**. Veja a [release v1.0](https://github.com/doretox/atomicvulns/releases/tag/v1.0.0).
+> **Marco — v1.0:** a **série web** agora cobre **todas as dez categorias do OWASP Top 10 2021 (A01–A10)**, em **38 átomos**. Veja a [release v1.0](https://github.com/doretox/atomicvulns/releases/tag/v1.0.0).
 
 `atomicvulns` é uma coleção de aplicações web *atômicas* — cada uma minúscula, isolada e focada em **uma única vulnerabilidade** do OWASP Top 10. Todo átomo entrega a app vulnerável, a versão corrigida, um diff comentado entre as duas e um walkthrough prático do exploit.
 
@@ -23,7 +25,7 @@ Este projeto **não** é mais um DVWA ou Juice Shop. Apps vulneráveis monolíti
 
 ## Cobertura
 
-Todas as dez categorias do OWASP Top 10 2021 estão cobertas — 38 átomos no total:
+A **série web** (Python/Flask) cobre todas as dez categorias do OWASP Top 10 2021 — 38 átomos no total:
 
 | Categoria | Átomos |
 |---|---|
@@ -37,6 +39,8 @@ Todas as dez categorias do OWASP Top 10 2021 estão cobertas — 38 átomos no t
 | **A08 — Software and Data Integrity Failures** | `deserialization-pickle`, `prototype-pollution`, `deserialization-node` |
 | **A09 — Security Logging and Monitoring Failures** | `logging-failures-demo` |
 | **A10 — Server-Side Request Forgery (SSRF)** | `ssrf-basic`, `ssrf-blind-oob`, `ssrf-cloud-metadata` |
+
+A **série API** (TypeScript/Express) está planejada sobre o OWASP API Security Top 10 2023 — nenhum átomo publicado ainda; ver o [ROADMAP](./atoms/api/ROADMAP.md).
 
 ## Público-alvo
 
@@ -65,7 +69,8 @@ Todo átomo faz bind apenas em `127.0.0.1`. **Nunca** altere isso — essas apps
 
 ## Documentação
 
-- **[ROADMAP.md](./atoms/web/ROADMAP.md)** — plano ordenado de implementação e checklist de progresso.
+- **[ROADMAP da série web](./atoms/web/ROADMAP.md)** — plano ordenado e progresso da série web (Python/Flask).
+- **[ROADMAP da série API](./atoms/api/ROADMAP.md)** — plano ordenado da série API (TypeScript/Express).
 - **[CLAUDE.md](./CLAUDE.md)** — *para contribuidores:* briefing do projeto, convenções e regras de base.
 
 ## Licença

@@ -16,14 +16,14 @@
 
 **Mantenedor:** projeto solo, médio/longo prazo.
 
-**Arquivo complementar:** ver [`ROADMAP.md`](./ROADMAP.md) para o plano ordenado de implementação e checklist de progresso.
+**Arquivos complementares:** ver [`atoms/web/ROADMAP.md`](./atoms/web/ROADMAP.md) e [`atoms/api/ROADMAP.md`](./atoms/api/ROADMAP.md) para os planos ordenados de cada série e seus checklists de progresso.
 
 ---
 
 ## 2. Princípios fundamentais (não negociáveis)
 
 1. **Um átomo = uma vulnerabilidade.** Se precisar de duas, são dois átomos.
-2. **Mínimo código possível.** Se a view vulnerável passa de ~30 linhas, provavelmente está fazendo coisa demais. O objetivo é que o estudante *leia e entenda rápido*, sem precisar navegar por múltiplos arquivos ou camadas de abstração.
+2. **Mínimo código possível.** Se o handler vulnerável passa de ~30 linhas, provavelmente está fazendo coisa demais. O objetivo é que o estudante *leia e entenda rápido*, sem precisar navegar por múltiplos arquivos ou camadas de abstração.
 3. **Vulnerável e corrigido vivem lado a lado.** Todo átomo tem uma pasta `vulnerable/` e uma `fixed/` com o mesmo endpoint, mesma feature — só o fix muda.
 4. **Walkthrough reproduzível.** Todo exploit documentado deve funcionar *exatamente* como descrito. O mantenedor valida manualmente via Burp antes de qualquer merge.
 5. **Segurança do estudante vem antes de tudo.** App intencionalmente vulnerável NUNCA bindа em `0.0.0.0` por padrão. Sempre `127.0.0.1`. Sempre com aviso no README.
@@ -34,25 +34,36 @@
 
 ## 3. Stack técnica
 
-### 3.1. Linguagem padrão: Python 3.11+ com Flask
+### 3.1. A stack é lei por série
 
-Escolha por legibilidade didática, cobertura ampla do Top 10, e stdlib rico (sqlite3, subprocess, pickle — todos úteis pra ilustrar classes de falha).
+A stack não é escolha por átomo — é **lei da série**. Cada série adota a stack que serve à sua classe de vulnerabilidades, e isso é uma decisão de arquitetura do mantenedor, tomada quando a série nasce, não um gosto do átomo. Dentro de uma série, usa-se a stack dela.
 
-### 3.2. Exceção à regra Python
+Hoje o repo tem duas séries, cada uma com a sua:
 
-Node.js + Express é permitido **apenas quando a vulnerabilidade é idiomática de JavaScript** e perde sentido pedagógico em Python. Na prática, isso cobre essencialmente:
+- **Série web** (`atoms/web/`): **Python 3.11+ com Flask.** Escolha por legibilidade didática, cobertura ampla do OWASP Top 10, e stdlib rico (sqlite3, subprocess, pickle — todos úteis pra ilustrar classes de falha).
+- **Série API** (`atoms/api/`): **TypeScript / Express / `tsx`**, containerizado — `tsx` é o entrypoint que roda o átomo dentro do container. Escolha pela stack idiomática de APIs modernas e pelo backbone da série ser o OWASP API Security Top 10.
+
+A stack de uma série futura é decisão de arquitetura — definida ao criar a série, não reaberta átomo a átomo.
+
+### 3.2. Exceção: linguagem idiomática à vulnerabilidade
+
+A stack é lei da série, mas há uma única exceção — e ela vale **dentro de qualquer série**: quando a vulnerabilidade é idiomática de outra linguagem e perde o sentido pedagógico na stack da série, o átomo usa a linguagem da falha. É exceção **por-vuln, não por-preferência**.
+
+O caso canônico é a série web abrindo mão de Python por Node.js + Express quando a falha só existe no ecossistema JavaScript:
 
 - Prototype pollution
 - Alguns casos específicos de NoSQL injection com MongoDB nativo
 - Deserialization em Node (quando o objetivo é mostrar o ecossistema JS)
 
-Nenhuma outra exceção sem discussão explícita. Evitar virar zoológico poliglota.
+Nenhuma outra exceção sem discussão explícita. A regra existe pra não virar zoológico poliglota — não pra reabrir a stack ao gosto do átomo.
 
 ### 3.3. Rendering e interação com a aplicação
 
+**Escopo desta seção:** as regras de rendering abaixo governam a **série web**, onde cada átomo tem uma UI mínima só pra dar contexto à feature. A **série API** (`atoms/api/`) é **API-only por natureza** — respostas JSON, sem Jinja, sem `templates/`, sem browser track —, exatamente como a subseção "Átomos naturalmente de API" descreve abaixo; a diferença é que na série API isso é a regra, não a exceção. Não se inventa UI pra átomo de API.
+
 **Filosofia:** o pentester trabalha no Burp. A UI existe apenas para *contextualizar* a feature simulada — nunca para ser o meio de exploração. O aluno abre no browser uma vez pra entender "o que essa app faz", e dali em diante migra pro Burp Repeater/Intruder como faria num pentest real.
 
-**Padrão: HTML mínimo server-rendered com Jinja2.**
+**Padrão da série web: HTML mínimo server-rendered com Jinja2.**
 
 Regras do HTML de cada átomo:
 
@@ -86,11 +97,15 @@ A decisão é por átomo: se a vulnerabilidade só faz sentido em contexto de AP
 - **MongoDB** apenas em átomos de NoSQL injection.
 - **PostgreSQL/MySQL** só se a vuln depende de uma feature específica daquele SGBD (ex: `pg_sleep`, `LOAD_FILE`).
 
+Átomos da série API tipicamente usam um store em memória (como o `bola-rest`), recorrendo a um banco só quando a vuln exige.
+
 ### 3.5. Containerização
 
-- **Docker Compose por átomo.** Cada átomo tem seu próprio `docker-compose.yml`.
+Vale igual para as duas séries — o mecanismo de container é agnóstico de stack:
+
+- **Docker Compose por átomo.** Cada átomo — web ou API — tem seu próprio `docker-compose.yml`.
 - **Bind obrigatório em `127.0.0.1`** nas portas publicadas.
-- **Wrapper simples na raiz** (`./atom` script em Bash ou Python) para UX: `./atom up <id>`, `./atom down <id>`, `./atom list`, `./atom doctor`.
+- **Wrapper simples na raiz** (`./atom` script em Bash ou Python) para UX: `./atom up <id>`, `./atom down <id>`, `./atom list`, `./atom doctor`. O `./atom` descobre as duas séries sob `atoms/` e mantém os IDs de átomo únicos no repo inteiro.
 
 ### 3.6. Dependências mínimas
 
@@ -100,66 +115,73 @@ Cada átomo deve rodar com o menor conjunto de dependências possível. Se o át
 
 ## 4. Estrutura do repositório
 
-Átomos organizados por categoria do OWASP Top 10 (edição 2021). Cada categoria é uma pasta, e os átomos daquela categoria moram dentro.
+O repo tem **duas séries** sob `atoms/`, cada uma organizada pela sua própria edição do OWASP Top 10 e com o seu `ROADMAP.md` dentro. A **série web** segue a OWASP Top 10 2021 (categorias `A01`…`A10`); a **série API** segue a OWASP API Security Top 10 2023 (categorias `API1`…`API10`). Em ambas, cada categoria é uma pasta e os átomos moram dentro.
 
 ```
 atomicvulns/
 ├── CLAUDE.md                      # este arquivo
-├── ROADMAP.md                     # plano ordenado e checklist de progresso
 ├── README.md                      # inglês, público
 ├── README.pt-BR.md                # português, público BR
 ├── LICENSE
-├── atom                           # wrapper CLI (executável)
+├── atom                           # wrapper CLI (executável) — descobre as duas séries
 ├── Makefile                       # atalhos equivalentes ao wrapper
 ├── atoms/
-│   ├── A01-broken-access-control/
-│   │   ├── idor-numeric-id/
-│   │   ├── idor-uuid-guessable/
-│   │   ├── bola-rest/
-│   │   ├── path-traversal-basic/
-│   │   ├── csrf-basic/
-│   │   ├── open-redirect/
-│   │   └── mass-assignment/
-│   ├── A02-cryptographic-failures/
-│   │   ├── crypto-weak-hash/
-│   │   ├── crypto-ecb-mode/
-│   │   ├── jwt-none-alg/
-│   │   ├── jwt-weak-secret/
-│   │   └── jwt-key-confusion/
-│   ├── A03-injection/
-│   │   ├── sqli-union-basic/
-│   │   ├── sqli-blind-boolean/
-│   │   ├── sqli-blind-time/
-│   │   ├── sqli-second-order/
-│   │   ├── nosql-injection-mongo/
-│   │   ├── command-injection-basic/
-│   │   ├── ldap-injection/
-│   │   ├── xss-reflected/
-│   │   ├── xss-stored/
-│   │   ├── xss-dom/
-│   │   └── ssti-jinja/
-│   ├── A04-insecure-design/
-│   │   └── race-condition-basic/
-│   ├── A05-security-misconfiguration/
-│   │   ├── debug-enabled/
-│   │   ├── cors-wildcard/
-│   │   ├── xxe-basic/
-│   │   └── xxe-blind-oob/
-│   ├── A06-vulnerable-components/
-│   │   └── cve-demo/
-│   ├── A07-auth-failures/
-│   │   ├── weak-password-reset/
-│   │   └── session-fixation/
-│   ├── A08-data-integrity-failures/
-│   │   ├── deserialization-pickle/
-│   │   ├── deserialization-node/
-│   │   └── prototype-pollution/
-│   ├── A09-logging-failures/
-│   │   └── logging-failures-demo/
-│   └── A10-ssrf/
-│       ├── ssrf-basic/
-│       ├── ssrf-blind-oob/
-│       └── ssrf-cloud-metadata/
+│   ├── web/                       # série web — Python 3.11+/Flask
+│   │   ├── ROADMAP.md             # plano ordenado da série web
+│   │   ├── A01-broken-access-control/
+│   │   │   ├── idor-numeric-id/
+│   │   │   ├── idor-uuid-guessable/
+│   │   │   ├── bola-rest/
+│   │   │   ├── path-traversal-basic/
+│   │   │   ├── csrf-basic/
+│   │   │   ├── open-redirect/
+│   │   │   └── mass-assignment/
+│   │   ├── A02-cryptographic-failures/
+│   │   │   ├── crypto-weak-hash/
+│   │   │   ├── crypto-ecb-mode/
+│   │   │   ├── jwt-none-alg/
+│   │   │   ├── jwt-weak-secret/
+│   │   │   └── jwt-key-confusion/
+│   │   ├── A03-injection/
+│   │   │   ├── sqli-union-basic/
+│   │   │   ├── sqli-blind-boolean/
+│   │   │   ├── sqli-blind-time/
+│   │   │   ├── sqli-second-order/
+│   │   │   ├── nosql-injection-mongo/
+│   │   │   ├── command-injection-basic/
+│   │   │   ├── ldap-injection/
+│   │   │   ├── xss-reflected/
+│   │   │   ├── xss-stored/
+│   │   │   ├── xss-dom/
+│   │   │   └── ssti-jinja/
+│   │   ├── A04-insecure-design/
+│   │   │   └── race-condition-basic/
+│   │   ├── A05-security-misconfiguration/
+│   │   │   ├── debug-enabled/
+│   │   │   ├── cors-wildcard/
+│   │   │   ├── xxe-basic/
+│   │   │   └── xxe-blind-oob/
+│   │   ├── A06-vulnerable-components/
+│   │   │   └── cve-demo/
+│   │   ├── A07-auth-failures/
+│   │   │   ├── weak-password-reset/
+│   │   │   └── session-fixation/
+│   │   ├── A08-data-integrity-failures/
+│   │   │   ├── deserialization-pickle/
+│   │   │   ├── deserialization-node/
+│   │   │   └── prototype-pollution/
+│   │   ├── A09-logging-failures/
+│   │   │   └── logging-failures-demo/
+│   │   └── A10-ssrf/
+│   │       ├── ssrf-basic/
+│   │       ├── ssrf-blind-oob/
+│   │       └── ssrf-cloud-metadata/
+│   └── api/                       # série API — TypeScript/Express/tsx
+│       ├── ROADMAP.md             # plano ordenado da série API
+│       ├── API1-broken-object-level-authz/
+│       │   └── <atom-id>/         # ex.: bola-sequential-id — ver api/ROADMAP.md
+│       ├── API2-broken-authentication/
+│       └── ...                    # API3…API10 (OWASP API Security Top 10 2023)
 └── docs/
     ├── assets/                    # imagens públicas (banner do README, etc.)
     │   └── banner.svg
@@ -167,16 +189,18 @@ atomicvulns/
         └── ATOM-SPEC-TEMPLATE.md
 ```
 
-**Nota sobre categorização:** seguimos a OWASP Top 10 de 2021 (edição estável mais atual). Se surgir uma nova edição durante o projeto, revisamos o mapeamento sem reescrever os átomos — só movemos as pastas.
+**Nota sobre categorização:** a série web segue a OWASP Top 10 2021 e a série API a OWASP API Security Top 10 2023 — a edição estável mais atual de cada. Se surgir uma nova edição durante o projeto, revisamos o mapeamento sem reescrever os átomos — só movemos as pastas.
 
 ---
 
 ## 5. Anatomia de um átomo
 
-Cada pasta de átomo em `atoms/A0X-<categoria>/<id>/` contém obrigatoriamente:
+Todo átomo é um par de gêmeos `vulnerable/` + `fixed/` lado a lado, mais a documentação bilíngue (README, DIFF, WALKTHROUGH em EN e PT) e o `docker-compose.yml` que sobe os dois. **A forma é a mesma nas duas séries** — os gêmeos, o diff limpo entre eles, os docs, o compose. O que muda é o *conteúdo* de `vulnerable/`/`fixed/`, que segue a stack da série.
+
+**Série web (Python/Flask)** — `atoms/web/A0X-<categoria>/<id>/`:
 
 ```
-atoms/A03-injection/sqli-union-basic/
+atoms/web/A03-injection/sqli-union-basic/
 ├── README.md                      # inglês — visão geral, como rodar
 ├── README.pt-BR.md                # português — mesma visão geral
 ├── docker-compose.yml             # sobe vulnerable + fixed lado a lado
@@ -200,14 +224,39 @@ atoms/A03-injection/sqli-union-basic/
     └── example-request.txt
 ```
 
+**Série API (TypeScript/Express/tsx)** — `atoms/api/APIX-<categoria>/<id>/`: mesma forma, mas `vulnerable/` e `fixed/` são build-contexts Docker self-contained em TypeScript (cada um com seu `package.json` e `tsconfig.json`, sem módulo compartilhado) e **sem `templates/`**, porque a série é API-only:
+
+```
+atoms/api/API1-broken-object-level-authz/bola-sequential-id/
+├── README.md                      # inglês — visão geral, como rodar
+├── README.pt-BR.md                # português — mesma visão geral
+├── docker-compose.yml             # sobe vulnerable + fixed lado a lado
+├── vulnerable/
+│   ├── Dockerfile
+│   ├── app.ts                     # app Express mínima, vulnerável
+│   ├── package.json
+│   └── tsconfig.json
+├── fixed/
+│   ├── Dockerfile
+│   ├── app.ts                     # mesma app, fix aplicado
+│   ├── package.json
+│   └── tsconfig.json
+├── DIFF.md                        # inglês — diff comentado linha a linha
+├── DIFF.pt-BR.md                  # português — mesmo diff
+├── WALKTHROUGH.md                 # Burp/curl — API-only, sem browser track
+├── WALKTHROUGH.pt-BR.md           # português — mesmo walkthrough
+└── burp/                          # opcional: requests exportados do Burp
+    └── example-request.txt
+```
+
 ### Portas convencionadas
 
-Cada átomo recebe um número sequencial de implementação (ver `ROADMAP.md`):
+Cada átomo recebe um número sequencial de implementação **dentro da sua série** (ver o `ROADMAP.md` da série). Cada série tem um **range de portas dedicado**, pra web e API rodarem lado a lado sem colisão:
 
-- `vulnerable/` expõe em `127.0.0.1:80NN`
-- `fixed/` expõe em `127.0.0.1:81NN`
+- **Série web:** `vulnerable/` em `127.0.0.1:80NN`, `fixed/` em `127.0.0.1:81NN`.
+- **Série API:** `vulnerable/` em `127.0.0.1:82NN`, `fixed/` em `127.0.0.1:83NN`.
 
-Onde `NN` é o número do átomo na ordem de implementação (átomo 01 → 8001/8101, átomo 15 → 8015/8115).
+Onde `NN` é o número do átomo na ordem de implementação da **sua** série (web átomo 01 → 8001/8101; API átomo 01 → 8201/8301). Cada série conta do próprio 01 — não se renumera nada.
 
 ### Padrões didáticos do walkthrough
 
@@ -225,7 +274,7 @@ O walkthrough termina onde a falha foi mostrada e o fix explicado. Não inclua s
 
 **Defina todo termo técnico não-óbvio na primeira ocorrência.** O átomo é escrito pra quem ainda não conhece a vuln. Na primeira vez que uma sigla ou termo novo aparece, dê a expansão ali mesmo (ex.: "DTD (Document Type Definition)"). Termos de mercado que o pentester aprende em inglês seguem em inglês (payload, sink, source) — mas ganham definição na estreia quando não forem óbvios.
 
-**Situe a vuln na categoria OWASP Top 10 atual (2021), sem arqueologia.** Nomeie a categoria vigente (ex.: "A05 — Security Misconfiguration") quando ela ancora a lição. NÃO relate em que número a categoria caía em edições antigas ("era A4 em 2017" e afins) — é ruído histórico que não ajuda o aluno a explorar a falha.
+**Situe a vuln na Top 10 vigente da sua série, sem arqueologia.** Nomeie a categoria da edição atual do Top 10 da série quando ela ancora a lição — na série web, OWASP Top 10 2021, categorias A0X (ex.: "A05 — Security Misconfiguration"); na série API, OWASP API Security Top 10 2023, categorias APIX (ex.: "API8 — Security Misconfiguration"). NÃO relate em que número a categoria caía em edições antigas ("era A4 em 2017" e afins) — é ruído histórico que não ajuda o aluno a explorar a falha.
 
 **O título nomeia a classe da vulnerabilidade, não a tecnologia.** O H1 usa o nome canônico da *classe* (ex.: "Server-side template injection (SSTI)"), não o stack onde ela foi demonstrada ("...em Jinja2"). O motor/lib/framework é detalhe de implementação: aparece no corpo do walkthrough e do DIFF, onde o mecanismo é explicado — nunca no título. Razão: o título deve ser reconhecível e transferível para qualquer pentester procurando a classe, independente da stack. (O *slug* do átomo pode qualificar a variante/motor — `ssti-jinja` — como todo slug do repo: `sqli-union-basic`, `jwt-none-alg`.)
 
@@ -275,7 +324,7 @@ Para o "<Nome da vuln>" no link, use a forma apresentada pela própria PortSwigg
 
 ### IDs de átomo
 
-Formato: `<categoria>-<variante>-<qualificador>` (a pasta pai já diz o A0X, então o ID não repete).
+Formato: `<categoria>-<variante>-<qualificador>` (a pasta pai já diz o código de categoria — A0X na web, APIX na API —, então o ID não repete).
 
 Exemplos:
 - `sqli-union-basic` (dentro de `A03-injection/`)
@@ -339,7 +388,7 @@ Regras claras para evitar inconsistência:
 
 Toda app deste repositório é **intencionalmente vulnerável**. As regras abaixo são inegociáveis:
 
-1. **Bind em `127.0.0.1` por padrão** em todo `docker-compose.yml` e em todo `app.run()`.
+1. **Bind em `127.0.0.1` por padrão** em todo `docker-compose.yml` e no bind do servidor de cada app (Flask `app.run(...)`, Express `app.listen(...)`).
 2. **Banner de aviso** no topo de todo README e toda página HTML: `⚠️ Intentionally vulnerable. Run locally only. Never expose to the internet or a shared network.`
 3. **Sem credenciais reais.** Usuários fake, dados fake, chaves dummy óbvias (`secret = "changeme"`).
 4. **Sem código malicioso real.** Payloads de exploit são demonstrativos (alert, leitura de `/etc/passwd` dummy, etc.), nunca payloads destrutivos ou com C2.
@@ -351,9 +400,11 @@ Toda app deste repositório é **intencionalmente vulnerável**. As regras abaix
 
 ## 9. Roadmap e ordem de implementação
 
-O plano ordenado completo, com fases e checklist, vive no arquivo [`ROADMAP.md`](./ROADMAP.md).
+O plano ordenado completo da série web, com fases e checklist, vive no arquivo [`atoms/web/ROADMAP.md`](./atoms/web/ROADMAP.md).
 
 **Resumo:** ~38 átomos planejados, organizados em 7 fases de 5 átomos cada. A Fase 1 (MVP) cobre as 5 vulnerabilidades mais comuns do dia a dia de um pentester. Cada fase concluída é um marco publicável.
+
+O plano ordenado da série API vive em [`atoms/api/ROADMAP.md`](./atoms/api/ROADMAP.md).
 
 Esta seção do CLAUDE.md não é atualizada a cada átomo concluído — isso é papel do `ROADMAP.md`.
 
@@ -365,7 +416,7 @@ Esta seção do CLAUDE.md não é atualizada a cada átomo concluído — isso �
 
 - Seguir a estrutura de pastas definida na Seção 4.
 - Respeitar o template de átomo da Seção 5 (todos os arquivos obrigatórios).
-- Criar HTML mínimo conforme Seção 3.3 (≤40 linhas, banner, dica de Burp, sem frameworks).
+- Para átomos da série web: criar HTML mínimo conforme Seção 3.3 (≤40 linhas, banner, dica de Burp, sem frameworks).
 - Escrever código em inglês, docs na dupla PT+EN.
 - Bindar em `127.0.0.1` em todo compose.
 - Manter PT e EN das docs sincronizadas no mesmo commit.
@@ -386,7 +437,7 @@ Esta seção do CLAUDE.md não é atualizada a cada átomo concluído — isso �
 - Inventar variantes não listadas no roadmap sem discussão.
 - Traduzir termos técnicos no texto em português.
 - Adicionar dependência pesada (frameworks de front-end, ORMs, filas) a um átomo que não precisa.
-- Adicionar CSS elaborado, JS não essencial, ou qualquer framework de UI no HTML dos átomos.
+- Adicionar CSS elaborado, JS não essencial, ou qualquer framework de UI no HTML dos átomos da série web.
 - Tornar a UI o meio principal de exploração no walkthrough — a trilha principal é SEMPRE Burp.
 - Assumir que o exploit funciona. Todo átomo deve ser validado manualmente pelo mantenedor via Burp.
 
@@ -405,7 +456,7 @@ Antes de criar qualquer átomo, o Claude Code DEVE ler, nesta ordem:
 
 1. **Este `CLAUDE.md` na íntegra** — regras e convenções.
 2. **`ROADMAP.md`** — confirmar qual é o próximo átomo e suas dependências conceituais.
-3. **`atoms/A03-injection/sqli-union-basic/` — átomo de referência canônico.** Define o padrão real (não só o teórico) de:
+3. **`atoms/web/A03-injection/sqli-union-basic/` — átomo de referência canônico da série web.** (A série API tem o seu próprio átomo de referência de estilo — ver `atoms/api/ROADMAP.md`.) Define o padrão real (não só o teórico) de:
    - Estilo de código Flask + Jinja2 + SQLite
    - Tamanho e estrutura do `app.py` vulnerável e corrigido
    - Forma do `docker-compose.yml` e dos `Dockerfile`
@@ -443,7 +494,7 @@ Todo átomo passa por este checklist manual antes de ir pro `main`:
 
 ## 12. Release de fim de fase
 
-Cada fase concluída do `ROADMAP.md` (os 5 átomos `[x]` em `main`) vira uma release versionada. É trabalho de mantenedor, pós-merge — nenhum átomo individual corta release. O procedimento, em ordem:
+Cada fase concluída do `ROADMAP.md` (os átomos `[x]` da fase em `main`) vira uma release versionada. É trabalho de mantenedor, pós-merge — nenhum átomo individual corta release. O procedimento, em ordem:
 
 1. **Promover o CHANGELOG.** O bloco `## [Unreleased]` (que acumulou as linhas `### Added` dos átomos da fase) vira `## [X.Y.0] - <data>` (data real via `date +%Y-%m-%d`, nunca inventada). Acima das linhas `### Added` — que se movem inalteradas —, escrever um parágrafo-resumo da fase no estilo dos resumos anteriores: o arco da fase e o fio condutor dos átomos, fechando com a frase-padrão "Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR)." Recriar um `## [Unreleased]` vazio no topo.
 
@@ -489,7 +540,7 @@ Para manter o escopo saudável:
 
 Este arquivo evolui com o projeto. Toda mudança estrutural (novo padrão, nova convenção, nova regra) é refletida aqui no mesmo PR que a introduz. Se o Claude Code observa conflito entre o que está aqui e o que foi pedido na sessão, ele para e pergunta.
 
-**Última revisão:** 2026-08-14.
+**Última revisão:** 2026-09-17.
 **Responsável:** mantenedor (Jose Renato).
 
 ## Memória de projeto
