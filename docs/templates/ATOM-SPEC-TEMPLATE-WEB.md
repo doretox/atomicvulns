@@ -1,6 +1,6 @@
-# Template — Spec de Átomo
+# Template — Spec de Átomo (série web)
 
-> Use este template para especificar qualquer átomo além do 01. O átomo 01 (`sqli-union-basic`) já estabeleceu os padrões estruturais — aqui só capturamos as decisões *específicas* deste átomo.
+> Use este template para especificar qualquer átomo da **série web** (`atoms/web/`) — Python/Flask — além do 01. O átomo 01 (`sqli-union-basic`) já estabeleceu os padrões estruturais — aqui só capturamos as decisões *específicas* deste átomo. Para átomos da **série API** (TypeScript/Express), use o template irmão `ATOM-SPEC-TEMPLATE-API.md`.
 >
 > Preenchimento alvo: ~10 minutos. Se estiver levando mais que isso, provavelmente há complexidade escondida que vale discutir antes de implementar.
 
