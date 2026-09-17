@@ -375,17 +375,16 @@ app.listen(PORT, HOST);
 FROM node:24.21.0-slim
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --omit=dev
 COPY tsconfig.json .
 COPY app.ts .
-# Drop root: the node:* images ship a non-root `node` user. chown so it owns the
-# install + sources — tsx writes its transpile cache under /app at runtime.
-RUN chown -R node:node /app
-USER node
 # Bind 0.0.0.0 inside the container so Docker port-forwarding reaches Express;
 # host exposure stays restricted to 127.0.0.1 by docker-compose.yml.
 ENV HOST=0.0.0.0
 EXPOSE 3000
+# Drop root for runtime: node:* ships a non-root `node` user. node_modules stays
+# root-owned (read-only at runtime) -- tsx needs no write access there.
+USER node
 CMD ["npm", "start"]
 ```
 
@@ -403,10 +402,10 @@ services:
       - "127.0.0.1:8301:3000"
 ```
 
-- `package.json` de cada gêmeo tem `"type": "module"` e `"scripts": { "start": "tsx app.ts", "typecheck": "tsc --noEmit" }` (entrypoint `tsx` — roda TS direto, sem step de build; `typecheck` roda o `tsc` só pra conferir tipos). O `package-lock.json` é **gerado e commitado** por gêmeo; o Dockerfile usa **`npm ci`** (nunca `npm install`) — instala exatamente o lockfile, build reprodutível e auditável.
+- `package.json` de cada gêmeo tem `"type": "module"` e `"scripts": { "start": "tsx app.ts", "typecheck": "tsc --noEmit" }` (entrypoint `tsx` — roda TS direto, sem step de build). O `package-lock.json` é **gerado e commitado** por gêmeo; o Dockerfile usa **`npm ci --omit=dev`** (nunca `npm install`) — instala exatamente o lockfile, **só o runtime**. Consequência: a imagem contém **exatamente `express` + `tsx`** — o mesmo conjunto que o gate `npm audit --omit=dev` cobre. **Escopo da imagem = escopo do audit.**
 - **Sem `templates/`, sem `COPY templates`** (API-only). Sem `apt`, sem banco.
 - **Base image pinada exata:** `node:24.21.0-slim` (Node 24 LTS "Krypton", último patch, verificado no Docker Hub nesta fase). **Nunca** `latest`, **nunca** a tag móvel `node:24-slim`, **nunca** `node` cru.
-- **Roda como não-root:** `USER node` (usuário que a imagem `node:*` já traz) **após** o `npm ci`; um `chown -R node:node /app` garante que o `node` seja dono do install e das fontes (o `tsx` grava cache de transpile em `/app`). Não abre nada aqui (bind `127.0.0.1`, sem volume, sem escrita externa), mas é o Dockerfile que 20 átomos vão copiar. **Validado nesta fase:** build OK e o container sobe como `node` (`whoami` → `node`), `tsx` sem erro de permissão, endpoints respondendo.
+- **Roda como não-root, sem `chown`:** `USER node` (usuário que a imagem `node:*` já traz) **no fim** do Dockerfile. O `npm ci` roda como root e o `node_modules` fica **root-owned, read-only em runtime** — o `tsx` **não** escreve lá (confirmado: nenhum `node_modules/.cache` é criado), então não há erro de permissão e **nenhum `chown -R`** (aquela camada duplicada foi eliminada). Não abre nada aqui (bind `127.0.0.1`, sem volume, sem escrita externa), mas é o Dockerfile que ~20 átomos vão copiar. **Validado nesta fase:** build OK, container sobe como `node` (`whoami` → `node`), `tsx` sem erro de permissão, endpoints respondendo, e a imagem tem **só `express` + `tsx`** (sem `typescript`/`@types`).
 
 ---
 
@@ -427,9 +426,11 @@ services:
 ```
 
 - **Versões exatas** (sem `^`, `~` ou `x`), verificadas por `npm view` **nesta fase**: **express 5.2.1**, **tsx 4.23.13**, **typescript 7.0.2**, **@types/express 5.0.6**, **@types/node 24.13.5**. `crypto` é **nativo do Node** (`node:crypto`) — não é dependência npm.
-- **Classificação segue o RUNTIME, não o hábito.** `tsx` fica em **`dependencies`** — é o **entrypoint que executa** no container (`CMD` → `npm start` → `tsx app.ts`), logo runtime. `typescript` e os `@types/*` ficam em **`devDependencies`** (compilam/checam, não rodam). Isso **não é gosto**: o gate combinado é **`npm audit --omit=dev`**, que **ignora** devDeps — com o `tsx` (o que roda dentro do container) em devDeps, o audit passaria verde **sem nunca olhar o runtime**. Com `tsx` em `dependencies`, o `--omit=dev` cobre exatamente o que executa.
-- **`scripts` de cada gêmeo:** `"start": "tsx app.ts"` (runtime) e `"typecheck": "tsc --noEmit"` (gate de tipos — ver checklist).
-- **Pin exato travado no `package-lock.json`** (commitado por gêmeo); Dockerfile com `npm ci`. Updates são **manuais** (CLAUDE.md §8.7). **Nada** além disto (CLAUDE.md §3.6): sem ORM, sem body-parser externo (Express 5 tem `express.json()` embutido), sem lib de token (`randomBytes` nativo).
+- **Classificação segue o RUNTIME, não o hábito.** `tsx` fica em **`dependencies`** — é o **entrypoint que executa** no container (`CMD` → `npm start` → `tsx app.ts`), logo runtime. `typescript` e os `@types/*` ficam em **`devDependencies`** (compilam/checam, não rodam). Isso **não é gosto**: o gate combinado é **`npm audit --omit=dev`**, que **ignora** devDeps — com o `tsx` (o que roda dentro do container) em devDeps, o audit passaria verde **sem nunca olhar o runtime**. Com `tsx` em `dependencies`, o `--omit=dev` cobre exatamente o que executa. **E o Dockerfile fecha o círculo:** `npm ci --omit=dev` faz a **imagem** conter só `dependencies` (`express` + `tsx`) — então **escopo da imagem = escopo do audit = o que roda**. A classificação não é rótulo: ela define os três.
+- **`scripts` de cada gêmeo:** `"start": "tsx app.ts"` (runtime, roda na imagem) e `"typecheck": "tsc --noEmit"` (gate de tipos de **host/CI** — como a imagem usa `--omit=dev`, o `tsc` **não** existe dentro do container; o typecheck roda fora, com `npm ci` completo. Ver checklist).
+- **Pin exato travado no `package-lock.json`** (commitado por gêmeo); Dockerfile com `npm ci --omit=dev`. Updates são **manuais** (CLAUDE.md §8.7). **Nada** além disto (CLAUDE.md §3.6): sem ORM, sem body-parser externo (Express 5 tem `express.json()` embutido), sem lib de token (`randomBytes` nativo).
+
+**Por que TypeScript 7 é seguro aqui.** A 7.0 é **estável desde julho de 2026** e é um **port nativo (Go) fiel** — mesmo type-checking da linha 5.x, mesma semântica de flags. Ela saiu com uma ressalva pública: **sem API programática estável** (prometida pra 7.1), o que hoje impede `typescript-eslint` com regras type-aware, loaders de webpack e o tooling de Vue/Svelte/Astro/Angular de consumirem a 7. **Essa ressalva não alcança este átomo nem a série:** o único consumo de TypeScript aqui é **`tsc --noEmit` pela CLI** — sem lint type-aware, sem bundler, sem framework. Se um átomo futuro precisar de tooling que consome a API do compilador, o pin **se reabre naquele átomo**, não é lei eterna da série. (Mesma lógica que justificou Express 5: não nascer legado, mas com o motivo **escrito** em vez de subentendido.)
 
 ---
 
@@ -523,8 +524,8 @@ Formato exato PT:
 12. **Portas:** `8201` (vulnerable) / `8301` (fixed); porta interna `3000` coerente entre `EXPOSE`, `app.listen` e o mapeamento do compose.
 13. **Docs EN+PT sincronizadas** no mesmo commit; **nenhum header de seção PT byte-idêntico ao par EN** (exceto o h1 do README); banner de aviso em todo README.
 14. **Theory primer:** re-confirmar as duas URLs por fetch na geração (podem mudar); confirmar os números de seção do RFC 9110 antes de cravar no DIFF.
-15. **`npm audit --omit=dev` em cada gêmeo** (vulnerable e fixed), com **registro dos advisories esperados**. O átomo é intencionalmente vulnerável na **LÓGICA** (object-level authorization ausente), **não nas dependências** — deixar essa distinção escrita pra ninguém confundir a lição com débito de dependência. Meta: **zero** advisory de runtime (`--omit=dev` ignora devDeps, e o `tsx` — runtime — está em `dependencies`, então é coberto); se algum aparecer, documentar por que é aceitável ou atualizar a lib (updates manuais, CLAUDE.md §8.7).
-16. **`npm run typecheck` (`tsc --noEmit`, typescript 7.0.2) passa nos DOIS gêmeos, sem erro** — inclusive o `vulnerable/`, que é vulnerável na **lógica**, não no **tipo**. Validado nesta fase contra os samples: `tsc --noEmit` sai limpo (exit 0) nos dois; `noUncheckedIndexedAccess` força a guarda `!order` (sem ela, `order.owner` → `TS18048`).
+15. **`npm audit --omit=dev` em cada gêmeo** (vulnerable e fixed), com **registro dos advisories esperados**. O átomo é intencionalmente vulnerável na **LÓGICA** (object-level authorization ausente), **não nas dependências** — deixar essa distinção escrita pra ninguém confundir a lição com débito de dependência. `--omit=dev` audita `dependencies` (`express` + `tsx`) — **exatamente o que a imagem `npm ci --omit=dev` instala e roda**. Meta: **zero** advisory de runtime; se algum aparecer, documentar por que é aceitável ou atualizar a lib (updates manuais, CLAUDE.md §8.7).
+16. **`npm run typecheck` (`tsc --noEmit`, typescript 7.0.2) passa nos DOIS gêmeos, sem erro** — inclusive o `vulnerable/`, que é vulnerável na **lógica**, não no **tipo**. É gate de **host/CI, NÃO do container**: a imagem usa `--omit=dev` e **não tem** o `tsc` — rode fora do container, com `npm ci` completo (com devDeps), aí `npm run typecheck`. Validado nesta fase contra os samples: `tsc --noEmit` limpo (exit 0) nos dois; `noUncheckedIndexedAccess` força a guarda `!order` (sem ela, `order.owner` → `TS18048`).
 
 **Bloqueante remanescente:** nenhum. Design fechado pelo mantenedor; as duas URLs do primer verificadas nesta fase. Resto é validação na geração.
 
