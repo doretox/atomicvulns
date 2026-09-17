@@ -1,6 +1,6 @@
 # Template — Spec de Átomo (série API)
 
-> Use este template para especificar qualquer átomo da **série API** (`atoms/api/`) — TypeScript / Express / `tsx`, containerizado, **API-only por natureza**. Para átomos da série web (Python/Flask), use o template irmão [`ATOM-SPEC-TEMPLATE.md`](./ATOM-SPEC-TEMPLATE.md).
+> Use este template para especificar qualquer átomo da **série API** (`atoms/api/`) — TypeScript / Express / `tsx`, containerizado, **API-only por natureza**. Para átomos da série web (Python/Flask), use o template irmão [`ATOM-SPEC-TEMPLATE-WEB.md`](./ATOM-SPEC-TEMPLATE-WEB.md).
 >
 > O átomo 01 da série API (`bola-sequential-id`) é o **átomo-bandeira** e a **referência de estilo TS/Express**: uma vez implementado, ele estabelece os padrões estruturais (forma do `app.ts`, do `package.json`/`tsconfig.json`, do `Dockerfile`, do WALKTHROUGH/DIFF/README) que os demais só *ajustam*. Enquanto ele não existe, o formato segue este template + `CLAUDE.md` §3 (a stack é lei da série).
 >
