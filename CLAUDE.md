@@ -111,6 +111,8 @@ Vale igual para as duas séries — o mecanismo de container é agnóstico de st
 
 Cada átomo deve rodar com o menor conjunto de dependências possível. Se o átomo é de SSRF, não precisa ter ORM. Se é de SQLi, não precisa ter Celery. **Regra: só inclua a lib se ela serve à demonstração da falha ou ao fix.**
 
+**Herança de toolchain na série API.** Um átomo novo da série API herda a imagem base e as versões de dependência do átomo de referência da série (§10.5) — a fonte da verdade é executável: leia o `package.json` e o `Dockerfile` dele, não uma tabela nesta doc. Versão sempre **exata** (nunca `^`, `~`, `x`; nunca `latest` em tag de imagem). Subir toolchain é decisão de **corte de release**, coordenada na série inteira — não se sobe versão no meio de um átomo. Se um átomo precisar divergir do toolchain de referência, a divergência e o motivo ficam registrados **na spec daquele átomo**, não aqui.
+
 ---
 
 ## 4. Estrutura do repositório
@@ -275,6 +277,8 @@ Esse passo de contraste é obrigatório em todo átomo onde o exploit possa ser 
 O walkthrough termina onde a falha foi mostrada e o fix explicado. Não inclua seção de exercícios ou variações adicionais — esse papel cabe à PortSwigger Web Security Academy (referenciada no Theory primer e na seção "Recommended approach" dos READMEs raiz).
 
 **Abertura direta, sem encenação.** O WALKTHROUGH entra direto na mecânica da vulnerabilidade — a primeira frase situa a feature e a falha, não um personagem. Nada de preâmbulo de encenação ("você é o pentester, trabalhando sozinho" e afins): o aluno já sabe que é ele operando.
+
+**Elenco consistente na série API.** A série API reusa o mesmo elenco entre átomos, pra o aluno não reaprender personagem a cada lab: `dana` é a atacante / o usuário que você controla, e `alice` é a vítima principal; vítimas adicionais entram conforme o átomo precisar. `dana` é **feminino** — nos docs PT a concordância referente a ela é feminina (`a atacante`, `você mesma`, `dela`); o masculino genérico (`o dono`, `o usuário`) continua certo quando descreve o **papel**, não a pessoa.
 
 **Defina todo termo técnico não-óbvio na primeira ocorrência.** O átomo é escrito pra quem ainda não conhece a vuln. Na primeira vez que uma sigla ou termo novo aparece, dê a expansão ali mesmo (ex.: "DTD (Document Type Definition)"). Termos de mercado que o pentester aprende em inglês seguem em inglês (payload, sink, source) — mas ganham definição na estreia quando não forem óbvios.
 
@@ -460,7 +464,7 @@ Antes de criar qualquer átomo, o Claude Code DEVE ler, nesta ordem:
 
 1. **Este `CLAUDE.md` na íntegra** — regras e convenções.
 2. **`ROADMAP.md`** — confirmar qual é o próximo átomo e suas dependências conceituais.
-3. **`atoms/web/A03-injection/sqli-union-basic/` — átomo de referência canônico da série web.** (A série API tem o seu próprio átomo de referência de estilo — ver `atoms/api/ROADMAP.md`.) Define o padrão real (não só o teórico) de:
+3. **`atoms/web/A03-injection/sqli-union-basic/` — átomo de referência canônico da série web.** (A série API tem o seu próprio átomo de referência de estilo: `atoms/api/API1-broken-object-level-authz/bola-sequential-id/`.) Define o padrão real (não só o teórico) de:
    - Estilo de código Flask + Jinja2 + SQLite
    - Tamanho e estrutura do `app.py` vulnerável e corrigido
    - Forma do `docker-compose.yml` e dos `Dockerfile`
