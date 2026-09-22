@@ -56,8 +56,10 @@ acessa (BOLA) e qual função se invoca (BFLA).
   - *Dependências:* nenhuma. Portas 8201/8301.
 
 - [ ] **02.** `bola-uuid-leaked` — **API1** Broken Object Level Authorization
-  - ID não-adivinhável (UUID) que vaza por outro endpoint. Isola a causa:
-    BOLA é check ausente, não ID adivinhável.
+  - UUID v4 não-adivinhável; a app não vaza ID nenhum — "leaked" = o ID chegou
+    ao atacante por um canal de FORA (suporte, print, link compartilhado), não
+    por um endpoint (isso seria um segundo bug). Um bug só: o check de posse
+    ausente. Isola a causa: BOLA é check ausente, não ID adivinhável.
   - *Dependências:* átomo 01.
 
 - [ ] **03.** `bola-nested-resource` — **API1** Broken Object Level Authorization
