@@ -4,7 +4,7 @@
 
 Uma pequena **API de pedidos** de e-commerce serve um pedido via `GET /orders/:id`, autenticando o caller com um Bearer token mas nunca checando de quem é o pedido. Isso é **BOLA (Broken Object Level Authorization)** — o risco #1 do OWASP API Security Top 10 (**API1:2023**), e a cara de API do IDOR (insecure direct object reference): o mesmo bug de check ausente dos átomos web `idor-numeric-id` e `bola-rest`, agora em TypeScript/Express à escala de uma coleção de verdade.
 
-Cada pedido carrega o nome do cliente, o endereço de entrega, o item e o valor. Você é o `dana`, e é dono de exatamente um pedido. No fim, você terá lido o dado pessoal dos onze pedidos que não são seus, usando o seu próprio token válido e trocando nada além do id.
+Cada pedido carrega o nome do cliente, o endereço de entrega, o item e o valor. Você é a `dana`, e é dona de exatamente um pedido. No fim, você terá lido o dado pessoal dos onze pedidos que não são seus, usando o seu próprio token válido e trocando nada além do id.
 
 Este é uma **API — não há trilha browser.** Todo request abaixo é um bloco que você cola no **Burp Repeater** (que reenvia um request único pra você editar e observar) ou, mais adiante, dirige do **Burp Intruder** (que repete um request sobre uma lista de valores). Se você ainda não configurou o Burp, os mesmos requests rodam no `curl`. É esse o ferramental inteiro.
 
@@ -40,7 +40,7 @@ Duas coisas pra ter em mente antes de começar:
 - **A autenticação é genuinamente imposta.** Token ausente ou inválido leva `401`. Você confirma isso no Passo 2.
 - **Se essa identidade autenticada é usada pra *autorizar* um objeto específico é outra pergunta** — e a `/orders/:id` vulnerable não usa. Esse gap é o bug.
 
-Uma disciplina pro walkthrough inteiro: **o ataque nunca toca o token.** Você não o decodifica, não o altera, não o forja — você faz login como você mesmo e manda o token exatamente como emitido. Ele fica válido e seu do começo ao fim. O alvo é o endpoint, não o token.
+Uma disciplina pro walkthrough inteiro: **o ataque nunca toca o token.** Você não o decodifica, não o altera, não o forja — você faz login como você mesma e manda o token exatamente como emitido. Ele fica válido e seu do começo ao fim. O alvo é o endpoint, não o token.
 
 ## 4. Baseline — capture o seu token e veja o escopo correto
 
@@ -48,7 +48,7 @@ Aponte o Burp pra API vulnerable em `127.0.0.1:8201` e trabalhe do Repeater.
 
 > **Os tokens abaixo são de uma sessão real.** O `POST /login` gera um token aleatório novo a cada vez, então **o seu vai diferir** — copie o seu de cada response de login e use no header `Authorization`. Os ids são estáveis (seedados), e a cadeia é idêntica de qualquer jeito.
 
-Faça login como você mesmo, `dana`:
+Faça login como você mesma, `dana`:
 
 ```
 POST /login HTTP/1.1
@@ -139,7 +139,7 @@ Response — **`401`**. A autenticação funciona: sem identidade, nada sai. (Co
 
 **(c) O mesmo token não recebe escopo nenhum na rota de detalhe.** Mande `GET /orders/1001` com esse mesmo `<dana-token>` — `200`, o pedido da alice, exatamente como no Passo 1.
 
-Ponha (b) e (c) lado a lado: **o mesmo token dá escopo correto num handler e escopo nenhum no outro.** Então isso não é identidade quebrada nem impersonation — você esteve autenticado como `dana` o tempo todo, e o endpoint de listagem te escopou certo. É um check que *existe* no `GET /orders` e *falta* no `GET /orders/:id`. A causa é a object-level authorization ausente na rota de detalhe — não o token, não a sua identidade, não o formato do id. (Um id não-adivinhável só tornaria a descoberta mais cara; não colocaria o check de volta.)
+Ponha (b) e (c) lado a lado: **o mesmo token dá escopo correto num handler e escopo nenhum no outro.** Então isso não é identidade quebrada nem impersonation — você esteve autenticada como `dana` o tempo todo, e o endpoint de listagem te escopou certo. É um check que *existe* no `GET /orders` e *falta* no `GET /orders/:id`. A causa é a object-level authorization ausente na rota de detalhe — não o token, não a sua identidade, não o formato do id. (Um id não-adivinhável só tornaria a descoberta mais cara; não colocaria o check de volta.)
 
 Contraste com o átomo web `idor-numeric-id`, onde o endpoint ignorava a identidade asserida do caller por completo — não havia autenticação real ali. Aqui o endpoint *autentica*, resolvendo uma identidade genuína, e depois a joga fora na hora de autorizar. Essa é a forma mais comum e realista, e a distinção auth-versus-authz só fica assim de nítida *porque* a autenticação embaixo é real.
 

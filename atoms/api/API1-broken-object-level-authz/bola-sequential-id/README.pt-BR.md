@@ -2,7 +2,7 @@
 
 > ⚠️ Intentionally vulnerable. Run locally only. Never expose to the internet or a shared network.
 
-Uma API REST mínima em TypeScript/Express para BOLA (Broken Object Level Authorization) — o nome que a área de API security dá a um IDOR (insecure direct object reference) que vive num endpoint REST, e o [API1:2023](https://api-security.owasp.org/editions/2023/en/0xa1-broken-object-level-authorization), o risco #1 do OWASP API Security Top 10. A API serve registros de pedido via `GET /orders/:id`. Todo request carrega um Bearer token opaco, e o endpoint até autentica ele — token inválido leva `401` — mas nunca checa se o pedido pedido pertence ao caller. Doze pedidos ficam atrás dos ids contíguos `1001`–`1012` e você é dono de exatamente um deles, então trocar o id no path te entrega o de outra pessoa: o nome dela, o endereço de entrega, o que ela comprou e quanto pagou.
+Uma API REST mínima em TypeScript/Express para BOLA (Broken Object Level Authorization) — o nome que a área de API security dá a um IDOR (insecure direct object reference) que vive num endpoint REST, e o [API1:2023](https://api-security.owasp.org/editions/2023/en/0xa1-broken-object-level-authorization), o risco #1 do OWASP API Security Top 10. A API serve registros de pedido via `GET /orders/:id`. Todo request carrega um Bearer token opaco, e o endpoint até autentica ele — token inválido leva `401` — mas nunca checa se o pedido pedido pertence ao caller. Doze pedidos ficam atrás dos ids contíguos `1001`–`1012` e você é dona de exatamente um deles, então trocar o id no path te entrega o de outra pessoa: o nome dela, o endereço de entrega, o que ela comprou e quanto pagou.
 
 A lição é que **estar autenticado não é estar autorizado**. Um token válido prova *quem você é*; não diz nada sobre se *este* objeto é seu. Duas coisas distintas fazem a leitura acontecer, e mantê-las separadas é o ponto do átomo: o **id sequencial** é o que torna a descoberta barata — sabendo um id, você deduz os vizinhos — enquanto o **ownership check ausente** é o que faz o request ter sucesso. Só o segundo é a vulnerabilidade, e o fix mexe só no segundo: os ids continuam exatamente tão sequenciais e tão públicos quanto antes. O átomo web `bola-rest` já fez o argumento central desta classe em Flask; este aqui a escala — quatro usuários, doze pedidos carregando dado pessoal, e uma enumeração que varre a coleção inteira numa passada.
 
@@ -27,7 +27,7 @@ O que o atalho *não* faz é enfraquecer a autenticação. A autenticação aqui
 
 Quatro usuários no seed:
 
-- `dana` — o atacante (você). Dono de exatamente **um** pedido, o `1007`.
+- `dana` — a atacante (você). Dona de exatamente **um** pedido, o `1007`.
 - `alice`, `bob`, `carol` — as vítimas. Dividem os outros **onze** pedidos de forma desigual: seis, três e dois.
 
 ## Como rodar

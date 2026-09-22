@@ -53,7 +53,7 @@ O `GET /orders` é *idêntico* nas duas versões, e nas duas ele filtra certo: `
 
 ## O token é opaco, e o ataque nunca o toca
 
-O Bearer token é uma string opaca aleatória (`randomBytes(24).toString("base64url")`) resolvida server-side pelo mapa `TOKENS` — um substituto pra um OAuth2 opaque access token ou uma session id, não um JWT. Nada no ataque inspeciona, decodifica, adultera ou forja ele; o `dana` faz login como ele mesmo e manda o próprio token, inalterado, o tempo todo. É esse o ponto de um token opaco cripto-forte aqui: ele é sólido e legitimamente dele, então a única coisa que sobra pra explicar a leitura cross-user é a autorização ausente. Um token fraco ou forjável seria uma *segunda* vulnerabilidade (broken authentication); mantê-lo forte prende este átomo a exatamente um bug. O token não é a vulnerabilidade; o endpoint é.
+O Bearer token é uma string opaca aleatória (`randomBytes(24).toString("base64url")`) resolvida server-side pelo mapa `TOKENS` — um substituto pra um OAuth2 opaque access token ou uma session id, não um JWT. Nada no ataque inspeciona, decodifica, adultera ou forja ele; a `dana` faz login como ela mesma e manda o próprio token, inalterado, o tempo todo. É esse o ponto de um token opaco cripto-forte aqui: ele é sólido e legitimamente dela, então a única coisa que sobra pra explicar a leitura cross-user é a autorização ausente. Um token fraco ou forjável seria uma *segunda* vulnerabilidade (broken authentication); mantê-lo forte prende este átomo a exatamente um bug. O token não é a vulnerabilidade; o endpoint é.
 
 ## Isto é BOLA — IDOR numa API, e mora no app.ts
 
