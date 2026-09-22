@@ -7,7 +7,7 @@
 [![Release](https://img.shields.io/github/v/release/doretox/atomicvulns)](https://github.com/doretox/atomicvulns/releases/latest)
 ![Web atoms](https://img.shields.io/badge/web%20atoms-38-blue)
 ![OWASP Top 10](https://img.shields.io/badge/OWASP-Top%2010%202021-red)
-![OWASP API Top 10](https://img.shields.io/badge/OWASP%20API-2023%20planned-lightgrey)
+![OWASP API Top 10](https://img.shields.io/badge/OWASP%20API-2023%20in%20progress-orange)
 ![web stack](https://img.shields.io/badge/web-Python%203.11%2B%2FFlask-blue)
 ![api stack](https://img.shields.io/badge/api-TypeScript%2FExpress-blue)
 
@@ -40,7 +40,7 @@ A **série web** (Python/Flask) cobre todas as dez categorias do OWASP Top 10 20
 | **A09 — Security Logging and Monitoring Failures** | `logging-failures-demo` |
 | **A10 — Server-Side Request Forgery (SSRF)** | `ssrf-basic`, `ssrf-blind-oob`, `ssrf-cloud-metadata` |
 
-A **série API** (TypeScript/Express) está planejada sobre o OWASP API Security Top 10 2023 — nenhum átomo publicado ainda; ver o [ROADMAP](./atoms/api/ROADMAP.md).
+A **série API** (TypeScript/Express) mira o OWASP API Security Top 10 2023 e está em andamento: seu primeiro átomo — [`bola-sequential-id`](./atoms/api/API1-broken-object-level-authz/bola-sequential-id/) (API1 — Broken Object Level Authorization) — está publicado, e o plano ordenado completo vive no seu [ROADMAP](./atoms/api/ROADMAP.md).
 
 ## Público-alvo
 
@@ -48,7 +48,7 @@ Estudantes de pentest e de AppSec que já sabem o básico de HTTP e terminal, us
 
 ## Rodando um átomo
 
-Cada átomo vive em sua própria pasta sob `atoms/web/A0X-<categoria>/<atom-id>/` e vem com um `docker-compose.yml`. Um script wrapper na raiz, `./atom`, dirige os átomos:
+Cada átomo vive em sua própria pasta — `atoms/web/A0X-<categoria>/<atom-id>/` na série web, `atoms/api/APIX-<categoria>/<atom-id>/` na série API — e vem com um `docker-compose.yml`. Um script wrapper na raiz, `./atom`, dirige os átomos:
 
 ```bash
 ./atom list                 # lista todos os átomos disponíveis
@@ -57,12 +57,16 @@ Cada átomo vive em sua própria pasta sob `atoms/web/A0X-<categoria>/<atom-id>/
 ./atom doctor               # checagem básica do ambiente local
 ```
 
-Por exemplo, para subir o primeiro átomo:
+Por exemplo:
 
 ```bash
-./atom up sqli-union-basic
+./atom up sqli-union-basic     # série web
 # vulnerable → http://127.0.0.1:8001
 # fixed      → http://127.0.0.1:8101
+
+./atom up bola-sequential-id   # série API
+# vulnerable → http://127.0.0.1:8201
+# fixed      → http://127.0.0.1:8301
 ```
 
 Todo átomo faz bind apenas em `127.0.0.1`. **Nunca** altere isso — essas apps são intencionalmente quebradas.

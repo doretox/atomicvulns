@@ -7,7 +7,7 @@
 [![Release](https://img.shields.io/github/v/release/doretox/atomicvulns)](https://github.com/doretox/atomicvulns/releases/latest)
 ![Web atoms](https://img.shields.io/badge/web%20atoms-38-blue)
 ![OWASP Top 10](https://img.shields.io/badge/OWASP-Top%2010%202021-red)
-![OWASP API Top 10](https://img.shields.io/badge/OWASP%20API-2023%20planned-lightgrey)
+![OWASP API Top 10](https://img.shields.io/badge/OWASP%20API-2023%20in%20progress-orange)
 ![web stack](https://img.shields.io/badge/web-Python%203.11%2B%2FFlask-blue)
 ![api stack](https://img.shields.io/badge/api-TypeScript%2FExpress-blue)
 
@@ -40,7 +40,7 @@ The **web series** (Python/Flask) covers all ten OWASP Top 10 2021 categories �
 | **A09 — Security Logging and Monitoring Failures** | `logging-failures-demo` |
 | **A10 — Server-Side Request Forgery (SSRF)** | `ssrf-basic`, `ssrf-blind-oob`, `ssrf-cloud-metadata` |
 
-The **API series** (TypeScript/Express) is planned against the OWASP API Security Top 10 2023 — no atoms are published yet; see its [ROADMAP](./atoms/api/ROADMAP.md).
+The **API series** (TypeScript/Express) targets the OWASP API Security Top 10 2023 and is in progress: its first atom — [`bola-sequential-id`](./atoms/api/API1-broken-object-level-authz/bola-sequential-id/) (API1 — Broken Object Level Authorization) — is published, and the full ordered plan lives in its [ROADMAP](./atoms/api/ROADMAP.md).
 
 ## Target audience
 
@@ -48,7 +48,7 @@ Pentest students and AppSec learners who already know the basics of HTTP and the
 
 ## Running an atom
 
-Each atom lives in its own folder under `atoms/web/A0X-<category>/<atom-id>/` and ships with a `docker-compose.yml`. A root wrapper script, `./atom`, drives them:
+Each atom lives in its own folder — `atoms/web/A0X-<category>/<atom-id>/` for the web series, `atoms/api/APIX-<category>/<atom-id>/` for the API series — and ships with a `docker-compose.yml`. A root wrapper script, `./atom`, drives them:
 
 ```bash
 ./atom list                 # show all available atoms
@@ -57,12 +57,16 @@ Each atom lives in its own folder under `atoms/web/A0X-<category>/<atom-id>/` an
 ./atom doctor               # sanity-check your local setup
 ```
 
-For example, to start the first atom:
+For example:
 
 ```bash
-./atom up sqli-union-basic
+./atom up sqli-union-basic     # web series
 # vulnerable → http://127.0.0.1:8001
 # fixed      → http://127.0.0.1:8101
+
+./atom up bola-sequential-id   # API series
+# vulnerable → http://127.0.0.1:8201
+# fixed      → http://127.0.0.1:8301
 ```
 
 Every atom binds to `127.0.0.1` only. **Never** change that — these apps are intentionally broken.
