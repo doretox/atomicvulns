@@ -50,7 +50,7 @@ acessa (BOLA) e qual função se invoca (BFLA).
 
 **Milestone:** `v1.1 — API Object & Function Authz`
 
-- [ ] **01.** `bola-sequential-id` — **API1** Broken Object Level Authorization
+- [x] **01.** `bola-sequential-id` — **API1** Broken Object Level Authorization
   - Átomo-bandeira e átomo de referência de estilo da série (primeiro TS).
     Exploit base: trocar o ID de objeto na request.
   - *Dependências:* nenhuma. Portas 8201/8301.
