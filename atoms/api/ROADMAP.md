@@ -174,18 +174,20 @@ Fecha o Top 10 de API.
 
 ## Cobertura
 
+Esta tabela é a **referência canônica das categorias da série**: o link oficial de cada categoria da OWASP API Security Top 10 (2023) vive aqui, e os átomos citam a categoria em texto simples (`APIX:2023`) sem repetir estes links.
+
 | Categoria | Átomos |
 |---|---|
-| API1 — Broken Object Level Authorization | `bola-sequential-id`, `bola-uuid-leaked`, `bola-nested-resource` |
-| API2 — Broken Authentication | `auth-predictable-token`, `auth-no-lockout`, `oauth-client-cred-unverified` |
-| API3 — Broken Object Property Level Authorization | `bopla-excessive-exposure`, `bopla-mass-assignment` |
-| API4 — Unrestricted Resource Consumption | `resource-unbounded-param`, `resource-no-rate-limit` |
-| API5 — Broken Function Level Authorization | `bfla-admin-function`, `bfla-method-based` |
-| API6 — Unrestricted Access to Sensitive Business Flows | `business-flow-scalping` |
-| API7 — Server-Side Request Forgery | `ssrf-url-param`, `ssrf-webhook` |
-| API8 — Security Misconfiguration | `misconfig-verbose-errors`, `misconfig-actuator-exposed`, `misconfig-permissive-cors` |
-| API9 — Improper Inventory Management | `inventory-shadow-version` |
-| API10 — Unsafe Consumption of APIs | `unsafe-consumption-upstream` |
+| [API1 — Broken Object Level Authorization](https://api-security.owasp.org/editions/2023/en/0xa1-broken-object-level-authorization/) | `bola-sequential-id`, `bola-uuid-leaked`, `bola-nested-resource` |
+| [API2 — Broken Authentication](https://api-security.owasp.org/editions/2023/en/0xa2-broken-authentication/) | `auth-predictable-token`, `auth-no-lockout`, `oauth-client-cred-unverified` |
+| [API3 — Broken Object Property Level Authorization](https://api-security.owasp.org/editions/2023/en/0xa3-broken-object-property-level-authorization/) | `bopla-excessive-exposure`, `bopla-mass-assignment` |
+| [API4 — Unrestricted Resource Consumption](https://api-security.owasp.org/editions/2023/en/0xa4-unrestricted-resource-consumption/) | `resource-unbounded-param`, `resource-no-rate-limit` |
+| [API5 — Broken Function Level Authorization](https://api-security.owasp.org/editions/2023/en/0xa5-broken-function-level-authorization/) | `bfla-admin-function`, `bfla-method-based` |
+| [API6 — Unrestricted Access to Sensitive Business Flows](https://api-security.owasp.org/editions/2023/en/0xa6-unrestricted-access-to-sensitive-business-flows/) | `business-flow-scalping` |
+| [API7 — Server-Side Request Forgery](https://api-security.owasp.org/editions/2023/en/0xa7-server-side-request-forgery/) | `ssrf-url-param`, `ssrf-webhook` |
+| [API8 — Security Misconfiguration](https://api-security.owasp.org/editions/2023/en/0xa8-security-misconfiguration/) | `misconfig-verbose-errors`, `misconfig-actuator-exposed`, `misconfig-permissive-cors` |
+| [API9 — Improper Inventory Management](https://api-security.owasp.org/editions/2023/en/0xa9-improper-inventory-management/) | `inventory-shadow-version` |
+| [API10 — Unsafe Consumption of APIs](https://api-security.owasp.org/editions/2023/en/0xaa-unsafe-consumption-of-apis/) | `unsafe-consumption-upstream` |
 
 ---
 
