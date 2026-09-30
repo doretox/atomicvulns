@@ -147,7 +147,7 @@ function operates(user: string, storeId: string): boolean {
 type Order = {
   id: number;
   storeId: string;    // the store this order belongs to -- the data needed to authorize is right here
-  customer: string;   // buyer's name on the order -- the PII (buyers never log in to this API)
+  customer: string;   // buyer's name on the order -- the PII
   address: string;    // delivery address -- obviously fake
   item: string;
   amount: string;
@@ -155,20 +155,21 @@ type Order = {
 
 // Order ids are ONE global counter shared by every store (1001..1012), so a store's own
 // ids have gaps -- the gaps are other stores' orders. Same twelve orders as the previous
-// atoms, redistributed across three stores: harbor 3, meadow 4, summit 5.
+// atoms (ids, items, amounts, addresses), redistributed across three stores: harbor 3,
+// meadow 4, summit 5. Buyer names are new: buyers are the public, operators are staff.
 const ORDERS: Record<number, Order> = {
-  1001: { id: 1001, storeId: "summit", customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Mechanical keyboard",     amount: "$89.00"  },
-  1002: { id: 1002, storeId: "meadow", customer: "Bob Carter",   address: "7 Sample St, Rivertown",      item: "Noise-cancelling headset", amount: "$199.00" },
-  1003: { id: 1003, storeId: "summit", customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "USB-C hub",                amount: "$42.50"  },
-  1004: { id: 1004, storeId: "harbor", customer: "Carol Dias",   address: "90 Placeholder Rd, Lakeside", item: "4K monitor",               amount: "$329.00" },
-  1005: { id: 1005, storeId: "summit", customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Laptop stand",             amount: "$55.00"  },
-  1006: { id: 1006, storeId: "meadow", customer: "Bob Carter",   address: "7 Sample St, Rivertown",      item: "Webcam",                   amount: "$75.00"  },
-  1007: { id: 1007, storeId: "meadow", customer: "Dana Lee",     address: "3 Testing Blvd, Faketon",     item: "Wireless mouse",           amount: "$29.90"  },
-  1008: { id: 1008, storeId: "harbor", customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Desk mat",                 amount: "$19.00"  },
-  1009: { id: 1009, storeId: "meadow", customer: "Carol Dias",   address: "90 Placeholder Rd, Lakeside", item: "Standing desk",            amount: "$589.00" },
-  1010: { id: 1010, storeId: "summit", customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Monitor arm",              amount: "$120.00" },
-  1011: { id: 1011, storeId: "harbor", customer: "Bob Carter",   address: "7 Sample St, Rivertown",      item: "HDMI cable",               amount: "$12.99"  },
-  1012: { id: 1012, storeId: "summit", customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Ergonomic chair",          amount: "$420.00" },
+  1001: { id: 1001, storeId: "summit", customer: "Priya Shah",  address: "12 Example Ave, Springfield", item: "Mechanical keyboard",     amount: "$89.00"  },
+  1002: { id: 1002, storeId: "meadow", customer: "Marcus Webb", address: "7 Sample St, Rivertown",      item: "Noise-cancelling headset", amount: "$199.00" },
+  1003: { id: 1003, storeId: "summit", customer: "Priya Shah",  address: "12 Example Ave, Springfield", item: "USB-C hub",                amount: "$42.50"  },
+  1004: { id: 1004, storeId: "harbor", customer: "Elena Ruiz",  address: "90 Placeholder Rd, Lakeside", item: "4K monitor",               amount: "$329.00" },
+  1005: { id: 1005, storeId: "summit", customer: "Priya Shah",  address: "12 Example Ave, Springfield", item: "Laptop stand",             amount: "$55.00"  },
+  1006: { id: 1006, storeId: "meadow", customer: "Marcus Webb", address: "7 Sample St, Rivertown",      item: "Webcam",                   amount: "$75.00"  },
+  1007: { id: 1007, storeId: "meadow", customer: "Theo Okafor", address: "3 Testing Blvd, Faketon",     item: "Wireless mouse",           amount: "$29.90"  },
+  1008: { id: 1008, storeId: "harbor", customer: "Priya Shah",  address: "12 Example Ave, Springfield", item: "Desk mat",                 amount: "$19.00"  },
+  1009: { id: 1009, storeId: "meadow", customer: "Elena Ruiz",  address: "90 Placeholder Rd, Lakeside", item: "Standing desk",            amount: "$589.00" },
+  1010: { id: 1010, storeId: "summit", customer: "Priya Shah",  address: "12 Example Ave, Springfield", item: "Monitor arm",              amount: "$120.00" },
+  1011: { id: 1011, storeId: "harbor", customer: "Marcus Webb", address: "7 Sample St, Rivertown",      item: "HDMI cable",               amount: "$12.99"  },
+  1012: { id: 1012, storeId: "summit", customer: "Priya Shah",  address: "12 Example Ave, Springfield", item: "Ergonomic chair",          amount: "$420.00" },
 };
 
 function ordersOf(storeId: string): Order[] {
@@ -180,11 +181,11 @@ function ordersOf(storeId: string): Order[] {
 
 | Loja | Operadores | Pedidos | Compradores (`customer`) |
 |---|---|---|---|
-| `harbor` | `dana` | `1004`, `1008`, `1011` (3) | Carol Dias, Alice Nguyen, Bob Carter |
-| `meadow` | `alice` | `1002`, `1006`, `1007`, `1009` (4) | Bob Carter ×2, Dana Lee, Carol Dias |
-| `summit` | `bob`, `carol` | `1001`, `1003`, `1005`, `1010`, `1012` (5) | Alice Nguyen ×5 |
+| `harbor` | `dana` | `1004`, `1008`, `1011` (3) | Elena Ruiz, Priya Shah, Marcus Webb |
+| `meadow` | `alice` | `1002`, `1006`, `1007`, `1009` (4) | Marcus Webb ×2, Theo Okafor, Elena Ruiz |
+| `summit` | `bob`, `carol` | `1001`, `1003`, `1005`, `1010`, `1012` (5) | Priya Shah ×5 |
 
-Total **12**, ids contíguos `1001–1012` num **contador global**. `id`, `customer`, `address`, `item` e `amount` de cada pedido são **idênticos** ao seed de 01 (conferido); só `owner` virou `storeId`.
+Total **12**, ids contíguos `1001–1012` num **contador global**. Os doze pedidos continuam os **mesmos objetos** do seed de 01 — mesmos `id`, `item`, `amount` e `address` (conferido). Mudaram só duas coisas: `owner` virou `storeId`, e o **nome do comprador** (`customer`) é novo, pelo motivo registrado em "Compradores não se chamam como operadores".
 
 **Pedidos em destaque no walkthrough:** `1011` (harbor — o pedido "da própria loja"), `1009` (meadow — o pedido alheio principal, Standing desk $589.00) e `1001` (summit — o segundo pedido alheio, Mechanical keyboard, o mesmo objeto que 01 e 02 liam).
 
@@ -193,18 +194,24 @@ Total **12**, ids contíguos `1001–1012` num **contador global**. `id`, `custo
 - **Três lojas, não duas.** O exploit precisa mostrar que o `orderId` não tem escopo **nenhum**: a `dana` lê pedidos da `meadow` **e** da `summit` pelo mesmo `/stores/harbor/...`. Com duas lojas o aluno pode inferir um vínculo entre a loja do path e a loja do pedido ("a outra loja") que não existe. Com três, fica claro que o `storeId` do path só decide se o check passa — não tem relação nenhuma com o pedido que volta.
 - **Contador global de ids.** É o traço realista (um `orders.id` autoincrement compartilhado pela plataforma) **e** o que torna a busca global natural: um id globalmente único é exatamente o que "permite" ao handler pular o pai. Também dá a descoberta sem adivinhação: a lista da `harbor` devolve `1004, 1008, 1011`, e as lacunas (`1009`, `1010`, …) são pedidos de outras lojas — o `1009` está literalmente entre dois ids da própria `dana`.
 - **Ids inteiros de 01, não UUIDs de 02.** O 02 já fechou que o formato do id não é a causa; este átomo não reabre esse eixo. Inteiros mantêm os paths de dois parâmetros legíveis.
-- **Regra de distribuição: nenhuma loja tem pedido cujo comprador tem o nome de um operador dela.** Evita a leitura "o operador está lendo a própria compra" — que é exatamente o reflexo usuário-como-dono de 01/02 que este átomo quer quebrar. Conferir na geração: `harbor` sem Dana Lee; `meadow` sem Alice Nguyen; `summit` sem Bob Carter nem Carol Dias.
-- **Espelhamento parcial, deliberado.** Os doze pedidos são os mesmos (itens, valores, nomes, endereços) para o aluno reconhecer o dado e perceber que **só a estrutura de autorização mudou**; a redistribuição é o que a nova entidade exige. Registrar no DIFF, em uma frase, que o espelhamento é parcial de propósito — diferente do 02, onde o espelhamento total era a prova.
+- **Espelhamento parcial, deliberado.** Os doze pedidos são os mesmos objetos — mesmos ids, itens, valores e endereços — para o aluno reconhecer o dado e perceber que **só a estrutura de autorização mudou**; a redistribuição é o que a nova entidade exige, e só o nome do comprador mudou (ver seção seguinte). Registrar no DIFF, em uma frase, que o espelhamento é parcial de propósito — diferente do 02, onde o espelhamento total era a prova.
 
-### `customer` é o comprador, não um login
+### Compradores não se chamam como operadores
 
-Os quatro nomes de comprador (Alice Nguyen, Bob Carter, Carol Dias, Dana Lee) são os mesmos quatro do seed herdado, e os logins são os mesmos quatro handles. **Neste átomo, compradores não fazem login** — todo login é um operador de loja — e **nenhuma decisão de autorização lê `customer`**. `customer`/`address` são só a PII que dói na screenshot. O README e o WALKTHROUGH (na primeira resposta que mostra um pedido) dizem isso em uma frase. Texto sugerido:
+No seed herdado, os quatro nomes de comprador coincidiam com os quatro handles de login — que, neste átomo, são **operadores**. A spec troca os quatro nomes de comprador por nomes sem sobreposição com operador nenhum. **Motivo (decisão do mantenedor):** este átomo depende de o aluno aceitar que **quem possui o pedido é a LOJA**. Um pedido comprado por alguém com o nome da atacante sussurraria um segundo eixo de posse (comprador → pedido) — exatamente o reflexo usuário-como-dono que o átomo existe pra quebrar. Em vez de administrar a colisão, apaga-se a causa: **compradores são o público; operadores são funcionários; zero sobreposição.**
 
-> **EN:** *`customer` is the buyer on the order — the same fake buyers as the previous atoms' seed. Buyers never log in to this API; every login is a store operator, and no authorization decision here reads `customer`.*
->
-> **PT:** *`customer` é o comprador do pedido — os mesmos compradores fake do seed dos átomos anteriores. Compradores nunca fazem login nesta API; todo login é um operador de loja, e nenhuma decisão de autorização aqui lê `customer`.*
+| Endereço (inalterado) | Comprador |
+|---|---|
+| `12 Example Ave, Springfield` | Priya Shah |
+| `7 Sample St, Rivertown` | Marcus Webb |
+| `90 Placeholder Rd, Lakeside` | Elena Ruiz |
+| `3 Testing Blvd, Faketon` | Theo Okafor |
 
-**Disciplina de redação (docs):** pedido se nomeia sempre por **loja + id** ("o pedido `1009` da `meadow`"), **nunca** por pessoa ("o pedido da alice"). A `alice` é vítima como **operadora da `meadow`**, não como compradora.
+- **Pareamento nome↔endereço preservado:** cada comprador novo herda o endereço fixo do comprador que substitui; ids, `storeId`, `item` e `amount` não mudam.
+- **Conferido nesta fase:** nenhum dos quatro nomes (nem prenome, nem sobrenome) aparece em outro arquivo do repo, e os operadores de toda a série API publicada são só `dana`, `alice`, `bob` e `carol`.
+- `customer`/`address` são só a PII que dói na screenshot; nenhuma decisão de autorização os lê. Sem colisão, **não há frase de desambiguação** de `customer` em README nem em WALKTHROUGH.
+
+**Disciplina de redação (docs):** pedido se nomeia sempre por **loja + id** ("o pedido `1009` da `meadow`"), **nunca** por pessoa. O motivo é **clareza com dois parâmetros no path**: o aluno precisa saber a todo momento qual loja e qual pedido estão em jogo, e "loja + id" é exatamente o par que o request carrega — casa com o requisito de rótulo do WALKTHROUGH.
 
 ---
 
@@ -319,7 +326,7 @@ O handler corrigido responde `403` quando a chamadora não opera a loja e `404` 
 - **Loja → `403`.** A existência de uma loja não é segredo: loja é estabelecimento, o slug é nome público (está no README). Esconder que a `meadow` existe não protege nada; `403` diz a verdade — "a loja existe e você não opera ela".
 - **Pedido → `404`.** A existência de um pedido **é** sensível: com um contador global, um `403`-vs-`404` para "existe em outra loja" vs "não existe" viraria um enumeration oracle (oráculo de enumeração) — varrendo ids pelo próprio path, a operadora mapearia quais pedidos existem nas outras lojas (volume de vendas, cadência). O `404` preserva a indistinguibilidade que 01 e 02 estabeleceram: no `fixed/`, "não é desta loja" e "não existe" são idênticos.
 
-**RESTRIÇÃO DE REDAÇÃO (DIFF):** os dois status se justificam **lado a lado, na mesma seção**, com o critério nomeado **uma vez** antes dos dois casos ("a existência do alvo é sensível?") e a conclusão explícita de que **o mesmo critério produz respostas diferentes porque os objetos são diferentes**. Proibido justificar o `403` numa seção e o `404` noutra; proibido apresentar um como "certo" e o outro como "concessão". O precedente do GitHub (repo privado → `404`) e a regra de bolso já estão no DIFF do `bola-sequential-id` — **referenciar**, não recontar.
+**RESTRIÇÃO DE REDAÇÃO (DIFF):** os dois status se justificam **lado a lado, na mesma seção**, com o critério nomeado **uma vez** antes dos dois casos ("a existência do alvo é sensível?") e a conclusão explícita de que **o mesmo critério produz respostas diferentes porque os objetos são diferentes**. Proibido justificar o `403` numa seção e o `404` noutra; proibido apresentar um como "certo" e o outro como "concessão". **Terceiro caso, na mesma seção: loja inexistente → `403`.** O DIFF explica que o check do pai pergunta **vínculo** ("você opera esta loja?"), não existência — e não-vínculo é verdadeiro tanto pra loja alheia quanto pra loja inexistente, por isso as duas recebem `403`. No filho a pergunta é sobre o objeto, e é aí que a existência entra e o `404` fecha o oráculo. O precedente do GitHub (repo privado → `404`) e a regra de bolso já estão no DIFF do `bola-sequential-id` — **referenciar**, não recontar.
 
 **Dois detalhes que sustentam o argumento (registrar no DIFF, curto):**
 
@@ -368,8 +375,8 @@ Token opaco via `POST /login`, sem senha (atalho), cripto-forte. Três camadas: 
 ### 4. Baseline — tokens, a própria loja, e o acesso autorizado
 
 - `POST /login` `{"user":"dana"}` → `<dana-token>`; `POST /login` `{"user":"alice"}` → `<alice-token>`.
-- `GET /stores/harbor/orders` com `<dana-token>` → `200`, **três** pedidos: `1004`, `1008`, `1011`. A API sabe que você opera a `harbor` e te escopa certo. *(Rótulo: loja `harbor`, sua.)* Aqui entra a frase do `customer` (comprador, não login).
-- `GET /stores/harbor/orders/1011` com `<dana-token>` → `200`, HDMI cable, comprador Bob Carter, `"storeId":"harbor"`. *(Rótulo: loja `harbor` (sua) · pedido `1011` (da `harbor`).)* Aqui entra a **frase obrigatória do compartilhamento**: o pedido foi comprado por outra pessoa e você o vê — porque é da sua loja. É a feature.
+- `GET /stores/harbor/orders` com `<dana-token>` → `200`, **três** pedidos: `1004`, `1008`, `1011`. A API sabe que você opera a `harbor` e te escopa certo. *(Rótulo: loja `harbor`, sua.)*
+- `GET /stores/harbor/orders/1011` com `<dana-token>` → `200`, HDMI cable, comprador Marcus Webb, `"storeId":"harbor"`. *(Rótulo: loja `harbor` (sua) · pedido `1011` (da `harbor`).)* Aqui entra a **frase obrigatória do compartilhamento**: o pedido foi comprado por outra pessoa e você o vê — porque é da sua loja. É a feature.
 - `GET /stores/meadow/orders/1009` com `<alice-token>` → `200`, Standing desk, `"storeId":"meadow"`. *(Rótulo: loja `meadow` (da alice) · pedido `1009` (da `meadow`).)* **É assim que o acesso autorizado ao `1009` se parece.** (No mundo real você não teria o token da alice; no lab você controla os dois logins só para ver o baseline.)
 
 ### 5. Step 1 — Read another store's order through your own store (BOLA confirmado)
@@ -566,7 +573,8 @@ Publicação verificada **lendo o `atoms/api/ROADMAP.md` e a árvore de `atoms/`
 | Pai | **Loja**, não usuário | Usuário-como-pai deixa "o pai é meu?" tautológico; pareceria o 01 com um parâmetro a mais. |
 | Topologia | **3 lojas**; `dana` opera só `harbor` | Com 2 lojas o aluno infere um vínculo inexistente entre path e pedido. |
 | Operadores | `harbor`: dana · `meadow`: alice · `summit`: bob + carol | alice = vítima principal (a loja do pedido em destaque); summit = exemplo de compartilhamento legítimo. |
-| Seed | **Os 12 pedidos de 01**, `owner` → `storeId`, redistribuídos 3/4/5 | Espelhamento parcial deliberado; nenhum pedido novo; regra "comprador ≠ operador da loja". |
+| Seed | **Os 12 pedidos de 01**, `owner` → `storeId`, redistribuídos 3/4/5 | Espelhamento parcial deliberado; nenhum pedido novo; mesmos ids, itens, valores e endereços. |
+| Compradores | **Quatro nomes novos** (Priya Shah, Marcus Webb, Elena Ruiz, Theo Okafor), endereços mantidos | Quem possui o pedido é a loja; comprador com nome de operador sussurraria um segundo eixo de posse. Zero sobreposição. |
 | Ids | Pedido: **inteiro global `1001–1012`**; loja: **slug** | Contador global torna a busca global natural e a descoberta trivial (lacunas); formatos distintos evitam confundir os dois parâmetros. |
 | Rotas | `POST /login`, `GET /stores/:storeId/orders` (correta nas 2), `GET /stores/:storeId/orders/:orderId` (vuln) | Superfície mínima; a lista prova que o escopo pelo pai era conhecido. |
 | Check do pai | **`operates(caller, storeId)` → `403`**, idêntico nas 2 | Genuíno e visível; a assinatura mostra que o pedido não é argumento. |
@@ -605,7 +613,7 @@ Publicação verificada **lendo o `atoms/api/ROADMAP.md` e a árvore de `atoms/`
 6. **Lista:** `GET /stores/harbor/orders` (dana) → exatamente `1004`, `1008`, `1011` nas duas versões.
 7. **Fixed:** `harbor/1009` e `harbor/1001` → `404` **byte-idênticos** ao de `harbor/1013`; `harbor/1011` → `200`; loja inexistente → `403`.
 8. **Diff entre gêmeos:** só o comentário + a linha da busca; `if (!order) return res.sendStatus(404);` e `res.json(order);` idênticos; `Dockerfile`, `package.json`, `package-lock.json`, `tsconfig.json` idênticos.
-9. **Seed:** 12 pedidos, dados de 01 intactos, split 3/4/5, regra comprador ≠ operador da loja.
+9. **Seed:** 12 pedidos, split 3/4/5; ids, itens, valores e endereços de 01 intactos; os quatro compradores novos, cada um com o seu endereço; nenhum nome de comprador coincide com operador.
 10. **Um bug só:** nenhum token em resposta; pedido serializado só com `id/storeId/customer/address/item/amount`; nenhuma rota extra.
 11. **API-only:** sem `templates/`, sem HTML; sucesso sempre JSON.
 12. **Bind/portas:** `127.0.0.1:8203`/`8303` → `3000`; `app.listen` default `127.0.0.1`; `ENV HOST=0.0.0.0` só no container.
@@ -614,7 +622,7 @@ Publicação verificada **lendo o `atoms/api/ROADMAP.md` e a árvore de `atoms/`
 15. **`npm run typecheck`** verde nos dois gêmeos (host/CI, não container).
 16. **Docs EN+PT sincronizados**; nenhum header PT byte-idêntico ao EN (exceto o h1 do README); banner em todo README; `dana` feminino no PT.
 17. **Rótulo loja/pedido em todo bloco** do WALKTHROUGH (EN e PT).
-18. **Frase do compartilhamento**, **frase do `customer`** e **conclusão do Step 2** presentes; **403 e 404 justificados lado a lado** no DIFF, com o critério nomeado uma vez.
+18. **Frase do compartilhamento** e **conclusão do Step 2** presentes; **403 (loja alheia e loja inexistente) e 404 justificados lado a lado** no DIFF, com o critério nomeado uma vez.
 19. **Frases-âncora** numa casa só; âncoras de 01/02 não reusadas.
 20. **Primer** re-verificado por fetch; **RFC 9110 §15.5.4/§15.5.5** citados como nesta spec; OWASP sem link.
 21. **Cross-ref:** nenhum átomo de API 04+; nenhuma afirmação sobre átomo web sem leitura do átomo; nenhuma afirmação de que o compilador força a guarda `!order`.
@@ -627,11 +635,11 @@ Publicação verificada **lendo o `atoms/api/ROADMAP.md` e a árvore de `atoms/`
 
 - **Princípio guia:** este átomo é sobre **qual pergunta** o check responde. Cada doc precisa deixar o check do pai **visível e respeitável** antes de mostrar o bug — se o aluno sair achando que "faltava autorização", o átomo falhou.
 - **A afirmação é o código.** O fix muda a busca; a guarda não muda. Se a geração improvisar outra forma (um `if (order.storeId !== storeId)` depois da busca, um `403` no filho), a tese do átomo cai. **PARE e pergunte.**
-- **Pedido se nomeia por loja + id**, nunca por pessoa. A `alice` é vítima como operadora da `meadow`.
+- **Pedido se nomeia por loja + id**, nunca por pessoa — clareza com dois parâmetros no path (é o par que o request carrega). A `alice` é vítima como operadora da `meadow`.
 - **Não reabrir o eixo do formato do id** (fechado pelo 02) nem o argumento completo do `404` (está no DIFF do 01 — referenciar).
 - **ROADMAP (`atoms/api/ROADMAP.md`):** marcar o átomo 03 como `[x]` só após geração + validação (proposta ao mantenedor, CLAUDE.md §10.4). **Divergência pendente:** a linha do átomo 03 ainda descreve `/users/{id}/orders/{oid}` (usuário como pai) — propor ao mantenedor a correção num commit próprio antes ou junto da geração.
 - **CHANGELOG.md (Fase 2):** linha em `[Unreleased] / Added` no padrão da série.
-- **Para o mantenedor revisar (decisões de detalhe desta spec):** (i) nomes de comprador = handles dos operadores (herança do seed) — tratado com a frase do `customer`, a regra de distribuição e a disciplina "loja + id"; (ii) slugs de loja `harbor`/`meadow`/`summit`; (iii) `bob` + `carol` como a loja com dois operadores; (iv) request 1 do contraste usando o mesmo pedido do request 3; (v) sem Intruder; (vi) loja inexistente → `403`.
+- **Para o mantenedor revisar (decisões de detalhe desta spec):** (i) os quatro nomes novos de comprador; (ii) slugs de loja `harbor`/`meadow`/`summit`; (iii) `bob` + `carol` como a loja com dois operadores; (iv) request 1 do contraste usando o mesmo pedido do request 3; (v) sem Intruder; (vi) loja inexistente → `403`.
 - **Validar manualmente na Fase 2** (CLAUDE.md §11): o checklist acima. Se as portas não forem alcançáveis do sandbox, validar via `docker exec`.
 
 ---
@@ -644,7 +652,7 @@ Publicação verificada **lendo o `atoms/api/ROADMAP.md` e a árvore de `atoms/`
 4. **`tsconfig.json`** — idêntico nos quatro (flags listadas em "Anatomia").
 5. **`docker-compose.yml`** — bind `127.0.0.1`, `8201/8301:3000` (01) e `8202/8302:3000` (02).
 6. **Bloco de auth** — linhas 1–23 dos `app.ts` de 01 e 02 byte-idênticas (`USERS`, `TOKENS`, `issueToken` com `randomBytes(24).toString("base64url")`, `authenticate`).
-7. **Seed** — doze pedidos `1001–1012`; `customer`/`address`/`item`/`amount` idênticos entre 01 e 02 (e reproduzidos acima).
+7. **Seed** — doze pedidos `1001–1012`; `customer`/`address`/`item`/`amount` idênticos entre 01 e 02. Nesta spec, ids, `address`, `item` e `amount` são reproduzidos; `customer` foi trocado de propósito (ver "Compradores não se chamam como operadores").
 8. **Handler vulnerável de 01/02** — só `authenticate()` + `404` de existência; **nenhum** check de autorização (omissão).
 9. **Fix de 01/02** — a mesma guarda byte a byte, `if (!order || order.owner !== caller) return res.sendStatus(404);`, com o comentário `FIXED:` — predicado acrescentado **depois** da busca.
 10. **Gêmeos de 01/02** — `app.ts` difere só nessa região; demais arquivos idênticos.
