@@ -210,7 +210,7 @@ Formato PT:
 > e por que importa.
 ```
 
-Referência suplementar (opcional, na descrição do README): a página oficial **APIX:2023** da OWASP API Security, quando ancora "onde a vuln cai no Top 10 de API". Também confirmar por fetch.
+**Referência da OWASP — NÃO vai inline.** O átomo cita a categoria em **texto simples** (`APIX:2023`), sem link; o link canônico de cada categoria da OWASP API Security Top 10 vive num lugar só — a tabela de "Cobertura" do [`atoms/api/ROADMAP.md`](../../atoms/api/ROADMAP.md). Motivo: um link externo replicado por átomo multiplica a manutenção a cada oscilação de infra do terceiro; um ponteiro para um índice pertence ao índice.
 
 ---
 
