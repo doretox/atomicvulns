@@ -55,7 +55,7 @@ acessa (BOLA) e qual função se invoca (BFLA).
     Exploit base: trocar o ID de objeto na request.
   - *Dependências:* nenhuma. Portas 8201/8301.
 
-- [ ] **02.** `bola-uuid-leaked` — **API1** Broken Object Level Authorization
+- [x] **02.** `bola-uuid-leaked` — **API1** Broken Object Level Authorization
   - UUID v4 não-adivinhável; a app não vaza ID nenhum — "leaked" = o ID chegou
     ao atacante por um canal de FORA (suporte, print, link compartilhado), não
     por um endpoint (isso seria um segundo bug). Um bug só: o check de posse
