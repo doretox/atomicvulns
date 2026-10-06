@@ -62,7 +62,7 @@ acessa (BOLA) e qual função se invoca (BFLA).
     ausente. Isola a causa: BOLA é check ausente, não ID adivinhável.
   - *Dependências:* átomo 01.
 
-- [ ] **03.** `bola-nested-resource` — **API1** Broken Object Level Authorization
+- [x] **03.** `bola-nested-resource` — **API1** Broken Object Level Authorization
   - Recurso aninhado (`/users/{id}/orders/{oid}`): check do objeto-pai passa,
     do objeto-filho falta.
   - *Dependências:* átomos 01–02.
