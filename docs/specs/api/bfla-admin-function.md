@@ -129,7 +129,8 @@ Restrição dura de design, idêntica em espírito à do átomo 02 (um bug só):
 // is_admin is the capability axis this atom is about. Promoting a user to admin is an
 // admin-only function. clancy (you) is a plain member; carol is the one seeded admin,
 // so the fixed build has a legitimate caller to show the function still works.
-// A Map (not a plain object) is deliberate -- see "Por que Map" below.
+// A Map, not a plain object: Map.get() never walks the prototype chain, so a :handle of
+// "__proto__" or "constructor" is just an unknown user -- never Object.prototype.
 type User = { is_admin: boolean };
 const USERS = new Map<string, User>([
   ["clancy", { is_admin: false }],   // attacker (you) -- a plain member
@@ -212,22 +213,22 @@ O gêmeo `fixed/` difere **APENAS por um check de papel acrescentado antes da ex
 ```ts
 app.post("/admin/users/:handle/promote", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);          // AUTHENTICATION
+  if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
   // FIXED: function-level authorization. Promoting is an admin-only capability, so the
   // caller's ROLE is checked BEFORE anything else happens -- a non-admin is refused 403
   // without the target ever being looked up, so the gate leaks nothing about who exists.
   if (!USERS.get(caller)?.is_admin) return res.sendStatus(403);
   const target = USERS.get(req.params.handle);
-  if (!target) return res.sendStatus(404);
-  target.is_admin = true;
-  res.json({ handle: req.params.handle, is_admin: true });
+  if (!target) return res.sendStatus(404);                  // unknown target user
+  target.is_admin = true;                                   // state change -- not a read
+  res.json({ handle: req.params.handle, is_admin: true });  // the state delta, not third-party data
 });
 ```
 
 Diff mínimo (o eixo único):
 
 ```diff
-   if (caller === null) return res.sendStatus(401);          // AUTHENTICATION
+   if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
 -  // VULNERABLE: the caller is authenticated, but the handler never checks the caller's
 -  // ROLE. Promoting a user to admin is an admin-only function; here ANY authenticated
 -  // user can invoke it. Authenticated is not authorized to PERFORM this operation.
@@ -236,7 +237,7 @@ Diff mínimo (o eixo único):
 +  // without the target ever being looked up, so the gate leaks nothing about who exists.
 +  if (!USERS.get(caller)?.is_admin) return res.sendStatus(403);
    const target = USERS.get(req.params.handle);
-   if (!target) return res.sendStatus(404);
+   if (!target) return res.sendStatus(404);                  // unknown target user
 ```
 
 **A leitura correta do fix (cravar no DIFF):** a operação passou a **perguntar pelo papel do chamador** — não pelo dono de um objeto. O predicado `USERS.get(caller)?.is_admin` pergunta *"quem chama é admin?"*, e **o alvo não é argumento dessa pergunta** (ela roda antes de o alvo ser buscado). É o inverso estrutural de 01/02, onde o fix acrescentava um predicado **sobre o objeto** (`order.owner !== caller`); aqui o predicado é **sobre o chamador** (`USERS.get(caller).is_admin`). A lição transferível: **autorização por função é uma pergunta sobre o papel de quem invoca, no mesmo nível que a autenticação — não um check opcional depois de a operação já estar em curso.**
