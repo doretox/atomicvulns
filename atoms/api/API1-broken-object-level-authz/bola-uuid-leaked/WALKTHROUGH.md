@@ -4,7 +4,7 @@
 
 A small e-commerce **orders API** serves one order through `GET /orders/:id`, authenticating the caller with a Bearer token but never checking whose order it is. That is **BOLA (Broken Object Level Authorization)** — the #1 risk in the OWASP API Security Top 10 (**API1:2023**), and the API-shaped face of IDOR (insecure direct object reference). Here the order id is a **UUID (Universally Unique Identifier) v4** — a 128-bit random value — not a small integer.
 
-The premise, in one sentence: **the UUID of one of alice's orders has reached you through a channel outside the app** — a support call, a screenshot, a shared link — the way ids circulate in the real world. The application leaks no id of its own; you simply *hold* one that isn't yours. You are `dana`, and you own exactly one order. By the end you will have read the personal data on an order you don't own, using your own valid token and a UUID you were handed.
+The premise, in one sentence: **the UUID of one of alice's orders has reached you through a channel outside the app** — a support call, a screenshot, a shared link — the way ids circulate in the real world. The application leaks no id of its own; you simply *hold* one that isn't yours. You are `clancy`, and you own exactly one order. By the end you will have read the personal data on an order you don't own, using your own valid token and a UUID you were handed.
 
 This is an **API — there is no browser track.** Every request below is a block you paste into **Burp Repeater** (which resends a single request so you can edit and observe it) or, later, drive from **Burp Intruder** (which replays one request across a list of values). If you haven't wired up Burp yet, the same requests run under `curl`. That is the whole toolset.
 
@@ -47,17 +47,17 @@ Point Burp at the vulnerable API on `127.0.0.1:8202` and work from Repeater.
 
 > **The token below is from one real session.** `POST /login` mints a fresh random token each time, so **yours will differ** — copy your own from each login response and use it in the `Authorization` header. The order UUIDs are stable (hardcoded in the seed), so those you can paste verbatim.
 
-Log in as yourself, `dana`:
+Log in as yourself, `clancy`:
 
 ```
 POST /login HTTP/1.1
 Host: 127.0.0.1:8202
 Content-Type: application/json
 
-{"user": "dana"}
+{"user": "clancy"}
 ```
 
-Response — `200`, a token that is yours for the rest of the session (shown as `<dana-token>` below):
+Response — `200`, a token that is yours for the rest of the session (shown as `<clancy-token>` below):
 
 ```json
 {"token": "owYzeYEn_oJ89HfQ0IRQy6tIrfxFOSXc"}
@@ -68,13 +68,13 @@ Now list your own orders with your token:
 ```
 GET /orders HTTP/1.1
 Host: 127.0.0.1:8202
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — `200`, and note it contains **only your one order**:
 
 ```json
-[{"id":"edec4558-0cf5-4462-aaba-308229ff6c4f","owner":"dana","customer":"Dana Lee","address":"3 Testing Blvd, Faketon","item":"Wireless mouse","amount":"$29.90"}]
+[{"id":"edec4558-0cf5-4462-aaba-308229ff6c4f","owner":"clancy","customer":"Omar Haddad","address":"3 Testing Blvd, Faketon","item":"Wireless mouse","amount":"$29.90"}]
 ```
 
 That single item is the proof the API **knows exactly who you are** and scopes you correctly. Read it back to confirm the feature works — `GET /orders/edec4558-0cf5-4462-aaba-308229ff6c4f` with your Bearer returns `200` and your own order. And notice what your list does **not** give you: it hands you only *your* UUID, and one UUID says nothing about any other. Unlike a sequential counter, where seeing `1007` tells you `1006` and `1008` exist, this list gives you zero leverage on anyone else's id. The app volunteers nothing.
@@ -101,12 +101,12 @@ Response — `200`, alice's order. Keep it next to you; in the next step the exa
 
 You were handed, from outside the app, the UUID of one of alice's orders: `376d2491-7bc1-44ea-b1f2-81cf7a34af58`. You did **not** guess it and you did **not** reconstruct it — it *leaked* (a support call, a screenshot, a shared link).
 
-Ask for it with your own, unchanged `<dana-token>`:
+Ask for it with your own, unchanged `<clancy-token>`:
 
 ```
 GET /orders/376d2491-7bc1-44ea-b1f2-81cf7a34af58 HTTP/1.1
 Host: 127.0.0.1:8202
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — `200`:
@@ -117,22 +117,22 @@ Response — `200`:
 
 You read another user's order — **with their name and delivery address** — using your own valid token, supplying an id that isn't yours. That is the **BOLA**. Nothing here is a payload; the request is valid by every protocol rule, a WAF (web application firewall) sees nothing wrong, and authentication "passed." Authorization for the object was simply never consulted. The random UUID protected nothing: the instant you *held* a valid id, the missing check served it.
 
-Look at what just happened across two requests. That same `376d2491-…` came back `200` to `<alice-token>` in the baseline *and* `200` to `<dana-token>` now. The server **resolved two different identities correctly** — `authenticate()` returned `alice` on one request and `dana` on the other — and **handed the same object to both**, because the identity, though known, never enters the access decision. That is exactly where BOLA lives.
+Look at what just happened across two requests. That same `376d2491-…` came back `200` to `<alice-token>` in the baseline *and* `200` to `<clancy-token>` now. The server **resolved two different identities correctly** — `authenticate()` returned `alice` on one request and `clancy` on the other — and **handed the same object to both**, because the identity, though known, never enters the access decision. That is exactly where BOLA lives.
 
 ## 6. Step 2 — What the vuln is NOT, and the Intruder inversion
 
 The exploit is a legitimate request with a legitimate token, so it is easy to misread. This step pins down the real cause, then names a trap the previous atom sets for you.
 
-**It is not broken identity, and not the id format.** Send `GET /orders/376d2491-…` with **no `Authorization` header** — you get `401`; authentication works. Send `GET /orders` again with your `<dana-token>` — `200`, correctly scoped to your one order. Send `GET /orders/376d2491-…` with that same `<dana-token>` — `200`, alice's order. The same token gives correct scope in one handler and no scope in the other, so this is not impersonation: you were `dana` the whole time, and the list endpoint scoped you correctly. It is a check that *exists* in `GET /orders` and is *missing* in `GET /orders/:id`. The companion atom `bola-sequential-id` walks this auth-versus-authz isolation request by request; the point that matters here is what it could only *assert* and this atom *demonstrates*: a non-guessable id would only make discovery more expensive — it would never put the check back. Here the id genuinely is non-guessable, and the read happened anyway.
+**It is not broken identity, and not the id format.** Send `GET /orders/376d2491-…` with **no `Authorization` header** — you get `401`; authentication works. Send `GET /orders` again with your `<clancy-token>` — `200`, correctly scoped to your one order. Send `GET /orders/376d2491-…` with that same `<clancy-token>` — `200`, alice's order. The same token gives correct scope in one handler and no scope in the other, so this is not impersonation: you were `clancy` the whole time, and the list endpoint scoped you correctly. It is a check that *exists* in `GET /orders` and is *missing* in `GET /orders/:id`. The companion atom `bola-sequential-id` walks this auth-versus-authz isolation request by request; the point that matters here is what it could only *assert* and this atom *demonstrates*: a non-guessable id would only make discovery more expensive — it would never put the check back. Here the id genuinely is non-guessable, and the read happened anyway.
 
 Now the trap. In `bola-sequential-id` the impact beat was **enumeration**: send `GET /orders/§id§` to **Burp Intruder** (the tool that replays a request while substituting a value from a list), sweep the contiguous range `1001`–`1012`, and the whole collection falls out. Try the analogous move here — **knowing up front that nobody finds a UUID by brute force** (the space is ~2¹²²; this is to see what happens, not a serious attempt to enumerate):
 
-- **(a)** In Repeater, invent a UUID — say `ffffffff-ffff-4fff-8fff-ffffffffffff` — and send it with your valid `<dana-token>`:
+- **(a)** In Repeater, invent a UUID — say `ffffffff-ffff-4fff-8fff-ffffffffffff` — and send it with your valid `<clancy-token>`:
 
   ```
   GET /orders/ffffffff-ffff-4fff-8fff-ffffffffffff HTTP/1.1
   Host: 127.0.0.1:8202
-  Authorization: Bearer <dana-token>
+  Authorization: Bearer <clancy-token>
   ```
 
   Response — `404`. A valid token does not conjure objects, and the app never reveals which UUIDs are real; a blind guess just misses.
@@ -148,8 +148,8 @@ So the cause is the absent object-level authorization on the detail route — no
 
 Point Burp at the fixed API on `127.0.0.1:8302` and log in there (each build keeps its own token map), then repeat the reads:
 
-- `GET /orders/376d2491-…` (the leaked order) with your `<dana-token>` → **`404`**. The order exists, but it isn't yours, so the ownership guard refuses it.
-- `GET /orders/edec4558-0cf5-4462-aaba-308229ff6c4f` (your own order) with your `<dana-token>` → `200`. Owners still read their own orders. Authentication is still enforced: no token or a bad token still gets `401`.
+- `GET /orders/376d2491-…` (the leaked order) with your `<clancy-token>` → **`404`**. The order exists, but it isn't yours, so the ownership guard refuses it.
+- `GET /orders/edec4558-0cf5-4462-aaba-308229ff6c4f` (your own order) with your `<clancy-token>` → `200`. Owners still read their own orders. Authentication is still enforced: no token or a bad token still gets `401`.
 - **`404`, not something that leaks:** the `404` for an order you don't own is byte-for-byte the `404` for an id that was never seeded — `GET /orders/ffffffff-ffff-4fff-8fff-ffffffffffff` returns the same status, body, and length. The fixed build tells a real order and an invented id apart to *nobody*.
 - **The fix left the id a UUID.** The patch reshaped nothing about the id, because the id's shape was never the problem — the missing check was. It is the same one-predicate guard `bola-sequential-id` uses, unchanged; [`DIFF.md`](./DIFF.md) sets the two fixes side by side.
 

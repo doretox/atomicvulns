@@ -65,7 +65,7 @@ One consequence to state outright, so the mirror isn't misread: the twelve order
 
 ## The token is opaque, and the attack never touches it
 
-The Bearer token is an opaque random string (`randomBytes(24).toString("base64url")`) resolved server-side through the `TOKENS` map — a stand-in for an OAuth2 opaque access token or a session id, not a JWT. Nothing in the attack inspects, decodes, tampers with, or forges it; `dana` logs in as herself and sends her own token, unchanged, throughout. Keep the two axes apart: the value that became a UUID is the **order id**, not the token. A weak or forgeable token would be a *second* vulnerability (broken authentication); keeping it crypto-strong holds this atom to exactly one bug. The token isn't the vulnerability; the endpoint is.
+The Bearer token is an opaque random string (`randomBytes(24).toString("base64url")`) resolved server-side through the `TOKENS` map — a stand-in for an OAuth2 opaque access token or a session id, not a JWT. Nothing in the attack inspects, decodes, tampers with, or forges it; `clancy` logs in as himself and sends his own token, unchanged, throughout. Keep the two axes apart: the value that became a UUID is the **order id**, not the token. A weak or forgeable token would be a *second* vulnerability (broken authentication); keeping it crypto-strong holds this atom to exactly one bug. The token isn't the vulnerability; the endpoint is.
 
 ## This is BOLA — IDOR in an API, and it lives in app.ts
 

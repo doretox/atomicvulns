@@ -53,7 +53,7 @@ Two things are in play and only one is the bug. The **sequential id** governs *d
 
 ## The token is opaque, and the attack never touches it
 
-The Bearer token is an opaque random string (`randomBytes(24).toString("base64url")`) resolved server-side through the `TOKENS` map — a stand-in for an OAuth2 opaque access token or a session id, not a JWT. Nothing in the attack inspects, decodes, tampers with, or forges it; `dana` logs in as herself and sends her own token, unchanged, throughout. That is the point of a crypto-strong opaque token here: it is solid and legitimately hers, so the only thing left to explain the cross-user read is the missing authorization. A weak or forgeable token would be a *second* vulnerability (broken authentication); keeping it strong holds this atom to exactly one bug. The token isn't the vulnerability; the endpoint is.
+The Bearer token is an opaque random string (`randomBytes(24).toString("base64url")`) resolved server-side through the `TOKENS` map — a stand-in for an OAuth2 opaque access token or a session id, not a JWT. Nothing in the attack inspects, decodes, tampers with, or forges it; `clancy` logs in as himself and sends his own token, unchanged, throughout. That is the point of a crypto-strong opaque token here: it is solid and legitimately his, so the only thing left to explain the cross-user read is the missing authorization. A weak or forgeable token would be a *second* vulnerability (broken authentication); keeping it strong holds this atom to exactly one bug. The token isn't the vulnerability; the endpoint is.
 
 ## This is BOLA — IDOR in an API, and it lives in app.ts
 

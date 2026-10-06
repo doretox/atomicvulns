@@ -33,7 +33,7 @@ Aqui as pessoas são **operadores** de uma loja: elas trabalham lá, elas não s
 
 | Loja | Operadores | Pedidos |
 |---|---|---|
-| `harbor` | `dana` — a atacante (você) | `1004`, `1008`, `1011` |
+| `harbor` | `clancy` — o atacante (você) | `1004`, `1008`, `1011` |
 | `meadow` | `alice` | `1002`, `1006`, `1007`, `1009` |
 | `summit` | `bob`, `carol` | `1001`, `1003`, `1005`, `1010`, `1012` |
 

@@ -2,7 +2,7 @@
 
 > ⚠️ Intentionally vulnerable. Run locally only. Never expose to the internet or a shared network.
 
-Uma API REST mínima em TypeScript/Express para BOLA (Broken Object Level Authorization) — o nome que a área de API security dá a um IDOR (insecure direct object reference) que vive num endpoint REST, e o API1:2023, o risco #1 do OWASP API Security Top 10. A API serve registros de pedido via `GET /orders/:id`. Todo request carrega um Bearer token opaco, e o endpoint até autentica ele — token inválido leva `401` — mas nunca checa se o pedido pedido pertence ao caller. O id de cada pedido é um **UUID v4** aleatório, não um número adivinhável, e isso não muda nada: no momento em que a atacante tem um id de pedido válido, o check ausente entrega aquele pedido — o nome do cliente, o endereço de entrega, o item e o valor.
+Uma API REST mínima em TypeScript/Express para BOLA (Broken Object Level Authorization) — o nome que a área de API security dá a um IDOR (insecure direct object reference) que vive num endpoint REST, e o API1:2023, o risco #1 do OWASP API Security Top 10. A API serve registros de pedido via `GET /orders/:id`. Todo request carrega um Bearer token opaco, e o endpoint até autentica ele — token inválido leva `401` — mas nunca checa se o pedido pedido pertence ao caller. O id de cada pedido é um **UUID v4** aleatório, não um número adivinhável, e isso não muda nada: no momento em que o atacante tem um id de pedido válido, o check ausente entrega aquele pedido — o nome do cliente, o endereço de entrega, o item e o valor.
 
 Aqui **"leaked" quer dizer que o UUID do pedido chegou ao atacante por um canal de fora da aplicação** — um chamado de suporte, um print, um link compartilhado — do jeito que ids circulam no mundo real. A aplicação em si não vaza id nenhum; o único bug é o check de posse ausente no `GET /orders/:id`.
 
@@ -29,7 +29,7 @@ O que o atalho *não* faz é enfraquecer a autenticação. A autenticação aqui
 
 Quatro usuários no seed:
 
-- `dana` — a atacante (você). Dona de exatamente **um** pedido.
+- `clancy` — o atacante (você). Dono de exatamente **um** pedido.
 - `alice`, `bob`, `carol` — as vítimas. Dividem os outros **onze** pedidos de forma desigual: seis, três e dois.
 
 ## Como rodar

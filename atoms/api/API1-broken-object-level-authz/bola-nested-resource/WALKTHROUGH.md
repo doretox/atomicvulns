@@ -6,7 +6,7 @@ A multi-store back-office API serves `GET /stores/:storeId/orders/:orderId`. It 
 
 The resource is **nested**: an object addressed *through its parent* in the path. The store is the **parent**, the order is the **child**, and a store's **scope** is the set of orders that belong to it. People are **operators** of a store — they work there, they don't own it, and every operator of a store sees all of that store's orders.
 
-The seed, in one breath: three stores — `harbor`, `meadow`, `summit` — and you are `dana`, who operates `harbor` and nothing else. Twelve orders sit on one global id counter, `1001`–`1012`, split three, four, and five across the stores. Each order carries the buyer's name, delivery address, item, and amount — the PII (personally identifiable information) that turns this from a curiosity into a finding.
+The seed, in one breath: three stores — `harbor`, `meadow`, `summit` — and you are `clancy`, who operates `harbor` and nothing else. Twelve orders sit on one global id counter, `1001`–`1012`, split three, four, and five across the stores. Each order carries the buyer's name, delivery address, item, and amount — the PII (personally identifiable information) that turns this from a curiosity into a finding.
 
 This is an **API — there is no browser track.** Every request below is a block you paste into **Burp Repeater** (which resends a single request so you can edit and observe it). If you haven't wired up Burp yet, the same requests run under `curl`. That is the whole toolset.
 
@@ -56,17 +56,17 @@ Point Burp at the vulnerable API on `127.0.0.1:8203` and work from Repeater.
 
 Log in as yourself:
 
-> **Logging in as:** `dana` — you, the operator of `harbor`
+> **Logging in as:** `clancy` — you, the operator of `harbor`
 
 ```
 POST /login HTTP/1.1
 Host: 127.0.0.1:8203
 Content-Type: application/json
 
-{"user": "dana"}
+{"user": "clancy"}
 ```
 
-Response — `200`, a token that is yours for the rest of the session (shown as `<dana-token>` below):
+Response — `200`, a token that is yours for the rest of the session (shown as `<clancy-token>` below):
 
 ```json
 {"token": "RAP7MNsx1BZW1u5iFVjbWJiVU0q5ksy1"}
@@ -91,7 +91,7 @@ Now list the orders of the store you operate:
 ```
 GET /stores/harbor/orders HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — `200`, and note it contains **only `harbor`'s three orders**:
@@ -107,7 +107,7 @@ Ids `1004`, `1008`, and `1011` — that is the entire scope of your store, and t
 ```
 GET /stores/harbor/orders/1011 HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — `200`:
@@ -147,7 +147,7 @@ Ask for `1009` with your own unchanged token, through **your** store:
 ```
 GET /stores/harbor/orders/1009 HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — **`200`**:
@@ -165,7 +165,7 @@ Now prove that the `{storeId}` in the path isn't pointing at anything. Same toke
 ```
 GET /stores/harbor/orders/1001 HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — **`200`**, a `summit` order:
@@ -176,11 +176,11 @@ Response — **`200`**, a `summit` order:
 
 **Two different stores, one door.** The `harbor` in the path does not mean "the other store," and it does not mean "the order's store" — it means nothing at all about the order. It only has to name a store *you* operate, so the check lets you through; after that, any of the twelve ids resolves.
 
-And look across the baseline and this step. Order `1009` in `meadow` came back `200` to `<alice-token>` through `/stores/meadow/...` **and** `200` to `<dana-token>` through `/stores/harbor/...`. The server resolved both identities correctly and authorized two different parents — then handed over the same child both times, because the authorized store was never compared to the order's store.
+And look across the baseline and this step. Order `1009` in `meadow` came back `200` to `<alice-token>` through `/stores/meadow/...` **and** `200` to `<clancy-token>` through `/stores/harbor/...`. The server resolved both identities correctly and authorized two different parents — then handed over the same child both times, because the authorized store was never compared to the order's store.
 
 ## 6. Step 2 — What the vuln is NOT
 
-The exploit is a legitimate request, with a legitimate token, against an endpoint that *does* authorize — so the easiest wrong conclusion to draw is "this handler has no authorization." It has. Three requests, all sent with the same unchanged `<dana-token>`, pin down what the flaw actually is.
+The exploit is a legitimate request, with a legitimate token, against an endpoint that *does* authorize — so the easiest wrong conclusion to draw is "this handler has no authorization." It has. Three requests, all sent with the same unchanged `<clancy-token>`, pin down what the flaw actually is.
 
 **Request 1 — name the order's real store.**
 
@@ -189,7 +189,7 @@ The exploit is a legitimate request, with a legitimate token, against an endpoin
 ```
 GET /stores/meadow/orders/1009 HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — **`403`**, body `Forbidden`. The first check exists and it bites. Notice what this request asked for: order `1009` under the store it actually belongs to — and it was refused, because you don't operate `meadow`.
@@ -201,7 +201,7 @@ Response — **`403`**, body `Forbidden`. The first check exists and it bites. N
 ```
 GET /stores/harbor/orders/1011 HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — **`200`**, the `harbor` order. Your store, your store's order: correct.
@@ -213,7 +213,7 @@ Response — **`200`**, the `harbor` order. Your store, your store's order: corr
 ```
 GET /stores/harbor/orders/1009 HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — **`200`**, the `meadow` order, exactly as in Step 1.
@@ -224,13 +224,13 @@ Now the conclusion, which is the whole atom. **`storeId` was checked on all thre
 
 That is what separates this atom from its two companions. In `bola-sequential-id` and `bola-uuid-leaked` the question was missing outright: the detail handler resolved the caller and then asked nothing whatsoever about the object, and the repair was to add the question. Here the question was not missing — it was **replaced by a neighbour that passes for it**. A reviewer reading this handler sees a `403` near the top and moves on; the gap is camouflaged by the check standing next to it.
 
-It is not an authentication failure either. Drop the `Authorization` header from any request above and you get `401` (body `Unauthorized`); flip a character in the token and you get `401` too. You were authenticated as `dana`, correctly and continuously, from the first request to the last.
+It is not an authentication failure either. Drop the `Authorization` header from any request above and you get `401` (body `Unauthorized`); flip a character in the token and you get `401` too. You were authenticated as `clancy`, correctly and continuously, from the first request to the last.
 
 ## 7. Why the fix works (port 8303)
 
 Point Burp at the fixed API on `127.0.0.1:8303` and log in there — each build keeps its own token map, so you need fresh tokens — then replay the chain:
 
-- **The parent check is untouched.** `GET /stores/meadow/orders/1009` with your `<dana-token>` → **`403`**, exactly as on 8203. That line is byte-identical in both builds; it was never the broken part.
+- **The parent check is untouched.** `GET /stores/meadow/orders/1009` with your `<clancy-token>` → **`403`**, exactly as on 8203. That line is byte-identical in both builds; it was never the broken part.
 - **The feature is untouched.** `GET /stores/harbor/orders/1011` → `200`, and `GET /stores/harbor/orders` still returns your three orders. `GET /stores/meadow/orders/1009` with `<alice-token>` → `200`: operators still read their own store's orders. No token still gets `401`.
 - **The exploit is gone, and it leaves no trace of itself.** `GET /stores/harbor/orders/1009` → **`404`**. `GET /stores/harbor/orders/1001` → **`404`**. Now ask for `GET /stores/harbor/orders/1013`, an id that was never seeded — **`404`** as well, with the same body (`Not Found`) and the same length. From inside your own store, an order that exists in another store and an order that exists nowhere are one and the same answer, which leaves you no **enumeration oracle**: no difference in the responses to map which ids are real from, without reading any of them.
 

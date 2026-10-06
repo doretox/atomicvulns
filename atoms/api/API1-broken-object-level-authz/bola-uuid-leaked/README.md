@@ -29,7 +29,7 @@ What the shortcut does *not* do is weaken authentication. Authentication here **
 
 Four users are seeded:
 
-- `dana` — the attacker (you). Owns exactly **one** order.
+- `clancy` — the attacker (you). Owns exactly **one** order.
 - `alice`, `bob`, `carol` — the victims. They split the other **eleven** orders unevenly: six, three, and two.
 
 ## Run

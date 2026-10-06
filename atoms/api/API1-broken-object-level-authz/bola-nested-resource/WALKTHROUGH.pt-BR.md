@@ -6,7 +6,7 @@ Uma API de back-office multi-loja serve `GET /stores/:storeId/orders/:orderId`. 
 
 O recurso é **nested**: um objeto endereçado *através do pai* no path. A loja é o **pai**, o pedido é o **filho**, e o **escopo** de uma loja é o conjunto de pedidos que pertencem a ela. As pessoas são **operadores** de uma loja — trabalham lá, não são donas dela, e todo operador de uma loja enxerga todos os pedidos daquela loja.
 
-O seed, num fôlego só: três lojas — `harbor`, `meadow`, `summit` — e você é a `dana`, que opera a `harbor` e mais nada. Doze pedidos ficam num único contador global de id, `1001`–`1012`, divididos três, quatro e cinco entre as lojas. Cada pedido carrega o nome do comprador, o endereço de entrega, o item e o valor — o PII (personally identifiable information) que transforma isto de curiosidade em achado.
+O seed, num fôlego só: três lojas — `harbor`, `meadow`, `summit` — e você é o `clancy`, que opera a `harbor` e mais nada. Doze pedidos ficam num único contador global de id, `1001`–`1012`, divididos três, quatro e cinco entre as lojas. Cada pedido carrega o nome do comprador, o endereço de entrega, o item e o valor — o PII (personally identifiable information) que transforma isto de curiosidade em achado.
 
 Esta é uma **API — não há trilha browser.** Todo request abaixo é um bloco que você cola no **Burp Repeater** (que reenvia um request único pra você editar e observar). Se você ainda não configurou o Burp, os mesmos requests rodam no `curl`. É esse o ferramental inteiro.
 
@@ -46,7 +46,7 @@ Três camadas se empilham neste endpoint, e o átomo é sobre a terceira:
 - **O check do pai** prova *que você opera a loja que está no path*. Uma loja que você não opera leva `403`.
 - **O escopo do filho** provaria *que o pedido pertence àquela loja*. Nada faz isso.
 
-Uma disciplina pro walkthrough inteiro: **o ataque nunca toca o token.** Você faz login como você mesma e manda o token exatamente como foi emitido — sem decodificar, sem editar, sem forjar. O alvo é o endpoint, não o token.
+Uma disciplina pro walkthrough inteiro: **o ataque nunca toca o token.** Você faz login como você mesmo e manda o token exatamente como foi emitido — sem decodificar, sem editar, sem forjar. O alvo é o endpoint, não o token.
 
 ## 4. Baseline — o seu token, a sua loja, e a cara de um acesso autorizado
 
@@ -54,19 +54,19 @@ Aponte o Burp pra API vulnerable em `127.0.0.1:8203` e trabalhe do Repeater.
 
 > **O token abaixo é de uma sessão real.** O `POST /login` gera um token aleatório novo a cada vez, então **o seu vai diferir** — copie o seu de cada response de login e use no header `Authorization`. Os slugs de loja e os ids de pedido são estáveis (seedados), então esses você cola literalmente.
 
-Faça login como você mesma:
+Faça login como você mesmo:
 
-> **Login como:** `dana` — você, quem opera a `harbor`
+> **Login como:** `clancy` — você, quem opera a `harbor`
 
 ```
 POST /login HTTP/1.1
 Host: 127.0.0.1:8203
 Content-Type: application/json
 
-{"user": "dana"}
+{"user": "clancy"}
 ```
 
-Response — `200`, um token que é seu pelo resto da sessão (mostrado como `<dana-token>` abaixo):
+Response — `200`, um token que é seu pelo resto da sessão (mostrado como `<clancy-token>` abaixo):
 
 ```json
 {"token": "RAP7MNsx1BZW1u5iFVjbWJiVU0q5ksy1"}
@@ -91,7 +91,7 @@ Agora liste os pedidos da loja que você opera:
 ```
 GET /stores/harbor/orders HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — `200`, e repare que contém **só os três pedidos da `harbor`**:
@@ -107,7 +107,7 @@ Ids `1004`, `1008` e `1011` — esse é o escopo inteiro da sua loja, e a API te
 ```
 GET /stores/harbor/orders/1011 HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — `200`:
@@ -147,7 +147,7 @@ Peça o `1009` com o seu próprio token, inalterado, pela **sua** loja:
 ```
 GET /stores/harbor/orders/1009 HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — **`200`**:
@@ -165,7 +165,7 @@ Agora prove que o `{storeId}` do path não está apontando pra nada. Mesmo token
 ```
 GET /stores/harbor/orders/1001 HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — **`200`**, um pedido da `summit`:
@@ -176,11 +176,11 @@ Response — **`200`**, um pedido da `summit`:
 
 **Duas lojas diferentes, uma porta só.** O `harbor` do path não quer dizer "a outra loja", e não quer dizer "a loja do pedido" — ele não quer dizer absolutamente nada sobre o pedido. Ele só precisa nomear uma loja que *você* opera, pra o check te deixar passar; depois disso, qualquer um dos doze ids resolve.
 
-E olhe o baseline e este passo lado a lado. O pedido `1009`, da `meadow`, voltou `200` pro `<alice-token>` por `/stores/meadow/...` **e** `200` pro `<dana-token>` por `/stores/harbor/...`. O servidor resolveu as duas identidades corretamente e autorizou dois pais diferentes — e então entregou o mesmo filho nas duas vezes, porque a loja autorizada nunca foi comparada com a loja do pedido.
+E olhe o baseline e este passo lado a lado. O pedido `1009`, da `meadow`, voltou `200` pro `<alice-token>` por `/stores/meadow/...` **e** `200` pro `<clancy-token>` por `/stores/harbor/...`. O servidor resolveu as duas identidades corretamente e autorizou dois pais diferentes — e então entregou o mesmo filho nas duas vezes, porque a loja autorizada nunca foi comparada com a loja do pedido.
 
 ## 6. Passo 2 — O que a vuln NÃO é
 
-O exploit é um request legítimo, com um token legítimo, contra um endpoint que *de fato* autoriza — então a conclusão errada mais fácil de tirar é "este handler não tem autorização". Tem. Três requests, todos mandados com o mesmo `<dana-token>` inalterado, fixam qual é de fato a falha.
+O exploit é um request legítimo, com um token legítimo, contra um endpoint que *de fato* autoriza — então a conclusão errada mais fácil de tirar é "este handler não tem autorização". Tem. Três requests, todos mandados com o mesmo `<clancy-token>` inalterado, fixam qual é de fato a falha.
 
 **Request 1 — nomeie a loja real do pedido.**
 
@@ -189,7 +189,7 @@ O exploit é um request legítimo, com um token legítimo, contra um endpoint qu
 ```
 GET /stores/meadow/orders/1009 HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — **`403`**, corpo `Forbidden`. O primeiro check existe e morde. Repare no que este request pediu: o pedido `1009` sob a loja à qual ele de fato pertence — e foi recusado, porque você não opera a `meadow`.
@@ -201,7 +201,7 @@ Response — **`403`**, corpo `Forbidden`. O primeiro check existe e morde. Repa
 ```
 GET /stores/harbor/orders/1011 HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — **`200`**, o pedido da `harbor`. Sua loja, pedido da sua loja: correto.
@@ -213,7 +213,7 @@ Response — **`200`**, o pedido da `harbor`. Sua loja, pedido da sua loja: corr
 ```
 GET /stores/harbor/orders/1009 HTTP/1.1
 Host: 127.0.0.1:8203
-Authorization: Bearer <dana-token>
+Authorization: Bearer <clancy-token>
 ```
 
 Response — **`200`**, o pedido da `meadow`, exatamente como no Passo 1.
@@ -224,13 +224,13 @@ Agora a conclusão, que é o átomo inteiro. **O `storeId` foi checado nos três
 
 É isso que separa este átomo dos seus dois companheiros. No `bola-sequential-id` e no `bola-uuid-leaked` a pergunta faltava por completo: o handler de detalhe resolvia o caller e depois não perguntava absolutamente nada sobre o objeto, e o reparo era acrescentar a pergunta. Aqui a pergunta não faltava — ela foi **substituída por uma vizinha que passa por ela**. Um revisor lendo este handler vê um `403` logo no começo e segue em frente; o gap fica camuflado pelo check que está ao lado.
 
-Também não é falha de autenticação. Tire o header `Authorization` de qualquer request acima e você leva `401` (corpo `Unauthorized`); troque um caractere do token e você leva `401` também. Você esteve autenticada como `dana`, corretamente e sem interrupção, do primeiro ao último request.
+Também não é falha de autenticação. Tire o header `Authorization` de qualquer request acima e você leva `401` (corpo `Unauthorized`); troque um caractere do token e você leva `401` também. Você esteve autenticado como `clancy`, corretamente e sem interrupção, do primeiro ao último request.
 
 ## 7. Por que o fix funciona (porta 8303)
 
 Aponte o Burp pra API fixed em `127.0.0.1:8303` e faça login lá — cada build tem o próprio mapa de tokens, então você precisa de tokens novos — e então repita a cadeia:
 
-- **O check do pai está intocado.** `GET /stores/meadow/orders/1009` com o seu `<dana-token>` → **`403`**, exatamente como na 8203. Essa linha é byte-idêntica nos dois builds; ela nunca foi a parte quebrada.
+- **O check do pai está intocado.** `GET /stores/meadow/orders/1009` com o seu `<clancy-token>` → **`403`**, exatamente como na 8203. Essa linha é byte-idêntica nos dois builds; ela nunca foi a parte quebrada.
 - **A feature está intocada.** `GET /stores/harbor/orders/1011` → `200`, e o `GET /stores/harbor/orders` continua devolvendo os seus três pedidos. `GET /stores/meadow/orders/1009` com o `<alice-token>` → `200`: operadores continuam lendo os pedidos da própria loja. Sem token, ainda é `401`.
 - **O exploit acabou, e não deixa rastro de si mesmo.** `GET /stores/harbor/orders/1009` → **`404`**. `GET /stores/harbor/orders/1001` → **`404`**. Agora peça `GET /stores/harbor/orders/1013`, um id que nunca foi seedado — **`404`** também, com o mesmo corpo (`Not Found`) e o mesmo tamanho. De dentro da sua própria loja, um pedido que existe em outra loja e um pedido que não existe em lugar nenhum são uma única e mesma resposta, o que não te deixa nenhum **oráculo de enumeração**: nenhuma diferença nas respostas a partir da qual mapear quais ids são reais, sem ler nenhum deles.
 

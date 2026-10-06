@@ -33,7 +33,7 @@ People here are **operators** of a store: they work there, they are not the stor
 
 | Store | Operators | Orders |
 |---|---|---|
-| `harbor` | `dana` — the attacker (you) | `1004`, `1008`, `1011` |
+| `harbor` | `clancy` — the attacker (you) | `1004`, `1008`, `1011` |
 | `meadow` | `alice` | `1002`, `1006`, `1007`, `1009` |
 | `summit` | `bob`, `carol` | `1001`, `1003`, `1005`, `1010`, `1012` |
 

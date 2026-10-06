@@ -6,7 +6,7 @@ app.use(express.json());   // Express 5 bundles express.json() but does NOT moun
                            // without this line req.body is undefined and POST /login 400s.
 
 // --- Simulated identity: an opaque, server-side token ---
-const USERS = new Set(["dana", "alice", "bob", "carol"]);   // dana = attacker (you)
+const USERS = new Set(["clancy", "alice", "bob", "carol"]); // clancy = attacker (you)
 const TOKENS = new Map<string, string>();                   // opaque token -> username (in-memory; NOT a JWT)
 
 function issueToken(user: string): string {
@@ -37,18 +37,18 @@ type Order = {
 // nothing about one id reveals another -- the id space is not walkable. Same twelve
 // orders, same owners/data as bola-sequential-id; ONLY the id type changed.
 const ORDERS: Record<string, Order> = {
-  "376d2491-7bc1-44ea-b1f2-81cf7a34af58": { id: "376d2491-7bc1-44ea-b1f2-81cf7a34af58", owner: "alice", customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Mechanical keyboard",     amount: "$89.00"  }, // was 1001 -- LEAKED to dana in the walkthrough
-  "3ee14e8a-ff76-495f-9e1f-d282ae469916": { id: "3ee14e8a-ff76-495f-9e1f-d282ae469916", owner: "bob",   customer: "Bob Carter",   address: "7 Sample St, Rivertown",      item: "Noise-cancelling headset", amount: "$199.00" }, // was 1002
-  "04320e8a-75d1-4c5b-ae31-abfe1ffb212b": { id: "04320e8a-75d1-4c5b-ae31-abfe1ffb212b", owner: "alice", customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "USB-C hub",                amount: "$42.50"  }, // was 1003
-  "bd840141-342e-4d8f-9c62-46e2dace56ef": { id: "bd840141-342e-4d8f-9c62-46e2dace56ef", owner: "carol", customer: "Carol Dias",   address: "90 Placeholder Rd, Lakeside", item: "4K monitor",               amount: "$329.00" }, // was 1004
-  "faba81a1-83bf-4031-bd4a-c5cb1fe503f9": { id: "faba81a1-83bf-4031-bd4a-c5cb1fe503f9", owner: "alice", customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Laptop stand",             amount: "$55.00"  }, // was 1005
-  "e1df436b-566f-4640-8a07-b07a382bf940": { id: "e1df436b-566f-4640-8a07-b07a382bf940", owner: "bob",   customer: "Bob Carter",   address: "7 Sample St, Rivertown",      item: "Webcam",                   amount: "$75.00"  }, // was 1006
-  "edec4558-0cf5-4462-aaba-308229ff6c4f": { id: "edec4558-0cf5-4462-aaba-308229ff6c4f", owner: "dana",  customer: "Dana Lee",     address: "3 Testing Blvd, Faketon",     item: "Wireless mouse",           amount: "$29.90"  }, // was 1007 -- attacker (you)
-  "21f0ebc8-15c8-424e-80e5-3c5aa0cf8b9b": { id: "21f0ebc8-15c8-424e-80e5-3c5aa0cf8b9b", owner: "alice", customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Desk mat",                 amount: "$19.00"  }, // was 1008
-  "bf587c3c-b25f-4533-ba15-21d3b8d21baa": { id: "bf587c3c-b25f-4533-ba15-21d3b8d21baa", owner: "carol", customer: "Carol Dias",   address: "90 Placeholder Rd, Lakeside", item: "Standing desk",            amount: "$589.00" }, // was 1009
-  "d17f8d55-bf75-45e3-a312-856293086997": { id: "d17f8d55-bf75-45e3-a312-856293086997", owner: "alice", customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Monitor arm",              amount: "$120.00" }, // was 1010
-  "93e1f9e0-277e-4c5b-a1fc-4acff50cb828": { id: "93e1f9e0-277e-4c5b-a1fc-4acff50cb828", owner: "bob",   customer: "Bob Carter",   address: "7 Sample St, Rivertown",      item: "HDMI cable",               amount: "$12.99"  }, // was 1011
-  "0b089ce7-756c-467b-98e0-f5facd72f561": { id: "0b089ce7-756c-467b-98e0-f5facd72f561", owner: "alice", customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Ergonomic chair",          amount: "$420.00" }, // was 1012
+  "376d2491-7bc1-44ea-b1f2-81cf7a34af58": { id: "376d2491-7bc1-44ea-b1f2-81cf7a34af58", owner: "alice",  customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Mechanical keyboard",     amount: "$89.00"  }, // was 1001 -- LEAKED to clancy in the walkthrough
+  "3ee14e8a-ff76-495f-9e1f-d282ae469916": { id: "3ee14e8a-ff76-495f-9e1f-d282ae469916", owner: "bob",    customer: "Bob Carter",   address: "7 Sample St, Rivertown",      item: "Noise-cancelling headset", amount: "$199.00" }, // was 1002
+  "04320e8a-75d1-4c5b-ae31-abfe1ffb212b": { id: "04320e8a-75d1-4c5b-ae31-abfe1ffb212b", owner: "alice",  customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "USB-C hub",                amount: "$42.50"  }, // was 1003
+  "bd840141-342e-4d8f-9c62-46e2dace56ef": { id: "bd840141-342e-4d8f-9c62-46e2dace56ef", owner: "carol",  customer: "Carol Dias",   address: "90 Placeholder Rd, Lakeside", item: "4K monitor",               amount: "$329.00" }, // was 1004
+  "faba81a1-83bf-4031-bd4a-c5cb1fe503f9": { id: "faba81a1-83bf-4031-bd4a-c5cb1fe503f9", owner: "alice",  customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Laptop stand",             amount: "$55.00"  }, // was 1005
+  "e1df436b-566f-4640-8a07-b07a382bf940": { id: "e1df436b-566f-4640-8a07-b07a382bf940", owner: "bob",    customer: "Bob Carter",   address: "7 Sample St, Rivertown",      item: "Webcam",                   amount: "$75.00"  }, // was 1006
+  "edec4558-0cf5-4462-aaba-308229ff6c4f": { id: "edec4558-0cf5-4462-aaba-308229ff6c4f", owner: "clancy", customer: "Omar Haddad",  address: "3 Testing Blvd, Faketon",     item: "Wireless mouse",           amount: "$29.90"  }, // was 1007 -- attacker (you)
+  "21f0ebc8-15c8-424e-80e5-3c5aa0cf8b9b": { id: "21f0ebc8-15c8-424e-80e5-3c5aa0cf8b9b", owner: "alice",  customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Desk mat",                 amount: "$19.00"  }, // was 1008
+  "bf587c3c-b25f-4533-ba15-21d3b8d21baa": { id: "bf587c3c-b25f-4533-ba15-21d3b8d21baa", owner: "carol",  customer: "Carol Dias",   address: "90 Placeholder Rd, Lakeside", item: "Standing desk",            amount: "$589.00" }, // was 1009
+  "d17f8d55-bf75-45e3-a312-856293086997": { id: "d17f8d55-bf75-45e3-a312-856293086997", owner: "alice",  customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Monitor arm",              amount: "$120.00" }, // was 1010
+  "93e1f9e0-277e-4c5b-a1fc-4acff50cb828": { id: "93e1f9e0-277e-4c5b-a1fc-4acff50cb828", owner: "bob",    customer: "Bob Carter",   address: "7 Sample St, Rivertown",      item: "HDMI cable",               amount: "$12.99"  }, // was 1011
+  "0b089ce7-756c-467b-98e0-f5facd72f561": { id: "0b089ce7-756c-467b-98e0-f5facd72f561", owner: "alice",  customer: "Alice Nguyen", address: "12 Example Ave, Springfield", item: "Ergonomic chair",          amount: "$420.00" }, // was 1012
 };
 
 app.post("/login", (req, res) => {

@@ -6,7 +6,7 @@ app.use(express.json());   // Express 5 bundles express.json() but does NOT moun
                            // without this line req.body is undefined and POST /login 400s.
 
 // --- Simulated identity: an opaque, server-side token ---
-const USERS = new Set(["dana", "alice", "bob", "carol"]);   // dana = attacker (you)
+const USERS = new Set(["clancy", "alice", "bob", "carol"]); // clancy = attacker (you)
 const TOKENS = new Map<string, string>();                   // opaque token -> username (in-memory; NOT a JWT)
 
 function issueToken(user: string): string {
@@ -26,7 +26,7 @@ function authenticate(req: express.Request): string | null {
 // People are OPERATORS of a store -- they work there; they are not the store. Every
 // operator of a store legitimately sees all of that store's orders (that is the feature).
 const STORES: Record<string, { operators: string[] }> = {
-  harbor: { operators: ["dana"] },          // dana (you) operates exactly one store
+  harbor: { operators: ["clancy"] },        // clancy (you) operates exactly one store
   meadow: { operators: ["alice"] },
   summit: { operators: ["bob", "carol"] },
 };
