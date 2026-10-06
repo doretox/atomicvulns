@@ -2,7 +2,7 @@
 
 `vulnerable/app.ts` and `fixed/app.ts` differ in exactly one place — one guard inserted into `POST /admin/users/:handle/promote`, between the authentication check and the target lookup, plus the comment above it. `POST /login`, the `USERS` seed, the `TOKENS` map, the helpers, the imports, the `listen` footer, the `Dockerfile`, `package.json`, `package-lock.json`, and `tsconfig.json` are byte-identical between the two versions (and there are no templates — this atom is API-only). So is the rest of the handler: the `401`, the target lookup, its `404`, the write, and the response are the same bytes in both builds. The change is one function-level authorization check.
 
-## The fix — the caller's role is checked before anything else
+## The fix — the caller's role is checked right after authentication, before the target lookup
 
 ```diff
  app.post("/admin/users/:handle/promote", (req, res) => {
@@ -12,8 +12,8 @@
 -  // ROLE. Promoting a user to admin is an admin-only function; here ANY authenticated
 -  // user can invoke it. Authenticated is not authorized to PERFORM this operation.
 +  // FIXED: function-level authorization. Promoting is an admin-only capability, so the
-+  // caller's ROLE is checked BEFORE anything else happens -- a non-admin is refused 403
-+  // without the target ever being looked up, so the gate leaks nothing about who exists.
++  // caller's ROLE is checked right after authentication -- a non-admin is refused 403
++  // BEFORE the target is ever looked up, so the gate leaks nothing about who exists.
 +  if (!USERS.get(caller)?.is_admin) return res.sendStatus(403);
    const target = USERS.get(req.params.handle);
    if (!target) return res.sendStatus(404);                  // unknown target user

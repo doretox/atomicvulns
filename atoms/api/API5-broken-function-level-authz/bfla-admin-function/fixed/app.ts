@@ -43,8 +43,8 @@ app.post("/admin/users/:handle/promote", (req, res) => {
   const caller = authenticate(req);
   if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
   // FIXED: function-level authorization. Promoting is an admin-only capability, so the
-  // caller's ROLE is checked BEFORE anything else happens -- a non-admin is refused 403
-  // without the target ever being looked up, so the gate leaks nothing about who exists.
+  // caller's ROLE is checked right after authentication -- a non-admin is refused 403
+  // BEFORE the target is ever looked up, so the gate leaks nothing about who exists.
   if (!USERS.get(caller)?.is_admin) return res.sendStatus(403);
   const target = USERS.get(req.params.handle);
   if (!target) return res.sendStatus(404);                  // unknown target user

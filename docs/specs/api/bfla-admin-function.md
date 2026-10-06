@@ -215,8 +215,8 @@ app.post("/admin/users/:handle/promote", (req, res) => {
   const caller = authenticate(req);
   if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
   // FIXED: function-level authorization. Promoting is an admin-only capability, so the
-  // caller's ROLE is checked BEFORE anything else happens -- a non-admin is refused 403
-  // without the target ever being looked up, so the gate leaks nothing about who exists.
+  // caller's ROLE is checked right after authentication -- a non-admin is refused 403
+  // BEFORE the target is ever looked up, so the gate leaks nothing about who exists.
   if (!USERS.get(caller)?.is_admin) return res.sendStatus(403);
   const target = USERS.get(req.params.handle);
   if (!target) return res.sendStatus(404);                  // unknown target user
@@ -233,8 +233,8 @@ Diff mínimo (o eixo único):
 -  // ROLE. Promoting a user to admin is an admin-only function; here ANY authenticated
 -  // user can invoke it. Authenticated is not authorized to PERFORM this operation.
 +  // FIXED: function-level authorization. Promoting is an admin-only capability, so the
-+  // caller's ROLE is checked BEFORE anything else happens -- a non-admin is refused 403
-+  // without the target ever being looked up, so the gate leaks nothing about who exists.
++  // caller's ROLE is checked right after authentication -- a non-admin is refused 403
++  // BEFORE the target is ever looked up, so the gate leaks nothing about who exists.
 +  if (!USERS.get(caller)?.is_admin) return res.sendStatus(403);
    const target = USERS.get(req.params.handle);
    if (!target) return res.sendStatus(404);                  // unknown target user
@@ -245,7 +245,7 @@ Diff mínimo (o eixo único):
 - **A guarda de papel vem ANTES da busca do alvo.** Um não-admin recebe `403` sem que o alvo seja consultado — então o gate **não vaza** nada sobre quais handles existem. É a mesma disciplina de ordem que o 03 usa (o check do pai antes da busca do filho); creditar o 03 (publicado) por essa simetria de método.
 - **`USERS.get(caller)?.is_admin`:** `caller` é um handle resolvido pelo `authenticate` (sempre uma chave de `USERS`, porque tokens só são emitidos pra usuários válidos), mas o TS não sabe disso — `USERS.get(caller)` tipa como `User | undefined` (assinatura do `Map.get`), então o `?.` é **exigido** e correto. **Validado nesta fase:** trocar por acesso direto `USERS.get(caller).is_admin` faz o `tsc` dar `TS2532: Object is possibly 'undefined'` (ver "Validação de typecheck e runtime"). Mesmo espírito do `STORES[storeId]?.operators ... ?? false` de 03. **Não** trocar por `!` (non-null assertion).
 
-**CRAVAR no DIFF — o fix NÃO é o de 01/02 nem o de 03, e isso é o esperado.** Em 01/02 o fix acrescentava um predicado **de posse do objeto** à guarda depois da busca; em 03 o fix **movia a busca** pra dentro do escopo do pai. Aqui o fix acrescenta uma guarda **de papel do chamador** antes de tudo. Três formas diferentes porque três perguntas diferentes: *é seu?* (01/02), *é desta loja?* (03), *você pode fazer isso?* (04). A lição não é "o fix é sempre X"; é **autorize a operação que você está prestes a executar, no eixo que a operação exige**.
+**CRAVAR no DIFF — o fix NÃO é o de 01/02 nem o de 03, e isso é o esperado.** Em 01/02 o fix acrescentava um predicado **de posse do objeto** à guarda depois da busca; em 03 o fix **movia a busca** pra dentro do escopo do pai. Aqui o fix acrescenta uma guarda **de papel do chamador** antes da busca do alvo. Três formas diferentes porque três perguntas diferentes: *é seu?* (01/02), *é desta loja?* (03), *você pode fazer isso?* (04). A lição não é "o fix é sempre X"; é **autorize a operação que você está prestes a executar, no eixo que a operação exige**.
 
 ---
 
@@ -349,7 +349,7 @@ A prova de impacto é **composta**: cada metade é demonstrada no gêmeo onde el
 
 ### 8. Why the fix works (porta 8304) — e a metade da prova que só o `fixed/` mostra
 Apontar o Burp pro `fixed/` em `127.0.0.1:8304` e logar lá (cada build tem o próprio mapa de tokens):
-- `clancy` (comum) promove `alice` → **`403`** (body `Forbidden`). **A função checa o papel do chamador antes de qualquer coisa** — a alice nunca é promovida.
+- `clancy` (comum) promove `alice` → **`403`** (body `Forbidden`). **A função checa o papel do chamador logo depois da autenticação, antes de buscar o alvo** — a alice nunca é promovida.
 - **A função ainda funciona pra quem pode:** logar como `carol` (`{"user":"carol"}` → `<carol-token>`), a admin seedada, e promover `bob` → **`200`**. O fix não quebrou a feature; só restringiu quem a invoca. Sem/ruim token ainda → `401`.
 - **Os dois requests acima fecham a prova composta do Step 3.** O gate roda antes da busca do alvo, então o alvo não entra na decisão: o que separa o `200` do `403` é só o `is_admin` de quem chama. No `fixed/`, o flag **governa de fato** o acesso à função — o papel significa algo. Somado à metade do `vulnerable/`: **o flag governa a capacidade, e o flag é gravável por qualquer um.**
 - **`403`, não `404`:** o não-admin recebe `403` (não um `404` que fingiria que o endpoint não existe) — o endpoint é conhecido por premissa, não há existência a esconder, e `403` diz a verdade ("você está autenticado e o seu papel não basta"). **Forward pro DIFF** pro argumento completo (RFC 9110 §15.5.4; o critério da série, e por que o oracle que sustenta o `404` do pedido no 01 e no 03 não se aplica aqui).
@@ -496,7 +496,7 @@ Publicação verificada **lendo `atoms/api/ROADMAP.md` e a árvore de `atoms/` N
 - **`bola-sequential-id`, `bola-uuid-leaked`, `bola-nested-resource` — citar, contrastar, creditar. A troca de categoria É a lição.** Contrastes permitidos, todos verdadeiros sobre o código:
   - **O eixo:** 01–03 protegem **instâncias** (é este objeto seu? / é desta loja?); este protege **capacidade** (você pode invocar esta operação?). BOLA = objeto; BFLA = função. É o contraste central do átomo.
   - **A pergunta de auditoria:** "cadê o check de dono do objeto?" (01/02) / "o objeto é do pai autorizado?" (03) vs **"o chamador pode invocar esta função?"** (04).
-  - **A forma do fix:** predicado de posse do objeto depois da busca (01/02); mover a busca pro escopo do pai (03); **guarda de papel do chamador antes de tudo** (04). Três formas, três perguntas.
+  - **A forma do fix:** predicado de posse do objeto depois da busca (01/02); mover a busca pro escopo do pai (03); **guarda de papel do chamador antes da busca** (04). Três formas, três perguntas.
   - **O status code:** um critério só na série — *a existência do alvo é sensível?* (a regra do DIFF do 01). No 01 e no 03 ele dá `404` pro pedido, pra fechar o oracle sobre id-space enumerável; o 02 mantém o mesmo `404` por herança do fix, sem id-space pra varrer; o 03 já dá `403` pra loja, cuja existência não é sensível. No 04 o alvo é capacidade conhecida, e o mesmo critério dá **`403`**. O que não transfere é o argumento do oracle, não o critério — e dizer por que **é** parte da lição.
   - **A premissa declarada:** creditar o **02** como o precedente de "átomo que começa de premissa declarada" — lá a premissa era a lição (id vazado), aqui é economia (endpoint conhecido).
   - **A ordem do check antes da busca:** creditar o **03** pela mesma disciplina de método (gate antes de materializar o alvo).
@@ -523,7 +523,7 @@ Publicação verificada **lendo `atoms/api/ROADMAP.md` e a árvore de `atoms/` N
 | Descoberta do endpoint | **DECLARADA no enunciado, uma frase** | Em BFLA real a descoberta quase nunca é o difícil; encenar distorceria a classe. Nada na app revela rota (seria information disclosure, 2º bug). 2ª vez na série (creditar o 02: lá premissa=lição, aqui=economia). |
 | Rotas | `POST /login`, `POST /admin/users/:handle/promote` (vuln) | Superfície mínima. Sem read, sem demote, sem índice de rotas. |
 | O bug | **Check de papel AUSENTE** antes da função admin | Ausência de código, não payload. Autentica mas não autoriza a função. |
-| Fix (eixo único) | **`if (!USERS.get(caller)?.is_admin) return 403` antes da busca** | Guarda de papel do chamador, antes de tudo. Inverso de 01/02 (predicado sobre o objeto) e diferente de 03 (mover a busca). |
+| Fix (eixo único) | **`if (!USERS.get(caller)?.is_admin) return 403` antes da busca** | Guarda de papel do chamador, logo depois da autenticação. Inverso de 01/02 (predicado sobre o objeto) e diferente de 03 (mover a busca). |
 | Status code do fix | **`403`** (não `404`) | O alvo é uma **função conhecida** (premissa), não objeto com existência sensível; sem id-space, sem oráculo. RFC 9110 §15.5.4: credencial presente, papel insuficiente → `403` honesto. O argumento de `404` de 01–03 não transfere, e dizer por quê é lição. |
 | Alvo inexistente (fixed) | **`404`**, só alcançável por admin (pós-`403`) | Ortogonal; admins podem saber quais usuários existem. Não é oráculo pra não-admin (gate antes da busca). |
 | Resposta de sucesso | **`{ "handle": "<alvo>", "is_admin": true }`** | O **delta que a operação aplica** (o valor gravado, `true` literal — não um antes/depois), não dado privado de terceiro. `handle` é eco do input; o corpo é determinístico e não diz nada sobre o estado anterior do alvo. Mantém no eixo da função, longe de BOLA. |
@@ -618,7 +618,7 @@ A Fase 2 ainda roda `npm run typecheck` nos dois gêmeos como gate oficial (host
 - **A função admin NÃO lê objeto.** Promover muda estado; a resposta é o **delta aplicado** (`{handle, is_admin:true}`, `true` literal — não revela o estado anterior), não um registro privado. Os usuários **não têm** nome/endereço — não há PII pra confundir com leitura. Se a geração sentir vontade de devolver "o registro do alvo", **PARE**: isso puxaria o átomo de volta pra BOLA.
 - **O passo de contraste decisivo é o auto-promote.** `clancy` promovendo `clancy` é inatacável sob a lente de objeto (é o registro dele) e **mesmo assim** é a falha — porque o eixo é a operação. É o argumento que separa BFLA de BOLA; não cortar, não enfraquecer.
 - **Descoberta é premissa, não passo.** O endpoint é conhecido (uma frase no README/Context). **NÃO** criar endpoint de descoberta, índice de rotas, nem erro que confirme existência (seria information disclosure, 2º bug). Creditar o **02** (publicado) como precedente de premissa declarada — lá era a lição, aqui é economia.
-- **Fix = guarda de papel do chamador, antes de tudo.** `if (!USERS.get(caller)?.is_admin) return 403`, antes da busca do alvo. **NÃO** é o predicado de posse de 01/02 nem o lookup escopado de 03 — e dizer por que o fix é diferente faz parte da lição.
+- **Fix = guarda de papel do chamador, logo depois da autenticação.** `if (!USERS.get(caller)?.is_admin) return 403`, antes da busca do alvo. **NÃO** é o predicado de posse de 01/02 nem o lookup escopado de 03 — e dizer por que o fix é diferente faz parte da lição.
 - **Status `403`, não `404`.** Argumento próprio: alvo é função conhecida (sem id-space, sem oráculo); RFC 9110 §15.5.4 (credencial insuficiente). O argumento de `404` de 01–03 **não transfere** — explicar por quê. **Não** copiar `404` por reflexo da série.
 - **Estado mutável:** primeiro átomo cujo endpoint atacado escreve. Escritas reais, mas nenhuma resposta depende do acúmulo — os passos repetem em qualquer ordem; **sem demote**. Gêmeos independentes.
 - **Impacto honesto:** escalação **vertical** de privilégio (ganhar papel admin); **não** chamar de horizontal, **não** de RCE. A prova de impacto é **composta pelos dois gêmeos** — o flag governa a capacidade (`fixed/`), e o flag é gravável por qualquer um (`vulnerable/`) —, não um dump de dados. **Não** afirmar, dentro do `vulnerable/`, um efeito do flag: lá nenhum papel é lido.
