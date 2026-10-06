@@ -1,0 +1,9 @@
+services:
+  vulnerable:
+    build: ./vulnerable
+    ports:
+      - "127.0.0.1:8204:3000"
+  fixed:
+    build: ./fixed
+    ports:
+      - "127.0.0.1:8304:3000"
