@@ -63,8 +63,9 @@ acessa (BOLA) e qual função se invoca (BFLA).
   - *Dependências:* átomo 01.
 
 - [x] **03.** `bola-nested-resource` — **API1** Broken Object Level Authorization
-  - Recurso aninhado (`/users/{id}/orders/{oid}`): check do objeto-pai passa,
-    do objeto-filho falta.
+  - Nested resource (`/stores/{storeId}/orders/{orderId}`): um pedido (o filho)
+    solicitado dentro de uma loja (o pai), não de um usuário — as pessoas são
+    operadores da loja. Check do objeto-pai passa, do objeto-filho falta.
   - *Dependências:* átomos 01–02.
 
 - [ ] **04.** `bfla-admin-function` — **API5** Broken Function Level Authorization
