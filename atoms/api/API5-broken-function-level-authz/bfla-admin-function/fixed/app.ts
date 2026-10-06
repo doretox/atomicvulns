@@ -15,7 +15,7 @@ type User = { is_admin: boolean };
 const USERS = new Map<string, User>([
   ["clancy", { is_admin: false }],   // attacker (you) -- a plain member
   ["alice",  { is_admin: false }],   // primary victim -- promoted in the exploit
-  ["bob",    { is_admin: false }],   // the member alice promotes once she is (wrongly) an admin
+  ["bob",    { is_admin: false }],   // target of carol's legitimate promotion in the fixed build
   ["carol",  { is_admin: true  }],   // the one legitimate administrator
 ]);
 const TOKENS = new Map<string, string>();                   // opaque token -> username (in-memory; NOT a JWT)
