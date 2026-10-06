@@ -44,7 +44,7 @@ BFLA é fácil de confundir com BOLA **quando o endpoint admin devolve objetos**
 
 Por isso **a escolha da função admin é o que determina se o átomo ensina a categoria certa**, e a escolha é dura:
 
-> **A função admin deste átomo MUDA ESTADO e NÃO devolve dado alheio.** Promover um usuário a administrador muda o servidor; a resposta carrega só **o que mudou** (o papel do alvo), não o registro privado de terceiro. Assim não há "dado alheio saindo" pra o aluno interpretar como leitura de objeto. O que prova o sucesso do ataque é **o que ficou diferente no servidor**, não um corpo de resposta com PII.
+> **A função admin deste átomo MUDA ESTADO e NÃO devolve dado alheio.** Promover um usuário a administrador muda o servidor; a resposta carrega só **o que a operação gravou** (o papel do alvo, `true` literal), não o registro privado de terceiro. Assim não há "dado alheio saindo" pra o aluno interpretar como leitura de objeto. O que prova o sucesso do ataque é **a função admin executar pra um não-admin** (o `200`, que só sai depois da escrita), não um corpo de resposta com PII — a mudança de estado em si é real mas inobservável pela API (ver "Estado mutável").
 
 Registrar essa justificativa **no DIFF e no WALKTHROUGH**: a função foi escolhida *mudança de estado, não leitura* justamente pra isolar o eixo da capacidade do eixo do objeto.
 
@@ -60,7 +60,7 @@ O bug **não é** "input virou código" (injection) nem "um request legítimo al
 
 1. **Primeira categoria nova da série.** Sai de API1 (objeto) e entra em API5 (função). A pasta `API5-*` nasce aqui. A troca de eixo — *instância* vs *capacidade* — é a razão de ser do átomo, e o contraste com os três anteriores **é** o material.
 2. **Escalação VERTICAL, não horizontal.** 01–03 liam o objeto de um par (mesmo nível). Aqui o chamador **ganha um privilégio mais alto**. Primeiro átomo vertical do repo.
-3. **A função MUDA ESTADO.** Primeiro átomo da série que **escreve** — todos os anteriores eram `GET`. A prova não é um corpo de resposta com dado alheio; é o **estado do servidor ficando diferente** (ver "Estado mutável" e "Prova de impacto"). Isso é o que mantém o átomo longe do reflexo de BOLA.
+3. **A função MUDA ESTADO.** Primeiro átomo da série que **escreve** — todos os anteriores eram `GET`. A prova não é um corpo de resposta com dado alheio; é a função admin **aceitar** a chamada de um não-admin (`200`) — a escrita é real, mas inobservável pela API (ver "Estado mutável" e "Prova de impacto"). Isso é o que mantém o átomo longe do reflexo de BOLA.
 4. **O check presente é de identidade, não de papel.** O handler vulnerável *autentica* (um `401` real) — então *parece* que cuida de acesso. O que falta é a camada acima: a verificação do **papel**. É a mesma armadilha do revisor apressado dos átomos anteriores ("tem auth, tá ok"), aplicada ao eixo da função.
 
 > **Contraste a cravar (WALKTHROUGH e DIFF):** em BOLA o handler sabia quem você era e não checava **de quem é o objeto**; em BFLA o handler sabe quem você é e não checa **o que você tem direito de fazer**. Mesma raiz (identidade conhecida, decisão de acesso ausente), eixo diferente (objeto vs operação).
@@ -114,7 +114,7 @@ Restrição dura de design, idêntica em espírito à do átomo 02 (um bug só):
 - **`bob`** — usuário comum (`is_admin: false`), com uma função só: o **alvo da promoção legítima da `carol` no `fixed/`** (o caminho positivo do fix). Fica fora do exploit de propósito, pra a promoção que passa (`carol` → `bob`) não cair no alvo que o fix acabou de recusar (`clancy` → `alice`).
 - **`carol`** — a **única administradora do seed** (`is_admin: true`). Existe por um motivo estrutural: sem um admin legítimo, o `fixed/` não teria como mostrar a função **funcionando pra quem pode** (carol promove → `200`). É o caminho positivo do fix.
 
-**Por que há um admin no seed, e por que é a `carol`.** O `fixed/` precisa provar duas coisas: que um não-admin é **recusado** (`clancy` → `403`) e que um admin **passa** (a função não quebrou). O segundo exige um admin seedado. A `carol` (já do elenco de 03 como operadora) assume o papel aqui — reuso de elenco, não personagem novo. `clancy` e `alice` ficam **comuns** de propósito: o atacante tem que ser comum pra a escalação ser escalação, e a vítima tem que ser comum pra "virar admin" ser uma mudança observável.
+**Por que há um admin no seed, e por que é a `carol`.** O `fixed/` precisa provar duas coisas: que um não-admin é **recusado** (`clancy` → `403`) e que um admin **passa** (a função não quebrou). O segundo exige um admin seedado. A `carol` (já do elenco de 03 como operadora) assume o papel aqui — reuso de elenco, não personagem novo. `clancy` e `alice` ficam **comuns** de propósito: o atacante tem que ser comum pra a escalação ser escalação, e o alvo tem que ser alguém que o `clancy` **não teria direito de promover** — uma conta comum, à qual a promoção concede um papel que ela não tem. Se a `alice` já fosse admin, a promoção seria no-op e o exploit perderia o sentido. É sobre a chamada ser **ilegítima**, não sobre o efeito ser visível (pela API ele não é — ver "Estado mutável").
 
 **Requisito de README (EN+PT) — declarar o atalho:** o login sem senha é um **atalho deliberado do laboratório, não a vulnerabilidade**, e a autenticação em si **é imposta** (token ruim → `401`). Uma frase, **sem citar átomo** (mesmo requisito de 01–03).
 
@@ -181,7 +181,7 @@ app.post("/login", (req, res) => {
 
 ### `POST /admin/users/:handle/promote` — a rota VULNERÁVEL (a função admin)
 
-Promove o usuário `:handle` a administrador (`is_admin = true`). Autentica (Bearer ruim → `401`), busca o alvo, muda o estado, e devolve **só o que mudou** (o papel do alvo) — **sem** verificar que o chamador é admin. Handler **≤ ~30 linhas** (tem ~8).
+Promove o usuário `:handle` a administrador (`is_admin = true`). Autentica (Bearer ruim → `401`), busca o alvo, muda o estado, e devolve **só o que gravou** (o papel do alvo, `true` literal) — **sem** verificar que o chamador é admin. Handler **≤ ~30 linhas** (tem ~8).
 
 ```ts
 app.post("/admin/users/:handle/promote", (req, res) => {
@@ -198,7 +198,7 @@ app.post("/admin/users/:handle/promote", (req, res) => {
 ```
 
 - **Source:** o token no `Authorization` (a identidade — que o vulnerable autentica mas não usa pra autorizar a função) + o `:handle` do alvo. **Sink conceitual:** a execução da promoção **sem** comparar o papel do chamador ao papel exigido. O bug é **o que não está lá** — não greppa; audita-se perguntando **"onde este endpoint confere que o chamador pode invocar esta função?"**.
-- **A resposta NÃO é dado alheio.** `{ "handle": "alice", "is_admin": true }` é **o que o chamador acabou de causar** — o `handle` é eco do input dele, e o `is_admin:true` é o resultado determinístico da operação. Não é um registro privado da alice sendo lido (ela não tem nome/endereço/nada). Isso mantém o átomo no eixo da **função/capacidade**, não no eixo do **objeto**. **Cravar no DIFF.**
+- **A resposta NÃO é dado alheio.** `{ "handle": "alice", "is_admin": true }` é **o que o chamador acabou de causar** — o `handle` é eco do input dele, e o `is_admin:true` é o resultado determinístico da operação — idêntico tenha o alvo sido admin ou não, então o corpo não diz nada sobre o estado anterior. Não é um registro privado da alice sendo lido (ela não tem nome/endereço/nada). Isso mantém o átomo no eixo da **função/capacidade**, não no eixo do **objeto**. **Cravar no DIFF.**
 - **A promoção é idempotente e muda estado.** Promover duas vezes dá o mesmo resultado; o efeito persiste em memória (ver "Estado mutável").
 - **`USERS.get(req.params.handle)` → `User | undefined`** (a assinatura do `Map.get`, independente de `noUncheckedIndexedAccess`): a guarda `!target` é **exigida pelo compilador**, porque a linha seguinte faz `target.is_admin = true` (desreferencia `target`). **Validado nesta fase:** removendo a guarda, o `tsc` dá `TS18048: 'target' is possibly 'undefined'` (ver "Validação de typecheck e runtime"). Mesma dinâmica de guarda forçada que 01/02 têm com `order.owner` — e **diferente** de 03, onde nada desreferenciava e a guarda não era forçada. O `Map` (em vez de `Record`) também fecha a prototype pollution que o `:handle` abriria (ver "Por que Map").
 
@@ -280,6 +280,7 @@ O fix retorna **`403`** para um não-admin que chama a função admin — **não
 Todos os átomos 01–03 eram `GET` (leitura). Este é o **primeiro que muda estado** (`POST` que promove).
 
 - **As escritas são reais, mas nenhuma resposta do walkthrough depende do acúmulo.** Fato verificado: a sequência do walkthrough foi rodada duas vezes seguidas, contra os mesmos containers, e os status e corpos saíram idênticos. Os passos podem ser repetidos em qualquer ordem. (No `vulnerable/` nenhum papel é lido; no `fixed/` o `clancy` nunca é promovido, e a promoção da `carol` não alimenta passo nenhum.)
+- **A mudança de estado no `vulnerable/` é real mas inobservável pela API.** Não há rota de leitura, e o corpo de sucesso é determinístico (`is_admin: true` literal, idêntico pra quem já era admin e pra quem não era) — de fora, o `200` não distingue nada. É consequência de uma escolha deliberada — **nenhuma rota de leitura, pra não convidar o reflexo de BOLA** (ver "A tese do átomo") —, não um defeito. A prova de que `is_admin` governa alguma coisa vem do `fixed/` (`carol` `200` vs `clancy` `403`), não de observar o flag.
 - **SEM endpoint de demote.** Um "despromover" seria **outra função admin desprotegida** — superfície a mais sem lição a mais (e, no `vulnerable/`, um segundo bug do mesmo tipo). E nenhum passo precisa desfazer nada.
 - **Gêmeos independentes.** Promover na porta 8204 não muda nada na 8304; o seed de cada build é próprio.
 - **Requisito de README (EN+PT), a única casa da frase do restart:** uma frase diz que o estado vive em memória e que `./atom down bfla-admin-function && ./atom up bfla-admin-function` devolve o seed original (`carol` a única admin). Não repetir no WALKTHROUGH nem no DIFF.
@@ -320,7 +321,7 @@ Trabalhado **100% no Burp** (Repeater), `curl` como equivalente — **API-only, 
   ```
   (corpo vazio ou ausente — o alvo vai no path). Resposta — **`200`** com `{"handle":"alice","is_admin":true}`.
 - Você invocou uma **função admin** — promover uma conta a administrador — sendo um **usuário comum**, com o seu próprio token válido. O registro alterado **não é seu**, você não tem relação nenhuma com a alice, e o que explica o sucesso é que **a FUNÇÃO estava desprotegida** — não um objeto seu, não uma identidade forjada. Isso é **BFLA**, e é **escalação vertical**: você ganhou poder, não leu o dado de um par.
-- **A resposta não é leitura de objeto.** O corpo diz só **o que você causou** (o papel da alice virou `true`) — o `handle` é o que você mesmo mandou no path. Nada de nome/endereço/registro privado. Guardar essa observação: é o que separa esta classe de BOLA.
+- **A resposta não é leitura de objeto.** O corpo diz só **o que a operação gravou** (`is_admin: true`, literal — o mesmo pra qualquer alvo) — o `handle` é o que você mesmo mandou no path. Que a alice era comum antes se lê no seed, não na resposta. Nada de nome/endereço/registro privado. Guardar essa observação: é o que separa esta classe de BOLA.
 - **Indiferença ao alvo (a assinatura de BFLA):** a função aceitou `alice` sem perguntar quem você é no organograma. Ela aceitaria **qualquer alvo** — o Step 2 prova isso com o caso-limite (o próprio `clancy`). A indiferença ao alvo é o sinal de que o eixo é **a operação**, não a instância.
 
 ### 6. Step 2 — What the vuln is NOT (passo de contraste OBRIGATÓRIO — CLAUDE.md §5)
@@ -511,7 +512,7 @@ Publicação verificada **lendo `atoms/api/ROADMAP.md` e a árvore de `atoms/` N
 | Toolchain | **Herdado exato** de 01–03 (express 5.2.1, tsx 4.23.13, typescript 7.0.2, @types/express 5.0.6, @types/node 24.13.5; base `node:24.21.0-slim`) | CLAUDE.md §3.6. Lido dos arquivos publicados nesta fase. Bump é decisão de release. |
 | Store | **Em memória (`Map<string, User>`), sem banco** | BFLA não depende do storage. `User = { is_admin: boolean }`: o papel tem que morar em algum lugar — única mudança estrutural vs. o `Set` de 01–03. **`Map` (não `Record`)** pra o lookup-e-escrita por `:handle` não abrir prototype pollution (`__proto__`/`constructor`); `Map.get` não percorre protótipo. |
 | Papel / representação | **`is_admin: boolean` por usuário** | Mínimo. Análogo ao `order.owner` (01/02) e ao vínculo operador→loja (03): o dado que a autorização compara. |
-| Admin no seed | **`carol` é a única admin; `clancy`/`alice`/`bob` comuns** | O `fixed/` precisa de um admin pra mostrar a função funcionando pra quem pode. `clancy` comum pra a escalação ser escalação; `alice` comum pra "virar admin" ser observável; `bob` comum como alvo da promoção legítima da `carol` no `fixed/`. `carol` reusa o elenco. |
+| Admin no seed | **`carol` é a única admin; `clancy`/`alice`/`bob` comuns** | O `fixed/` precisa de um admin pra mostrar a função funcionando pra quem pode. `clancy` comum pra a escalação ser escalação; `alice` comum pra a promoção ser ilegítima (se já fosse admin, seria no-op); `bob` comum como alvo da promoção legítima da `carol` no `fixed/`. `carol` reusa o elenco. |
 | Token | **Opaco, `crypto.randomBytes`; NÃO JWT** — idêntico a 01–03 | Cripto-forte pra não ser 2ª vuln. O ataque não toca o token. |
 | Descoberta do endpoint | **DECLARADA no enunciado, uma frase** | Em BFLA real a descoberta quase nunca é o difícil; encenar distorceria a classe. Nada na app revela rota (seria information disclosure, 2º bug). 2ª vez na série (creditar o 02: lá premissa=lição, aqui=economia). |
 | Rotas | `POST /login`, `POST /admin/users/:handle/promote` (vuln) | Superfície mínima. Sem read, sem demote, sem índice de rotas. |
@@ -519,7 +520,7 @@ Publicação verificada **lendo `atoms/api/ROADMAP.md` e a árvore de `atoms/` N
 | Fix (eixo único) | **`if (!USERS.get(caller)?.is_admin) return 403` antes da busca** | Guarda de papel do chamador, antes de tudo. Inverso de 01/02 (predicado sobre o objeto) e diferente de 03 (mover a busca). |
 | Status code do fix | **`403`** (não `404`) | O alvo é uma **função conhecida** (premissa), não objeto com existência sensível; sem id-space, sem oráculo. RFC 9110 §15.5.4: credencial presente, papel insuficiente → `403` honesto. O argumento de `404` de 01–03 não transfere, e dizer por quê é lição. |
 | Alvo inexistente (fixed) | **`404`**, só alcançável por admin (pós-`403`) | Ortogonal; admins podem saber quais usuários existem. Não é oráculo pra não-admin (gate antes da busca). |
-| Resposta de sucesso | **`{ "handle": "<alvo>", "is_admin": true }`** | O **delta de estado** (o que o chamador causou), não dado privado de terceiro. `handle` é eco do input; `is_admin:true` é o resultado. Mantém no eixo da função, longe de BOLA. |
+| Resposta de sucesso | **`{ "handle": "<alvo>", "is_admin": true }`** | O **delta que a operação aplica** (o valor gravado, `true` literal — não um antes/depois), não dado privado de terceiro. `handle` é eco do input; o corpo é determinístico e não diz nada sobre o estado anterior do alvo. Mantém no eixo da função, longe de BOLA. |
 | Corpo dos erros — `sendStatus` | **`res.sendStatus(...)` (401/403/404); sucesso via `res.json(...)`** | Igual a 01–03. |
 | Estado | **Mutável; escritas reais, nenhuma resposta depende do acúmulo; sem demote** | Primeiro átomo que escreve. Sequência do walkthrough rodada duas vezes seguidas: status e corpos idênticos, passos repetíveis em qualquer ordem. Demote seria 2ª função desprotegida (superfície sem lição). Gêmeos independentes. |
 | Padrão de prova | **Trigger** (não Payload) | Não há sink; o exploit é invocar uma função legítima sem papel. → passo de contraste obrigatório. |
@@ -579,11 +580,11 @@ A Fase 2 ainda roda `npm run typecheck` nos dois gêmeos como gate oficial (host
 
 1. **`POST /login`** mapeia `usuário→token`, Bearer resolve de volta; `clancy`/`alice`/`bob`/`carol` recebem tokens distintos e cripto-fortes (`randomBytes`). Bloco de auth (helpers) byte a byte o de 01–03; só `USERS` mudou de `Set<string>` pra `Map<string, User>`; membership segue `USERS.has(user)`.
 2. **Autenticação funciona:** sem Bearer, ou Bearer inválido → **`401`** no endpoint admin, nas duas versões.
-3. **Vulnerable — BFLA:** `POST /admin/users/alice/promote` com o Bearer do **`clancy`** (comum) → **`200`**, `{"handle":"alice","is_admin":true}`; `alice.is_admin` fica `true`. Token intacto.
+3. **Vulnerable — BFLA:** `POST /admin/users/alice/promote` com o Bearer do **`clancy`** (comum) → **`200`**, `{"handle":"alice","is_admin":true}`. A escrita (`alice.is_admin = true`) é real — o `200` só sai depois dela —, mas inobservável pela API: validar pelo status, não por ler o flag. Token intacto.
 4. **Vulnerable — indiferença ao alvo:** `POST /admin/users/clancy/promote` com o Bearer do `clancy` → **`200`** (o caso-limite do passo de contraste).
 5. **Vulnerable — nenhum papel é lido:** no `vulnerable/app.ts` o `is_admin` só é escrito, nunca lido. Por isso a metade "o flag governa a capacidade" da prova de impacto não é demonstrável ali e mora no `fixed/` (item 8); os itens 3–4 são a metade "o flag é gravável por qualquer um".
 6. **Vulnerable — alvo inexistente:** `POST /admin/users/nobody/promote` com Bearer válido → **`404`**.
-7. **Fixed — o não-admin é recusado:** `POST /admin/users/alice/promote` com o Bearer do **`clancy`** (comum) → **`403`** (body `Forbidden`); `alice` **não** vira admin.
+7. **Fixed — o não-admin é recusado:** `POST /admin/users/alice/promote` com o Bearer do **`clancy`** (comum) → **`403`** (body `Forbidden`); `alice` **não** vira admin (o `403` sai antes da escrita).
 8. **Fixed — a função funciona pra admin:** logar como `carol` (seed admin) e `POST /admin/users/bob/promote` → **`200`**. Sem/ruim token → `401`. Com o item 7, é a metade `fixed/` da prova de impacto: o que separa `200` de `403` é só o `is_admin` de quem chama.
 9. **Fixed — `403` antes da busca:** um não-admin pedindo um `:handle` **inexistente** ainda recebe **`403`** (não `404`) — o gate roda antes do lookup, não vaza existência de alvo.
 10. **`app.ts` DIFERE só pela guarda de papel** (`if (!USERS.get(caller)?.is_admin) return res.sendStatus(403);` + o comentário) entre `vulnerable/` e `fixed/`. `POST /login`, helpers, imports, `USERS`, rodapé, `Dockerfile`, `package.json`, `package-lock.json`, `tsconfig.json` **idênticos** entre as versões.
@@ -608,7 +609,7 @@ A Fase 2 ainda roda `npm run typecheck` nos dois gêmeos como gate oficial (host
 ## Notas específicas pro Claude Code
 
 - **Princípio guia:** este átomo **vira a página da série** — de objeto (API1/BOLA) pra função (API5/BFLA). Cada doc deve deixar o contraste visível: 01–03 perguntavam *este objeto é seu?*; aqui a pergunta é *você pode invocar esta operação?*. Se o aluno sair achando que "li o dado de outra pessoa", o átomo falhou — por isso a função **muda estado e não devolve dado alheio**.
-- **A função admin NÃO lê objeto.** Promover muda estado; a resposta é o **delta** (`{handle, is_admin:true}`), não um registro privado. Os usuários **não têm** nome/endereço — não há PII pra confundir com leitura. Se a geração sentir vontade de devolver "o registro do alvo", **PARE**: isso puxaria o átomo de volta pra BOLA.
+- **A função admin NÃO lê objeto.** Promover muda estado; a resposta é o **delta aplicado** (`{handle, is_admin:true}`, `true` literal — não revela o estado anterior), não um registro privado. Os usuários **não têm** nome/endereço — não há PII pra confundir com leitura. Se a geração sentir vontade de devolver "o registro do alvo", **PARE**: isso puxaria o átomo de volta pra BOLA.
 - **O passo de contraste decisivo é o auto-promote.** `clancy` promovendo `clancy` é inatacável sob a lente de objeto (é o registro dele) e **mesmo assim** é a falha — porque o eixo é a operação. É o argumento que separa BFLA de BOLA; não cortar, não enfraquecer.
 - **Descoberta é premissa, não passo.** O endpoint é conhecido (uma frase no README/Context). **NÃO** criar endpoint de descoberta, índice de rotas, nem erro que confirme existência (seria information disclosure, 2º bug). Creditar o **02** (publicado) como precedente de premissa declarada — lá era a lição, aqui é economia.
 - **Fix = guarda de papel do chamador, antes de tudo.** `if (!USERS.get(caller)?.is_admin) return 403`, antes da busca do alvo. **NÃO** é o predicado de posse de 01/02 nem o lookup escopado de 03 — e dizer por que o fix é diferente faz parte da lição.
