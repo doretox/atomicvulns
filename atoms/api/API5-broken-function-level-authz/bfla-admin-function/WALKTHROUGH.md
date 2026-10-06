@@ -24,7 +24,7 @@ app.post("/admin/users/:handle/promote", (req, res) => {
   const target = USERS.get(req.params.handle);
   if (!target) return res.sendStatus(404);                  // unknown target user
   target.is_admin = true;                                   // state change -- not a read
-  res.json({ handle: req.params.handle, is_admin: true });
+  res.json({ handle: req.params.handle, is_admin: true });  // the state delta, not third-party data
 });
 ```
 
