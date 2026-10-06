@@ -98,7 +98,9 @@ Restrição dura de design, idêntica em espírito à do átomo 02 (um bug só):
 
 `POST /login` recebe `{ "user": "<nome>" }`, valida contra os usuários seedados e devolve `{ "token": "<opaco>" }`. Mapa `token → usuário` **em memória**, resolvido por lookup. **NÃO é JWT.** Os helpers de auth (imports, `TOKENS`, `issueToken`, `authenticate`) são **byte a byte** os de 01–03 (conferido: linhas 1–23 dos três `app.ts` publicados são idênticas, md5 batendo) — **copiar, não reescrever**. Token com `randomBytes(24).toString("base64url")`: um token previsível seria uma segunda vulnerabilidade e violaria "um átomo = uma vuln" (CLAUDE.md §2). O ataque **não toca** o token.
 
-**Uma mudança estrutural obrigatória — e é a única que a classe exige.** Em 01–03, `USERS` é um `Set<string>` (a identidade é só o handle). BFLA precisa que o usuário **carregue um papel**, então `USERS` passa de `Set` a um `Record<string, User>` onde `User = { is_admin: boolean }`. Essa é a mudança mínima que a categoria pede (o papel tem que morar em algum lugar) — registrar no DIFF que **não é um eixo novo de bug**, é o dado que a autorização por função compara, análogo ao `order.owner` de 01/02 e ao `STORES[...].operators` de 03. Tudo o mais do bloco de auth é idêntico.
+**Uma mudança estrutural obrigatória — e é a única que a classe exige.** Em 01–03, `USERS` é um `Set<string>` (a identidade é só o handle). BFLA precisa que o usuário **carregue um papel**, então `USERS` passa de `Set` a um **`Map<string, User>`** onde `User = { is_admin: boolean }`. Essa é a mudança mínima que a categoria pede (o papel tem que morar em algum lugar) — registrar no DIFF que **não é um eixo novo de bug**, é o dado que a autorização por função compara, análogo ao `order.owner` de 01/02 e ao `STORES[...].operators` de 03. Tudo o mais do bloco de auth é idêntico.
+
+> **Por que `Map`, e não `Record` — o `Map` é o que impede uma SEGUNDA vuln (prototype pollution). Ver a seção "Store / dados".** Resumo: a função deste átomo **escreve** através de um lookup por chave-string vinda do path (`:handle`), e um objeto literal (`Record`) tem `Object.prototype` na cadeia; `Map.get()` não. A escolha de `Map` resolve o problema **estruturalmente** (não com uma guarda extra) e, de quebra, devolve o `POST /login` à forma de 01–03 (`USERS.has(user)`).
 
 **O que a auth prova e o que NÃO prova (deixar explícito — é a lição):**
 
@@ -127,18 +129,36 @@ Restrição dura de design, idêntica em espírito à do átomo 02 (um bug só):
 // is_admin is the capability axis this atom is about. Promoting a user to admin is an
 // admin-only function. clancy (you) is a plain member; carol is the one seeded admin,
 // so the fixed build has a legitimate caller to show the function still works.
+// A Map (not a plain object) is deliberate -- see "Por que Map" below.
 type User = { is_admin: boolean };
-const USERS: Record<string, User> = {
-  clancy: { is_admin: false },   // attacker (you) -- a plain member
-  alice:  { is_admin: false },   // primary victim -- promoted in the exploit
-  bob:    { is_admin: false },   // the member alice promotes once she is (wrongly) an admin
-  carol:  { is_admin: true  },   // the one legitimate administrator
-};
+const USERS = new Map<string, User>([
+  ["clancy", { is_admin: false }],   // attacker (you) -- a plain member
+  ["alice",  { is_admin: false }],   // primary victim -- promoted in the exploit
+  ["bob",    { is_admin: false }],   // the member alice promotes once she is (wrongly) an admin
+  ["carol",  { is_admin: true  }],   // the one legitimate administrator
+]);
 ```
 
 - **`is_admin: boolean` é a representação do papel** — o dado que a autorização por função compara, análogo ao `order.owner` (01/02) e ao vínculo operador→loja (03). Dado fake óbvio, sem PII (handles de login, não pessoas com nome/endereço).
 - **Dois admins ao longo do walkthrough** (seed tem um, `carol`): o exploit cria mais (`alice`, depois quem ela promover). Ver "Estado mutável".
 - **Nenhum outro campo.** O usuário não tem nome, e-mail, endereço — nada que um `GET` pudesse "vazar". Isso é deliberado: **não há dado alheio pra confundir com leitura de objeto** (ver "A tese do átomo").
+
+### Por que `Map`, e não `Record` — o `:handle` abre prototype pollution
+
+**Decisão do mantenedor, e a razão tem que ficar escrita.** A função admin **escreve** através de um lookup por chave-string vinda do path (`USERS[req.params.handle]`, depois `target.is_admin = true`). Se `USERS` fosse um **objeto literal** (`Record`), ele traria `Object.prototype` na cadeia de protótipo, e isso abriria uma **segunda classe de vulnerabilidade** — **prototype pollution**, que tem átomo web dedicado neste repo:
+
+- `POST /admin/users/__proto__/promote` faz `USERS["__proto__"]` devolver `Object.prototype`, que é **truthy** — a guarda `!target` **NÃO pega** — e a linha seguinte executa `Object.prototype.is_admin = true`. A partir daí **todo objeto do processo** sem `is_admin` próprio herda `true`. Não é teórico: o parâmetro é string vinda do path, e um aluno curioso tenta `__proto__` justamente por isso. (`constructor` cai na mesma armadilha: `USERS["constructor"]` é truthy e recebe a escrita.) **Validado no protótipo desta fase** (ver "Validação de typecheck e runtime").
+- Isso violaria "um átomo = uma vuln" (CLAUDE.md §2) — o átomo é de BFLA, não de prototype pollution.
+
+**Por que o risco só aparece AGORA, e não em 01–03:** o átomo 01 e o 02 fazem `ORDERS[Number(id)]` — `Number("__proto__")` é `NaN` e `ORDERS[NaN]` é `undefined`; o 03 só **lê** (`STORES[storeId]?.operators ?? false`), nunca escreve através da chave. Este é o **primeiro átomo que ESCREVE através de um lookup com chave-string vinda do path**. A categoria nova (função que muda estado) trouxe o risco novo.
+
+**A correção é `Map<string, User>`, e ela dá três ganhos — registrar os três:**
+
+1. **`Map.get()` não percorre a cadeia de protótipo.** `USERS.get("__proto__")` e `USERS.get("constructor")` devolvem `undefined` → `404`. O problema **desaparece estruturalmente**, em vez de ser barrado por uma guarda extra que o leitor do átomo não teria como entender.
+2. **`USERS.has(user)` no `POST /login` volta a ser a MESMA forma de 01–03**, eliminando o `Object.hasOwn` que seria uma divergência da série.
+3. **`Map.get()` tipa como `User | undefined` sempre** (independente de `noUncheckedIndexedAccess`), então a guarda `!target` continua **exigida pelo compilador** — exatamente o que a spec afirma na seção "Anatomia".
+
+> **Alternativa CONSIDERADA e DESCARTADA:** `Record` + `Object.hasOwn(USERS, handle)` antes da escrita. Funciona (o `hasOwn` ignora a cadeia de protótipo), mas a guarda fica **arbitrária pra quem lê** e esconde o motivo real — o leitor vê um `hasOwn` sem entender que ele está barrando prototype pollution. O `Map` torna a intenção estrutural. **Não reintroduzir o `Record`.**
 
 ---
 
@@ -148,12 +168,12 @@ Imports: `import express from "express";` e `import { randomBytes } from "node:c
 
 ### `POST /login` — obter o próprio token (idêntico nas duas versões)
 
-Recebe `{ "user": "<nome>" }`, valida contra `USERS`, devolve um token opaco. Sem senha (atalho de auth). Usuário desconhecido/ausente → `400` (higiene). A **única** diferença vs. 01–03 é a checagem de membership: como `USERS` agora é `Record` (não `Set`), usa-se `Object.hasOwn(USERS, user)` no lugar de `USERS.has(user)`.
+Recebe `{ "user": "<nome>" }`, valida contra `USERS`, devolve um token opaco. Sem senha (atalho de auth). Usuário desconhecido/ausente → `400` (higiene). A checagem de membership é **`USERS.has(user)` — a MESMA forma de 01–03** (o `Map` preserva essa API; só o tipo do store mudou de `Set<string>` pra `Map<string, User>`, porque agora cada usuário carrega um papel). Nenhuma divergência da série aqui.
 
 ```ts
 app.post("/login", (req, res) => {
   const user = req.body?.user;
-  if (!Object.hasOwn(USERS, user)) return res.sendStatus(400);
+  if (!USERS.has(user)) return res.sendStatus(400);
   res.json({ token: issueToken(user) });
 });
 ```
@@ -169,7 +189,7 @@ app.post("/admin/users/:handle/promote", (req, res) => {
   // VULNERABLE: the caller is authenticated, but the handler never checks the caller's
   // ROLE. Promoting a user to admin is an admin-only function; here ANY authenticated
   // user can invoke it. Authenticated is not authorized to PERFORM this operation.
-  const target = USERS[req.params.handle];
+  const target = USERS.get(req.params.handle);
   if (!target) return res.sendStatus(404);                  // unknown target user
   target.is_admin = true;                                   // state change -- not a read
   res.json({ handle: req.params.handle, is_admin: true });  // the state delta, not third-party data
@@ -179,7 +199,7 @@ app.post("/admin/users/:handle/promote", (req, res) => {
 - **Source:** o token no `Authorization` (a identidade — que o vulnerable autentica mas não usa pra autorizar a função) + o `:handle` do alvo. **Sink conceitual:** a execução da promoção **sem** comparar o papel do chamador ao papel exigido. O bug é **o que não está lá** — não greppa; audita-se perguntando **"onde este endpoint confere que o chamador pode invocar esta função?"**.
 - **A resposta NÃO é dado alheio.** `{ "handle": "alice", "is_admin": true }` é **o que o chamador acabou de causar** — o `handle` é eco do input dele, e o `is_admin:true` é o resultado determinístico da operação. Não é um registro privado da alice sendo lido (ela não tem nome/endereço/nada). Isso mantém o átomo no eixo da **função/capacidade**, não no eixo do **objeto**. **Cravar no DIFF.**
 - **A promoção é idempotente e muda estado.** Promover duas vezes dá o mesmo resultado; o efeito é persistente até o restart (ver "Estado mutável").
-- **`USERS[req.params.handle]` → `User | undefined`** (por `noUncheckedIndexedAccess`): a guarda `!target` é **exigida pelo compilador**, porque a linha seguinte faz `target.is_admin = true` (desreferencia `target`). Mesma dinâmica de guarda forçada que 01/02 têm com `order.owner` — e **diferente** de 03, onde nada desreferenciava e a guarda não era forçada. (Verificar na geração; ver "Decisões que podem gerar dúvida".)
+- **`USERS.get(req.params.handle)` → `User | undefined`** (a assinatura do `Map.get`, independente de `noUncheckedIndexedAccess`): a guarda `!target` é **exigida pelo compilador**, porque a linha seguinte faz `target.is_admin = true` (desreferencia `target`). **Validado nesta fase:** removendo a guarda, o `tsc` dá `TS18048: 'target' is possibly 'undefined'` (ver "Validação de typecheck e runtime"). Mesma dinâmica de guarda forçada que 01/02 têm com `order.owner` — e **diferente** de 03, onde nada desreferenciava e a guarda não era forçada. O `Map` (em vez de `Record`) também fecha a prototype pollution que o `:handle` abriria (ver "Por que Map").
 
 > **Bind do servidor** (rodapé idêntico a 01–03): `const PORT = Number(process.env.PORT ?? 3000); const HOST = process.env.HOST ?? "127.0.0.1"; app.listen(PORT, HOST);`
 
@@ -196,8 +216,8 @@ app.post("/admin/users/:handle/promote", (req, res) => {
   // FIXED: function-level authorization. Promoting is an admin-only capability, so the
   // caller's ROLE is checked BEFORE anything else happens -- a non-admin is refused 403
   // without the target ever being looked up, so the gate leaks nothing about who exists.
-  if (!USERS[caller]?.is_admin) return res.sendStatus(403);
-  const target = USERS[req.params.handle];
+  if (!USERS.get(caller)?.is_admin) return res.sendStatus(403);
+  const target = USERS.get(req.params.handle);
   if (!target) return res.sendStatus(404);
   target.is_admin = true;
   res.json({ handle: req.params.handle, is_admin: true });
@@ -214,15 +234,15 @@ Diff mínimo (o eixo único):
 +  // FIXED: function-level authorization. Promoting is an admin-only capability, so the
 +  // caller's ROLE is checked BEFORE anything else happens -- a non-admin is refused 403
 +  // without the target ever being looked up, so the gate leaks nothing about who exists.
-+  if (!USERS[caller]?.is_admin) return res.sendStatus(403);
-   const target = USERS[req.params.handle];
++  if (!USERS.get(caller)?.is_admin) return res.sendStatus(403);
+   const target = USERS.get(req.params.handle);
    if (!target) return res.sendStatus(404);
 ```
 
-**A leitura correta do fix (cravar no DIFF):** a operação passou a **perguntar pelo papel do chamador** — não pelo dono de um objeto. O predicado `USERS[caller]?.is_admin` pergunta *"quem chama é admin?"*, e **o alvo não é argumento dessa pergunta** (ela roda antes de o alvo ser buscado). É o inverso estrutural de 01/02, onde o fix acrescentava um predicado **sobre o objeto** (`order.owner !== caller`); aqui o predicado é **sobre o chamador** (`USERS[caller].is_admin`). A lição transferível: **autorização por função é uma pergunta sobre o papel de quem invoca, no mesmo nível que a autenticação — não um check opcional depois de a operação já estar em curso.**
+**A leitura correta do fix (cravar no DIFF):** a operação passou a **perguntar pelo papel do chamador** — não pelo dono de um objeto. O predicado `USERS.get(caller)?.is_admin` pergunta *"quem chama é admin?"*, e **o alvo não é argumento dessa pergunta** (ela roda antes de o alvo ser buscado). É o inverso estrutural de 01/02, onde o fix acrescentava um predicado **sobre o objeto** (`order.owner !== caller`); aqui o predicado é **sobre o chamador** (`USERS.get(caller).is_admin`). A lição transferível: **autorização por função é uma pergunta sobre o papel de quem invoca, no mesmo nível que a autenticação — não um check opcional depois de a operação já estar em curso.**
 
 - **A guarda de papel vem ANTES da busca do alvo.** Um não-admin recebe `403` sem que o alvo seja consultado — então o gate **não vaza** nada sobre quais handles existem. É a mesma disciplina de ordem que o 03 usa (o check do pai antes da busca do filho); creditar o 03 (publicado) por essa simetria de método.
-- **`USERS[caller]?.is_admin`:** `caller` é um handle resolvido pelo `authenticate` (sempre uma chave de `USERS`, porque tokens só são emitidos pra usuários válidos), mas o TS não sabe disso — `USERS[caller]` tipa como `User | undefined` sob `noUncheckedIndexedAccess`, então o `?.` é **exigido** e correto. Mesmo padrão do `STORES[storeId]?.operators ... ?? false` de 03. **Não** trocar por `!` (non-null assertion).
+- **`USERS.get(caller)?.is_admin`:** `caller` é um handle resolvido pelo `authenticate` (sempre uma chave de `USERS`, porque tokens só são emitidos pra usuários válidos), mas o TS não sabe disso — `USERS.get(caller)` tipa como `User | undefined` (assinatura do `Map.get`), então o `?.` é **exigido** e correto. **Validado nesta fase:** trocar por acesso direto `USERS.get(caller).is_admin` faz o `tsc` dar `TS2532: Object is possibly 'undefined'` (ver "Validação de typecheck e runtime"). Mesmo espírito do `STORES[storeId]?.operators ... ?? false` de 03. **Não** trocar por `!` (non-null assertion).
 
 **CRAVAR no DIFF — o fix NÃO é o de 01/02 nem o de 03, e isso é o esperado.** Em 01/02 o fix acrescentava um predicado **de posse do objeto** à guarda depois da busca; em 03 o fix **movia a busca** pra dentro do escopo do pai. Aqui o fix acrescenta uma guarda **de papel do chamador** antes de tudo. Três formas diferentes porque três perguntas diferentes: *é seu?* (01/02), *é desta loja?* (03), *você pode fazer isso?* (04). A lição não é "o fix é sempre X"; é **autorize a operação que você está prestes a executar, no eixo que a operação exige**.
 
@@ -279,10 +299,15 @@ Trabalhado **100% no Burp** (Repeater), `curl` como equivalente — **API-only, 
 - Creditar o eixo: em 01–03 o handler sabia quem você era e não checava **de quem é o objeto**; aqui sabe quem você é e não checa **o que você pode fazer**.
 
 ### 3. How auth works in this lab (subseção curta)
-- Token opaco via `POST /login` (**sem senha** — atalho de auth fora de escopo), cripto-forte (`randomBytes`), mapeado ao usuário. Dois pontos: (i) a **autenticação É imposta** (token ruim → `401`); (ii) se o **papel** do chamador é checado pra autorizar a **função** é outra pergunta — e o vulnerable não checa. **Disciplina cravada:** o ataque **não toca** o token (não decodifica, não adultera) — fica válido e do `clancy` o tempo todo. O papel mora em `USERS[caller].is_admin`.
+- Token opaco via `POST /login` (**sem senha** — atalho de auth fora de escopo), cripto-forte (`randomBytes`), mapeado ao usuário. Dois pontos: (i) a **autenticação É imposta** (token ruim → `401`); (ii) se o **papel** do chamador é checado pra autorizar a **função** é outra pergunta — e o vulnerable não checa. **Disciplina cravada:** o ataque **não toca** o token (não decodifica, não adultera) — fica válido e do `clancy` o tempo todo. O papel mora em `USERS.get(caller).is_admin`.
 
 ### 4. Baseline — logar como usuário comum
 - `POST /login` com `{"user":"clancy"}` → `{"token":"<clancy-token>"}`. Bloco colável (request-line + `Content-Type: application/json` + corpo). `clancy` é um **usuário comum** — a API o autentica perfeitamente; ele simplesmente não é admin. (Não há `GET` de escopo pra mostrar aqui — a superfície é mínima; a única outra rota é a função admin, que o Step 1 ataca. Baseline curto é o correto pra esta classe.)
+- **Requisito de walkthrough — UMA frase sobre o papel do `clancy` (obrigatória).** No ponto em que o papel dele passa a importar (aqui, ou na abertura do Step 1), uma frase registra que **o papel do `clancy` se lê no seed do `app.ts`** (`clancy: { is_admin: false }` — a premissa do repo: um bug por app, rápido de ler) e **se confirma pelo comportamento no `fixed/`**, onde a mesma chamada bate num `403`. Motivo: a superfície tem duas rotas e nenhum `GET`, então no `vulnerable/` a chamada do `clancy` passa de qualquer jeito e o sucesso **não distingue** "ele não era admin" de "ele já era" — sem essa frase fica um buraco visível. **Uma frase. NÃO criar rota de leitura** (`GET /me` etc.) pra confirmar o papel — superfície extra sem lição. Texto sugerido (a Fase 2 ajusta a prosa, não o sentido):
+
+  > **EN:** *You can see clancy is an ordinary member in the seed — `clancy: { is_admin: false }` in `app.ts` — and the fixed build confirms it from the outside: the same call there is refused `403`. The vulnerable build never says so, because it never checks.*
+  >
+  > **PT:** *Dá pra ver que o `clancy` é um member comum no seed — `clancy: { is_admin: false }` no `app.ts` — e o `fixed/` confirma isso de fora: a mesma chamada lá leva `403`. O `vulnerable/` nunca diz isso, porque nunca checa.*
 
 ### 5. Step 1 — Invoke the admin function as a non-admin (BFLA confirmado)
 - `clancy` (comum) promove a **alice**:
@@ -365,7 +390,7 @@ Nenhuma frase memorável aparece em **dois** documentos. Atribuição fixa:
 }
 ```
 
-- **`noUncheckedIndexedAccess: true` FORÇA a guarda `!target` neste átomo** — como em 01/02 (onde `order.owner` era desreferenciado) e **diferente** de 03 (onde nada era desreferenciado e a guarda não era forçada). Aqui `USERS[req.params.handle]` é `User | undefined`, e `target.is_admin = true` desreferencia `target`, então sem `if (!target)` o `tsc` dá `TS18048: 'target' is possibly 'undefined'`. O mesmo vale pra `USERS[caller]` no fix, resolvido com `?.` em vez de guarda (não há desreferência direta). **Os docs PODEM afirmar que o compilador força a guarda `!target`** (ao contrário de 03). Confirmar na geração.
+- **A guarda `!target` é FORÇADA pelo compilador neste átomo** — como em 01/02 (onde `order.owner` era desreferenciado) e **diferente** de 03 (onde nada era desreferenciado e a guarda não era forçada). Aqui `USERS.get(req.params.handle)` é `User | undefined` (assinatura do `Map.get`, **independente** do `noUncheckedIndexedAccess`), e `target.is_admin = true` desreferencia `target`, então sem `if (!target)` o `tsc` dá **`TS18048: 'target' is possibly 'undefined'`** (observado nesta fase; ver "Validação de typecheck e runtime"). O mesmo `| undefined` do `Map.get` exige o `?.` em `USERS.get(caller)?.is_admin` no fix — sem ele, **`TS2532: Object is possibly 'undefined'`**. **Os docs PODEM afirmar que o compilador força a guarda `!target` e o `?.`** (ao contrário de 03), com os códigos acima. Nota: o `noUncheckedIndexedAccess` continua ligado (herança da série), mas aqui quem força as guardas é a assinatura do `Map.get`, não a flag.
 
 `Dockerfile` (idêntico a 01–03 — copiar; base `node:24.21.0-slim`, patch exato, nunca `latest` nem a tag móvel `node:24-slim`):
 
@@ -489,14 +514,14 @@ Publicação verificada **lendo `atoms/api/ROADMAP.md` e a árvore de `atoms/` N
 | Papel na série | **Vira o eixo: instância → capacidade** | BOLA protege objeto; BFLA protege operação. O contraste com 01–03 é o material. |
 | A função admin | **Promover usuário a admin** (`POST /admin/users/:handle/promote`) | Muda estado, não devolve dado alheio → isola o eixo da capacidade do eixo do objeto (evita o reflexo de BOLA). Escalação autoevidente; dá passo de verificação natural (a capacidade propaga). |
 | Toolchain | **Herdado exato** de 01–03 (express 5.2.1, tsx 4.23.13, typescript 7.0.2, @types/express 5.0.6, @types/node 24.13.5; base `node:24.21.0-slim`) | CLAUDE.md §3.6. Lido dos arquivos publicados nesta fase. Bump é decisão de release. |
-| Store | **Em memória (`Record<string, User>`), sem banco** | BFLA não depende do storage. `User = { is_admin: boolean }`: o papel tem que morar em algum lugar — única mudança estrutural vs. o `Set` de 01–03. |
+| Store | **Em memória (`Map<string, User>`), sem banco** | BFLA não depende do storage. `User = { is_admin: boolean }`: o papel tem que morar em algum lugar — única mudança estrutural vs. o `Set` de 01–03. **`Map` (não `Record`)** pra o lookup-e-escrita por `:handle` não abrir prototype pollution (`__proto__`/`constructor`); `Map.get` não percorre protótipo. |
 | Papel / representação | **`is_admin: boolean` por usuário** | Mínimo. Análogo ao `order.owner` (01/02) e ao vínculo operador→loja (03): o dado que a autorização compara. |
 | Admin no seed | **`carol` é a única admin; `clancy`/`alice`/`bob` comuns** | O `fixed/` precisa de um admin pra mostrar a função funcionando pra quem pode. `clancy` comum pra a escalação ser escalação; `alice` comum pra "virar admin" ser observável. `carol` reusa o elenco. |
 | Token | **Opaco, `crypto.randomBytes`; NÃO JWT** — idêntico a 01–03 | Cripto-forte pra não ser 2ª vuln. O ataque não toca o token. |
 | Descoberta do endpoint | **DECLARADA no enunciado, uma frase** | Em BFLA real a descoberta quase nunca é o difícil; encenar distorceria a classe. Nada na app revela rota (seria information disclosure, 2º bug). 2ª vez na série (creditar o 02: lá premissa=lição, aqui=economia). |
 | Rotas | `POST /login`, `POST /admin/users/:handle/promote` (vuln) | Superfície mínima. Sem read, sem demote, sem índice de rotas. |
 | O bug | **Check de papel AUSENTE** antes da função admin | Ausência de código, não payload. Autentica mas não autoriza a função. |
-| Fix (eixo único) | **`if (!USERS[caller]?.is_admin) return 403` antes da busca** | Guarda de papel do chamador, antes de tudo. Inverso de 01/02 (predicado sobre o objeto) e diferente de 03 (mover a busca). |
+| Fix (eixo único) | **`if (!USERS.get(caller)?.is_admin) return 403` antes da busca** | Guarda de papel do chamador, antes de tudo. Inverso de 01/02 (predicado sobre o objeto) e diferente de 03 (mover a busca). |
 | Status code do fix | **`403`** (não `404`) | O alvo é uma **função conhecida** (premissa), não objeto com existência sensível; sem id-space, sem oráculo. RFC 9110 §15.5.4: credencial presente, papel insuficiente → `403` honesto. O argumento de `404` de 01–03 não transfere, e dizer por quê é lição. |
 | Alvo inexistente (fixed) | **`404`**, só alcançável por admin (pós-`403`) | Ortogonal; admins podem saber quais usuários existem. Não é oráculo pra não-admin (gate antes da busca). |
 | Resposta de sucesso | **`{ "handle": "<alvo>", "is_admin": true }`** | O **delta de estado** (o que o chamador causou), não dado privado de terceiro. `handle` é eco do input; `is_admin:true` é o resultado. Mantém no eixo da função, longe de BOLA. |
@@ -515,19 +540,50 @@ Publicação verificada **lendo `atoms/api/ROADMAP.md` e a árvore de `atoms/` N
 
 ## Decisões que podem gerar dúvida durante implementação
 
-- **Membership no `POST /login` com `Record`.** `USERS` virou `Record<string, User>`, então a checagem de 01–03 (`USERS.has(user)`) não existe. Usar **`Object.hasOwn(USERS, user)`** (não `user in USERS`, pra não pegar chaves do protótipo; não `USERS[user]` como truthiness, pra não depender do valor). `req.body?.user` é `any` (Express não tipa o body) → `Object.hasOwn` aceita; `issueToken(user)` aceita `any` em parâmetro `string`. Confirmar `tsc --noEmit` limpo na geração.
-- **Guarda `!target` FORÇADA pelo tipo (diferente de 03).** `USERS[req.params.handle]` é `User | undefined` sob `noUncheckedIndexedAccess`; `target.is_admin = true` desreferencia, então `if (!target)` é exigido pelo compilador (sem ela, `TS18048`). Os docs **podem** afirmar isso (ao contrário de 03, onde a guarda não era forçada). Validar na geração ligando/desligando a guarda.
-- **`USERS[caller]?.is_admin` no fix.** `caller` vem do `authenticate` (string, sempre uma chave real de `USERS` em runtime), mas o TS vê `USERS[caller]` como `User | undefined`; o `?.` é exigido e correto. **Não** usar `!` (non-null assertion). Mesmo padrão do `STORES[storeId]?.` de 03.
+- **Membership no `POST /login` — resolvida pelo `Map`.** Com `USERS` sendo `Map<string, User>`, a checagem é **`USERS.has(user)`**, exatamente como 01–03 (sem `Object.hasOwn`, sem divergência da série). `req.body?.user` é `any` (Express não tipa o body) → `Map.has(any)` aceita; `issueToken(user)` aceita `any` em parâmetro `string`. **Validado nesta fase:** `tsc --noEmit` limpo (exit 0).
+- **Guarda `!target` FORÇADA pelo compilador (diferente de 03) — validado nesta fase.** `USERS.get(req.params.handle)` é `User | undefined` (assinatura do `Map.get`); `target.is_admin = true` desreferencia, então `if (!target)` é exigido. **Observado:** removendo a guarda, `tsc` dá **`TS18048: 'target' is possibly 'undefined'`**. Os docs **podem** afirmar isso (ao contrário de 03, onde a guarda não era forçada).
+- **`USERS.get(caller)?.is_admin` no fix — `?.` exigido, validado nesta fase.** `caller` vem do `authenticate` (string, sempre uma chave real em runtime), mas o TS vê `USERS.get(caller)` como `User | undefined`; o `?.` é exigido. **Observado:** trocar por acesso direto `USERS.get(caller).is_admin` dá **`TS2532: Object is possibly 'undefined'`**. **Não** usar `!` (non-null assertion).
 - **Tipos do Express 5 — retorno `Response` vs `void`.** Igual a 01–03: callbacks contextualmente tipados (retorno `void`), onde `return res.sendStatus(...)` **passa**. Se o gerador **anotar o retorno** do handler explicitamente, o TS reclama; a forma segura é **`res.sendStatus(401); return;`** (statement + `return` vazio), **nunca** `return res.sendStatus(...)`. Não anotar o retorno é o caminho de 01–03.
 - **Corpo do `POST` da promoção.** O alvo vai no **path** (`:handle`); o corpo é vazio/ausente. O `app.use(express.json())` continua obrigatório (o `POST /login` usa o body) e idêntico a 01–03 — não removê-lo.
 - **Verbo HTTP.** `POST` é o verbo natural pra a ação "promover". **NÃO** transformar a escolha do método em lição (variação por método HTTP é outra linha da categoria, não-publicada — fora do escopo; não aludir).
-- **`typecheck` não foi rodado nesta fase de planning** (ao contrário de 01–03, onde foi). A forma do código foi raciocinada contra o toolchain exato lido dos arquivos; a Fase 2 **deve** rodar `npm run typecheck` nos dois gêmeos como gate (host/CI) e confirmar os três pontos acima.
+
+---
+
+## Validação de typecheck e runtime (feita NESTA fase de planning)
+
+Montei um protótipo local com o **toolchain EXATO** herdado de 01–03 (express 5.2.1, tsx 4.23.13, typescript 7.0.2, @types/express 5.0.6, @types/node 24.13.5) e o `tsconfig.json` da série (copiado byte a byte do `bola-sequential-id`), reconstruí os **dois gêmeos** a partir dos samples desta spec **já com o `Map`**, e rodei `tsc --noEmit` em cada um. Observado (não raciocinado):
+
+**Typecheck (os números de erro são reais, do `tsc` 7.0.2):**
+
+| Teste | Resultado observado |
+|---|---|
+| `vulnerable/app.ts` (Map, guarda `!target` presente) | **exit 0**, limpo |
+| `fixed/app.ts` (Map, `USERS.get(caller)?.is_admin`) | **exit 0**, limpo |
+| **[prova negativa]** `fixed/` com acesso direto `USERS.get(caller).is_admin` (sem `?.`) | **`TS2532: Object is possibly 'undefined'`** |
+| **[prova negativa]** `vulnerable/` com a guarda `!target` removida | **`TS18048: 'target' is possibly 'undefined'`** |
+| `USERS.has(user)` / `USERS.get(handle)` com `Map` | compilam limpos (dentro dos dois gêmeos exit 0) |
+| `lib`/`target` da série (`es2024`) | suportam tudo que os samples usam (`Map`, `randomBytes`, Express 5) — exit 0 |
+
+- **As duas afirmações de compilador da spec estão CORRETAS**, agora com código: a guarda `!target` é forçada (**`TS18048`**), e o `?.` no fix é exigido (**`TS2532`**). Nenhuma estava errada — mas, diferente da versão anterior desta spec, agora são **observadas**, não analogia. (A correção que o átomo 03 fez na própria pele — "a guarda não era forçada lá" — foi o motivo de validar em vez de supor.)
+- **Nota de precisão:** o `| undefined` que força as duas guardas vem da **assinatura do `Map.get`**, não do `noUncheckedIndexedAccess` (que continua ligado por herança da série, mas não é o que faz o trabalho aqui).
+
+**Runtime — prototype pollution, ANTES e DEPOIS do `Map`** (handler reproduzido com `tsx`, alvos `__proto__` e `constructor`):
+
+| Store | `__proto__` | `Object.prototype` poluído? | `constructor` | `alice` | `nobody` |
+|---|---|---|---|---|---|
+| **`Record`** (design descartado) | **`200`** (guarda `!target` NÃO pega) | **SIM** — `({}).is_admin === true` no processo todo | **`200`** | `200` | `404` |
+| **`Map`** (correção) | **`404`** | **não** — `({}).is_admin === undefined` | **`404`** | `200` | `404` |
+
+- Com `Record`, `USERS["__proto__"]` devolve `Object.prototype` (truthy), a guarda passa, e `Object.prototype.is_admin = true` **polui o processo inteiro** — segunda vuln confirmada, não teórica.
+- Com `Map`, `USERS.get("__proto__")` e `USERS.get("constructor")` devolvem `undefined` → `404`, e **nada** é acrescentado a `Object.prototype`. O caminho legítimo (`alice` → `200`, `nobody` → `404`) é idêntico nos dois.
+
+A Fase 2 ainda roda `npm run typecheck` nos dois gêmeos como gate oficial (host/CI) — o acima é a validação de planning, na mesma disciplina de 01–03.
 
 ---
 
 ## Riscos técnicos a validar na geração (checklist — Fase 2, CLAUDE.md §11)
 
-1. **`POST /login`** mapeia `usuário→token`, Bearer resolve de volta; `clancy`/`alice`/`bob`/`carol` recebem tokens distintos e cripto-fortes (`randomBytes`). Bloco de auth (helpers) byte a byte o de 01–03; só `USERS` mudou de `Set` pra `Record`.
+1. **`POST /login`** mapeia `usuário→token`, Bearer resolve de volta; `clancy`/`alice`/`bob`/`carol` recebem tokens distintos e cripto-fortes (`randomBytes`). Bloco de auth (helpers) byte a byte o de 01–03; só `USERS` mudou de `Set<string>` pra `Map<string, User>`; membership segue `USERS.has(user)`.
 2. **Autenticação funciona:** sem Bearer, ou Bearer inválido → **`401`** no endpoint admin, nas duas versões.
 3. **Vulnerable — BFLA:** `POST /admin/users/alice/promote` com o Bearer do **`clancy`** (comum) → **`200`**, `{"handle":"alice","is_admin":true}`; `alice.is_admin` fica `true`. Token intacto.
 4. **Vulnerable — indiferença ao alvo:** `POST /admin/users/clancy/promote` com o Bearer do `clancy` → **`200`** (o caso-limite do passo de contraste).
@@ -536,7 +592,7 @@ Publicação verificada **lendo `atoms/api/ROADMAP.md` e a árvore de `atoms/` N
 7. **Fixed — a cadeia para:** `POST /admin/users/alice/promote` com o Bearer do **`clancy`** (comum) → **`403`** (body `Forbidden`); `alice` **não** vira admin.
 8. **Fixed — a função funciona pra admin:** logar como `carol` (seed admin) e `POST /admin/users/bob/promote` → **`200`**. Sem/ruim token → `401`.
 9. **Fixed — `403` antes da busca:** um não-admin pedindo um `:handle` **inexistente** ainda recebe **`403`** (não `404`) — o gate roda antes do lookup, não vaza existência de alvo.
-10. **`app.ts` DIFERE só pela guarda de papel** (`if (!USERS[caller]?.is_admin) return res.sendStatus(403);` + o comentário) entre `vulnerable/` e `fixed/`. `POST /login`, helpers, imports, `USERS`, rodapé, `Dockerfile`, `package.json`, `package-lock.json`, `tsconfig.json` **idênticos** entre as versões.
+10. **`app.ts` DIFERE só pela guarda de papel** (`if (!USERS.get(caller)?.is_admin) return res.sendStatus(403);` + o comentário) entre `vulnerable/` e `fixed/`. `POST /login`, helpers, imports, `USERS`, rodapé, `Dockerfile`, `package.json`, `package-lock.json`, `tsconfig.json` **idênticos** entre as versões.
 11. **Resposta não vaza dado alheio nem token:** o sucesso serializa só `{ handle, is_admin }`; nenhum campo de PII (os usuários não têm nome/endereço); nenhum token em resposta alguma. **Um bug só** (BFLA).
 12. **Superfície mínima:** só `POST /login` e `POST /admin/users/:handle/promote`. **Sem** read, **sem** demote, **sem** índice de rotas, **sem** `GET /me`.
 13. **Estado mutável:** promoções cumulativas e persistentes; restart (`./atom down && ./atom up`) devolve o seed (`carol` única admin). Gêmeos independentes (8204 não afeta 8304).
@@ -546,11 +602,12 @@ Publicação verificada **lendo `atoms/api/ROADMAP.md` e a árvore de `atoms/` N
 17. **Theory primer:** re-confirmar por fetch a URL `https://portswigger.net/web-security/access-control` (200, sem redirect); texto do link "Access control vulnerabilities and privilege escalation", em inglês no PT. **Confirmar que NÃO é a página de IDOR de 01–03.**
 18. **RFC 9110** citado como nesta spec: **§15.5.4 (403 Forbidden)** (credencial presente, insuficiente; `404` como `MAY` pra esconder existência) e, se útil, **§15.5.2 (401 Unauthorized)**. Texto bruto conferido nesta fase em `rfc-editor.org/rfc/rfc9110.txt`; **reconfirmar na geração** antes de cravar as citações.
 19. **`npm audit --omit=dev` em cada gêmeo**, advisories esperados **registrados**. O átomo é vulnerável na **LÓGICA** (check de papel ausente), **não nas dependências** (idênticas a 01–03). Meta: zero advisory de runtime.
-20. **`npm run typecheck` (`tsc --noEmit`, typescript 7.0.2) verde nos DOIS gêmeos** — inclusive o `vulnerable/` (vulnerável na lógica, não no tipo). Gate de **host/CI**, não do container. Confirmar os pontos de "Decisões que podem gerar dúvida" (membership com `Record`, guarda `!target` forçada, `?.` no fix).
-21. **Frases-âncora:** cada uma numa casa só (WALKTHROUGH: indiferença ao alvo; DIFF: o fix não checa o alvo, só o papel); **não** reusar as âncoras de 01/02/03 — em especial, manter distância da de 03 ("which question it answers").
-22. **Cross-ref:** 01–03 citados/contrastados (a troca de categoria é a lição); **nenhum** átomo de API 05+; **nenhuma** antecipação de "BFLA por método".
+20. **`npm run typecheck` (`tsc --noEmit`, typescript 7.0.2) verde nos DOIS gêmeos** — inclusive o `vulnerable/` (vulnerável na lógica, não no tipo). Gate de **host/CI**, não do container. **Shape validado nesta fase** (ver "Validação de typecheck e runtime"): os dois gêmeos com `Map` saem exit 0; a guarda `!target` é forçada (`TS18048` sem ela); o `?.` no fix é exigido (`TS2532` sem ele); `USERS.has`/`USERS.get` compilam limpos.
+21. **Prototype pollution fechada pelo `Map` — gate explícito nos DOIS gêmeos.** `POST /admin/users/__proto__/promote` e `POST /admin/users/constructor/promote` devolvem **`404`** no `vulnerable/` (com qualquer token válido); no `fixed/`, **`403`** para não-admin e **`404`** para admin. E, decisivo: **nenhuma propriedade é acrescentada a `Object.prototype`** — checar que `({}).is_admin` (ou qualquer objeto sem `is_admin` próprio) continua `undefined` depois dessas requests. (Validado em protótipo nesta fase; ver "Validação de typecheck e runtime".) **Se algum desses devolver `200` ou poluir o protótipo, a correção `Map` não foi aplicada — PARE.**
+22. **Frases-âncora:** cada uma numa casa só (WALKTHROUGH: indiferença ao alvo; DIFF: o fix não checa o alvo, só o papel); **não** reusar as âncoras de 01/02/03 — em especial, manter distância da de 03 ("which question it answers").
+23. **Cross-ref:** 01–03 citados/contrastados (a troca de categoria é a lição); **nenhum** átomo de API 05+; **nenhuma** antecipação de "BFLA por método".
 
-**Bloqueante remanescente:** nenhum. Design fechado pelo mantenedor; toolchain herdado e lido dos arquivos de 01–03; URL do primer e seções do RFC 9110 verificadas por fetch/texto bruto nesta fase. O único item que 01–03 fizeram e esta fase não fez é **rodar o `tsc`**; a forma foi raciocinada contra o toolchain exato e os três pontos de tipo estão listados pra o gate da Fase 2.
+**Bloqueante remanescente:** nenhum. Design fechado pelo mantenedor; toolchain herdado e lido dos arquivos de 01–03; URL do primer e seções do RFC 9110 verificadas por fetch/texto bruto nesta fase; shape TS e a prototype pollution validados em protótipo com o toolchain exato (ver "Validação de typecheck e runtime"). Resto é validação de smoke test na Fase 2.
 
 ---
 
@@ -560,7 +617,7 @@ Publicação verificada **lendo `atoms/api/ROADMAP.md` e a árvore de `atoms/` N
 - **A função admin NÃO lê objeto.** Promover muda estado; a resposta é o **delta** (`{handle, is_admin:true}`), não um registro privado. Os usuários **não têm** nome/endereço — não há PII pra confundir com leitura. Se a geração sentir vontade de devolver "o registro do alvo", **PARE**: isso puxaria o átomo de volta pra BOLA.
 - **O passo de contraste decisivo é o auto-promote.** `clancy` promovendo `clancy` é inatacável sob a lente de objeto (é o registro dele) e **mesmo assim** é a falha — porque o eixo é a operação. É o argumento que separa BFLA de BOLA; não cortar, não enfraquecer.
 - **Descoberta é premissa, não passo.** O endpoint é conhecido (uma frase no README/Context). **NÃO** criar endpoint de descoberta, índice de rotas, nem erro que confirme existência (seria information disclosure, 2º bug). Creditar o **02** (publicado) como precedente de premissa declarada — lá era a lição, aqui é economia.
-- **Fix = guarda de papel do chamador, antes de tudo.** `if (!USERS[caller]?.is_admin) return 403`, antes da busca do alvo. **NÃO** é o predicado de posse de 01/02 nem o lookup escopado de 03 — e dizer por que o fix é diferente faz parte da lição.
+- **Fix = guarda de papel do chamador, antes de tudo.** `if (!USERS.get(caller)?.is_admin) return 403`, antes da busca do alvo. **NÃO** é o predicado de posse de 01/02 nem o lookup escopado de 03 — e dizer por que o fix é diferente faz parte da lição.
 - **Status `403`, não `404`.** Argumento próprio: alvo é função conhecida (sem id-space, sem oráculo); RFC 9110 §15.5.4 (credencial insuficiente). O argumento de `404` de 01–03 **não transfere** — explicar por quê. **Não** copiar `404` por reflexo da série.
 - **Estado mutável:** primeiro átomo que escreve. Promoções cumulativas; **sem demote**; undo = restart (uma frase no walkthrough). Gêmeos independentes.
 - **Impacto honesto:** escalação **vertical** de privilégio (ganhar papel admin); **não** chamar de horizontal, **não** de RCE. A prova de impacto é a **propagação** da capacidade (alice→bob), não um dump de dados.
@@ -582,7 +639,7 @@ A spec afirma herança e contraste com 01–03; tudo abaixo foi conferido **lend
 3. **`Dockerfile`** — **md5 idêntico nos seis**: `node:24.21.0-slim`, `npm ci --omit=dev`, `COPY tsconfig.json` + `COPY app.ts`, `ENV HOST=0.0.0.0`, `EXPOSE 3000`, `USER node` no fim sem `chown`, `CMD ["npm","start"]`.
 4. **`tsconfig.json`** — **md5 idêntico nos seis**: `nodenext`, `target/lib es2024`, `types [node]`, `strict`, `noUncheckedIndexedAccess`, `esModuleInterop`, `noEmit`.
 5. **`docker-compose.yml`** — bind `127.0.0.1`; `8201/8301` (01), `8202/8302` (02), `8203/8303` (03).
-6. **Bloco de auth** — linhas 1–23 dos três `app.ts` **byte-idênticas** (md5 batendo): `USERS = new Set(["clancy","alice","bob","carol"])`, `TOKENS = new Map`, `issueToken` com `randomBytes(24).toString("base64url")`, `authenticate` por `Bearer`. **Este átomo muda `USERS` de `Set` pra `Record<string,User>`** — a única mudança estrutural que a classe exige.
+6. **Bloco de auth** — linhas 1–23 dos três `app.ts` **byte-idênticas** (md5 batendo): `USERS = new Set(["clancy","alice","bob","carol"])`, `TOKENS = new Map`, `issueToken` com `randomBytes(24).toString("base64url")`, `authenticate` por `Bearer`. **Este átomo muda `USERS` de `Set<string>` pra `Map<string, User>`** — a única mudança estrutural que a classe exige; `TOKENS` continua `Map<string,string>`, e `USERS.has(user)` no `POST /login` é a mesma forma que 01–03 (o `Set` e o `Map` compartilham `.has`).
 7. **Elenco** — `clancy` é o atacante (masculino) em código e docs PT ("o `clancy` faz login como ele mesmo", "você esteve autenticado como `clancy`"); `alice`/`bob`/`carol` são o resto do elenco. (O seed de 01/02 tem `clancy` dono do pedido `1007`, customer "Omar Haddad".)
 8. **Fix de 01/02** — `if (!order || order.owner !== caller) return res.sendStatus(404);` (predicado de posse **depois** da busca); comentário `FIXED:` com "(a 403 here would be an enumeration oracle)".
 9. **Fix de 03** — `const order = ordersOf(req.params.storeId).find(...)` (move a **busca** pro escopo do pai); a guarda `!order` **não** é forçada pelo tipo em 03 (nada desreferencia `order`).
