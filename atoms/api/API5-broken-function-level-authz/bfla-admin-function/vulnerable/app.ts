@@ -41,7 +41,7 @@ app.post("/login", (req, res) => {
 
 app.post("/admin/users/:handle/promote", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
   // VULNERABLE: the caller is authenticated, but the handler never checks the caller's
   // ROLE. Promoting a user to admin is an admin-only function; here ANY authenticated
   // user can invoke it. Authenticated is not authorized to PERFORM this operation.

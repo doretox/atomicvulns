@@ -77,14 +77,14 @@ app.post("/login", (req, res) => {
 
 app.get("/stores/:storeId/orders", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);
   if (!operates(caller, req.params.storeId)) return res.sendStatus(403);
   res.json(ordersOf(req.params.storeId));   // correctly scoped: only this store's orders
 });
 
 app.get("/stores/:storeId/orders/:orderId", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);                        // AUTHENTICATION
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION
   if (!operates(caller, req.params.storeId)) return res.sendStatus(403);  // parent check: real, and it bites
   // FIXED: the order is looked up INSIDE the authorized store, not in the global collection --
   // an order from another store is simply not found, the same 404 as an id that never existed.

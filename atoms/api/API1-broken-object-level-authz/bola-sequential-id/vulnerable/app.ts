@@ -58,14 +58,14 @@ app.post("/login", (req, res) => {
 
 app.get("/orders", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);
   // Correctly scoped: only the caller's own orders.
   res.json(Object.values(ORDERS).filter((o) => o.owner === caller));
 });
 
 app.get("/orders/:id", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
   const order = ORDERS[Number(req.params.id)];
   if (!order) return res.sendStatus(404);
   // VULNERABLE: authenticated, but the order is returned WITHOUT checking that

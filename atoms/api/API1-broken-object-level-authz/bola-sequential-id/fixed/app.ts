@@ -58,14 +58,14 @@ app.post("/login", (req, res) => {
 
 app.get("/orders", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);
   // Correctly scoped: only the caller's own orders.
   res.json(Object.values(ORDERS).filter((o) => o.owner === caller));
 });
 
 app.get("/orders/:id", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
   const order = ORDERS[Number(req.params.id)];
   // FIXED: existence and ownership are ONE guard with ONE exit -- a missing order and
   // someone else's order both hit the same sendStatus(404), so "doesn't exist" and
