@@ -186,7 +186,7 @@ Promove o usuário `:handle` a administrador (`is_admin = true`). Autentica (Bea
 ```ts
 app.post("/admin/users/:handle/promote", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
   // VULNERABLE: the caller is authenticated, but the handler never checks the caller's
   // ROLE. Promoting a user to admin is an admin-only function; here ANY authenticated
   // user can invoke it. Authenticated is not authorized to PERFORM this operation.
@@ -213,7 +213,7 @@ O gêmeo `fixed/` difere **APENAS por um check de papel acrescentado antes da ex
 ```ts
 app.post("/admin/users/:handle/promote", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
   // FIXED: function-level authorization. Promoting is an admin-only capability, so the
   // caller's ROLE is checked right after authentication -- a non-admin is refused 403
   // BEFORE the target is ever looked up, so the gate leaks nothing about who exists.
@@ -228,7 +228,7 @@ app.post("/admin/users/:handle/promote", (req, res) => {
 Diff mínimo (o eixo único):
 
 ```diff
-   if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
+   if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
 -  // VULNERABLE: the caller is authenticated, but the handler never checks the caller's
 -  // ROLE. Promoting a user to admin is an admin-only function; here ANY authenticated
 -  // user can invoke it. Authenticated is not authorized to PERFORM this operation.
