@@ -68,7 +68,7 @@ acessa (BOLA) e qual função se invoca (BFLA).
     operadores da loja. Check do objeto-pai passa, do objeto-filho falta.
   - *Dependências:* átomos 01–02.
 
-- [ ] **04.** `bfla-admin-function` — **API5** Broken Function Level Authorization
+- [x] **04.** `bfla-admin-function` — **API5** Broken Function Level Authorization
   - User comum invoca endpoint admin-only sem check de role (priv-esc vertical).
   - *Dependências:* átomos 01–03.
 
