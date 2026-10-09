@@ -43,7 +43,7 @@ Duas coisas pra ter em mente antes de começar:
 - **A autenticação é genuinamente imposta.** Token ausente ou inválido leva `401`. Você confirma isso no Passo 3.
 - **Se a role do caller é checada pra autorizar a *função* é outra pergunta** — e o handler vulnerable nunca a faz. Cada usuário do seed carrega um flag de role, `is_admin`; é esse flag que o check ausente deveria ter lido.
 
-Dá pra ver no seed que o `clancy` é membro comum — `["clancy", { is_admin: false }]` no `app.ts` —, e o build fixed confirma isso de fora: a mesma chamada lá é recusada com `403`. O build vulnerable nunca diz isso, porque nunca checa.
+O Passo 1 abre com o seed, onde o `clancy` começa como membro comum. O build vulnerable em si nunca diz isso, porque nunca checa.
 
 Uma disciplina pro walkthrough inteiro: **o ataque nunca toca o token.** Você não o decodifica, não o altera, não o forja — você faz login como você mesmo e manda o token exatamente como emitido. Ele fica válido e do `clancy` do começo ao fim. O alvo é a função, não o token.
 
@@ -73,7 +73,20 @@ Esse é o baseline inteiro. A API autentica o `clancy` perfeitamente; ele só n�
 
 ## 5. Passo 1 — Rode a função admin como membro comum (BFLA confirmado)
 
-Peça à função admin que promova a `alice`, também membro comum, com o seu próprio `<clancy-token>`, inalterado. O alvo vai no path; não há corpo:
+Não há rota de leitura, então o estado inicial se lê no seed — o bloco `USERS` do [`vulnerable/app.ts`](./vulnerable/app.ts):
+
+```ts
+const USERS = new Map<string, User>([
+  ["clancy", { is_admin: false }],   // attacker (you) -- a plain member
+  ["alice",  { is_admin: false }],   // primary victim -- promoted in the exploit
+  ["bob",    { is_admin: false }],   // target of carol's legitimate promotion in the fixed build
+  ["carol",  { is_admin: true  }],   // the one legitimate administrator
+]);
+```
+
+O `clancy` e a `alice` começam os dois como membros comuns, `is_admin: false`. A confirmação por comportamento vem em *Por que o fix funciona*: lá o build fixed recusa o `clancy` com `403`, o que mostra de fora que ele não é admin.
+
+Agora peça à função admin que promova a `alice` com o seu próprio `<clancy-token>`, inalterado. O alvo vai no path; não há corpo:
 
 ```
 POST /admin/users/alice/promote HTTP/1.1

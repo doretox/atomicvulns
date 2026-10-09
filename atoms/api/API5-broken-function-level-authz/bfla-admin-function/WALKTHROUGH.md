@@ -43,7 +43,7 @@ Two things to hold in mind before you start:
 - **Authentication is genuinely enforced.** A missing or invalid token gets `401`. You'll confirm this in Step 3.
 - **Whether the caller's role is checked to authorize the *function* is a separate question** — and the vulnerable handler never asks it. Each user in the seed carries one role flag, `is_admin`; that flag is what the missing check should have read.
 
-You can see `clancy` is a plain member in the seed — `["clancy", { is_admin: false }]` in `app.ts` — and the fixed build confirms it from the outside: the same call there is refused `403`. The vulnerable build never says so, because it never checks.
+Step 1 opens with the seed, where `clancy` starts as a plain member. The vulnerable build itself never says so, because it never checks.
 
 One discipline for the whole walkthrough: **the attack never touches the token.** You don't decode it, alter it, or forge it — you log in as yourself and send the token exactly as issued. It stays valid and `clancy`'s from start to finish. The target is the function, not the token.
 
@@ -73,7 +73,20 @@ That is the whole baseline. The API authenticates `clancy` perfectly; he simply 
 
 ## 5. Step 1 — Run the admin function as a plain member (BFLA confirmed)
 
-Ask the admin function to promote `alice`, another plain member, with your own unchanged `<clancy-token>`. The target goes in the path; there is no body:
+There is no read route, so the starting state is read in the seed — the `USERS` block in [`vulnerable/app.ts`](./vulnerable/app.ts):
+
+```ts
+const USERS = new Map<string, User>([
+  ["clancy", { is_admin: false }],   // attacker (you) -- a plain member
+  ["alice",  { is_admin: false }],   // primary victim -- promoted in the exploit
+  ["bob",    { is_admin: false }],   // target of carol's legitimate promotion in the fixed build
+  ["carol",  { is_admin: true  }],   // the one legitimate administrator
+]);
+```
+
+`clancy` and `alice` both start as plain members, `is_admin: false`. The confirmation by behavior comes in *Why the fix works*: there the fixed build refuses `clancy` with `403`, which shows from the outside that he is not an admin.
+
+Now ask the admin function to promote `alice` with your own unchanged `<clancy-token>`. The target goes in the path; there is no body:
 
 ```
 POST /admin/users/alice/promote HTTP/1.1
