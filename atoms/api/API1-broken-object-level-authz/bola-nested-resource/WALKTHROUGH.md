@@ -19,7 +19,7 @@ Open [`vulnerable/app.ts`](./vulnerable/app.ts). The vulnerable handler is ten l
 ```ts
 app.get("/stores/:storeId/orders/:orderId", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);                        // AUTHENTICATION
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION
   if (!operates(caller, req.params.storeId)) return res.sendStatus(403);  // parent check: real, and it bites
   // VULNERABLE: the lookup is GLOBAL. The caller operates :storeId, but order.storeId is
   // never compared to it -- an order from ANY store comes back.
@@ -42,8 +42,8 @@ The handler makes three decisions, and only the third one is wrong. It authentic
 
 Three layers stack up on this endpoint, and the atom is about the third:
 
-- **Authentication** proves *who you are*. No token, or a bad one, gets `401`.
-- **The parent check** proves *that you operate the store in the path*. A store you don't operate gets `403`.
+- **Authentication** proves *who you are*. No token, or a bad one, gets `401` — with a `WWW-Authenticate: Bearer` challenge, the header in which the server asks for credentials.
+- **The parent check** proves *that you operate the store in the path*. A store you don't operate gets `403` — with no challenge, because the server already knows who you are.
 - **The child scope** would prove *that the order belongs to that store*. Nothing does this.
 
 One discipline for the whole walkthrough: **the attack never touches the token.** You log in as yourself and send the token exactly as issued — no decoding, no editing, no forging. The target is the endpoint, not the token.

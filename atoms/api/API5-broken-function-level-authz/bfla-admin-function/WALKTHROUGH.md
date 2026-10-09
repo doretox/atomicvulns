@@ -17,7 +17,7 @@ Open [`vulnerable/app.ts`](./vulnerable/app.ts). The vulnerable handler is short
 ```ts
 app.post("/admin/users/:handle/promote", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
   // VULNERABLE: the caller is authenticated, but the handler never checks the caller's
   // ROLE. Promoting a user to admin is an admin-only function; here ANY authenticated
   // user can invoke it. Authenticated is not authorized to PERFORM this operation.
@@ -168,7 +168,7 @@ Response — `200`:
 {"handle":"bob","is_admin":true}
 ```
 
-The fix didn't break the feature; it restricted who can invoke it. No token or a bad token still gets `401`.
+The fix didn't break the feature; it restricted who can invoke it. No token or a bad token still gets `401`, and only the `401` carries a `WWW-Authenticate: Bearer` challenge — the header telling the client which kind of credentials to come back with. The `403`s above carry none: you were already authenticated, so there is nothing to ask for.
 
 **`403`, not `404`.** The API1 atoms answer `404` for an order outside your scope; here the non-admin gets an honest `403`. The endpoint is known by premise, so there is no existence to hide, and `403` tells the truth: you are authenticated, and your role is not enough for this operation. [`DIFF.md`](./DIFF.md) carries the full argument — RFC 9110 §15.5.4, the series' single criterion for choosing between the two, and why the enumeration-oracle argument (a difference in responses that would let an attacker map which ids exist) behind the order `404` in `bola-sequential-id` and `bola-nested-resource` doesn't apply to a known function.
 

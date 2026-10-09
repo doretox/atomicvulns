@@ -7,7 +7,7 @@ O `vulnerable/app.ts` e o `fixed/app.ts` diferem em exatamente um lugar — uma 
 ```diff
  app.post("/admin/users/:handle/promote", (req, res) => {
    const caller = authenticate(req);
-   if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
+   if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
 -  // VULNERABLE: the caller is authenticated, but the handler never checks the caller's
 -  // ROLE. Promoting a user to admin is an admin-only function; here ANY authenticated
 -  // user can invoke it. Authenticated is not authorized to PERFORM this operation.
@@ -86,7 +86,7 @@ O `404` é um `MAY`: uma opção pra um servidor que tem uma existência que val
 
 **Aqui o alvo é uma capacidade.** O que a guarda protege é uma função única e nomeada, não uma instância num espaço de ids, e a existência dessa função é premissa deste átomo: o path admin é simplesmente conhecido — nomes previsíveis, uma spec OpenAPI que costuma ser pública, um bundle de front-end que o carrega. Não há espaço de ids pra varrer nem existência a esconder; um `404` não esconderia nada que o atacante já não tenha, e contradiria a premissa de que o átomo parte. O critério, portanto, dá `403`, como deu pra loja.
 
-E o `403` é a resposta honesta nos termos do próprio RFC. Credenciais *foram* fornecidas — um token válido, genuinamente do `clancy` — e o servidor as considera insuficientes pra esta função, que é exatamente o caso que a segunda frase citada descreve. O `401` fica onde estava, pra token ausente ou inválido, então os dois codes mantêm autenticação e function-level authorization separadas.
+E o `403` é a resposta honesta nos termos do próprio RFC. Credenciais *foram* fornecidas — um token válido, genuinamente do `clancy` — e o servidor as considera insuficientes pra esta função, que é exatamente o caso que a segunda frase citada descreve. O `401` fica onde estava, pra token ausente ou inválido, então os dois codes mantêm autenticação e function-level authorization separadas. Os headers traçam a mesma linha: pelo §15.5.2, o servidor que gera um `401` *"MUST send a WWW-Authenticate header field"* com pelo menos um challenge — aqui, `Bearer` — e o `403` não traz nenhum. A credencial nunca foi o problema, só o que ela pode fazer.
 
 **A recusa não é um oráculo, por construção.** A guarda roda antes da busca do alvo, então um não-admin leva o mesmo `403` quer o alvo seja a `alice`, ele mesmo ou um handle que nunca foi seedado. Ela revela um fato — que o caller não é admin — e esse é um fato sobre a própria conta dele, que ele já conhece. O `404` de handle desconhecido sobrevive ao fix, mas só depois da guarda, então só um admin consegue chegar a ele — e saber quais contas existem é, legitimamente, assunto de admin.
 

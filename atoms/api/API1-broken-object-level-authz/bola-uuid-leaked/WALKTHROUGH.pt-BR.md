@@ -15,7 +15,7 @@ Abra [`vulnerable/app.ts`](./vulnerable/app.ts). O handler vulnerable é curto:
 ```ts
 app.get("/orders/:id", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
   const order = ORDERS[req.params.id];                      // string key (UUID) -- no Number() coercion
   if (!order) return res.sendStatus(404);
   // VULNERABLE: authenticated, but the order is returned WITHOUT checking that

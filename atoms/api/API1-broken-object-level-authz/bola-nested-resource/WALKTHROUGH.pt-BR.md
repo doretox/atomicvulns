@@ -19,7 +19,7 @@ Abra o [`vulnerable/app.ts`](./vulnerable/app.ts). O handler vulnerable tem dez 
 ```ts
 app.get("/stores/:storeId/orders/:orderId", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);                        // AUTHENTICATION
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION
   if (!operates(caller, req.params.storeId)) return res.sendStatus(403);  // parent check: real, and it bites
   // VULNERABLE: the lookup is GLOBAL. The caller operates :storeId, but order.storeId is
   // never compared to it -- an order from ANY store comes back.
@@ -42,8 +42,8 @@ O `POST /login` recebe um nome de usuário e devolve um **Bearer token opaco** �
 
 Três camadas se empilham neste endpoint, e o átomo é sobre a terceira:
 
-- **A autenticação** prova *quem você é*. Sem token, ou com um token ruim, você leva `401`.
-- **O check do pai** prova *que você opera a loja que está no path*. Uma loja que você não opera leva `403`.
+- **A autenticação** prova *quem você é*. Sem token, ou com um token ruim, você leva `401` — com um challenge `WWW-Authenticate: Bearer`, o header em que o servidor pede credenciais.
+- **O check do pai** prova *que você opera a loja que está no path*. Uma loja que você não opera leva `403` — sem challenge, porque o servidor já sabe quem você é.
 - **O escopo do filho** provaria *que o pedido pertence àquela loja*. Nada faz isso.
 
 Uma disciplina pro walkthrough inteiro: **o ataque nunca toca o token.** Você faz login como você mesmo e manda o token exatamente como foi emitido — sem decodificar, sem editar, sem forjar. O alvo é o endpoint, não o token.

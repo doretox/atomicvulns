@@ -7,7 +7,7 @@
 ```diff
  app.post("/admin/users/:handle/promote", (req, res) => {
    const caller = authenticate(req);
-   if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
+   if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
 -  // VULNERABLE: the caller is authenticated, but the handler never checks the caller's
 -  // ROLE. Promoting a user to admin is an admin-only function; here ANY authenticated
 -  // user can invoke it. Authenticated is not authorized to PERFORM this operation.
@@ -86,7 +86,7 @@ The `404` is a `MAY`: an option for a server that has an existence worth hiding,
 
 **Here the target is a capability.** What the guard protects is a single, named function, not an instance in an id-space, and the existence of that function is a premise of this atom: the admin path is simply known — predictable names, an OpenAPI spec that is often public, a front-end bundle that ships it. There is no id-space to sweep and no existence to hide; a `404` would conceal nothing the attacker doesn't already have, and would contradict the premise the atom starts from. The criterion therefore gives `403`, as it did for the store.
 
-And `403` is the honest answer, in the RFC's own terms. Credentials *were* provided — a valid token, genuinely `clancy`'s — and the server considers them insufficient for this function, which is exactly the case the second quoted sentence describes. `401` stays where it was, for a missing or invalid token, so the two codes keep authentication and function-level authorization apart.
+And `403` is the honest answer, in the RFC's own terms. Credentials *were* provided — a valid token, genuinely `clancy`'s — and the server considers them insufficient for this function, which is exactly the case the second quoted sentence describes. `401` stays where it was, for a missing or invalid token, so the two codes keep authentication and function-level authorization apart. The headers draw the same line: per §15.5.2, the server generating a `401` *"MUST send a WWW-Authenticate header field"* with at least one challenge — here, `Bearer` — and the `403` carries none. The credentials were never the problem, only what they are allowed to do.
 
 **The denial is not an oracle, by construction.** The guard runs before the target lookup, so a non-admin gets the same `403` for `alice`, for himself, and for a handle that was never seeded. It discloses one fact — that the caller is not an admin — and that is a fact about his own account, which he already knows. The `404` for an unknown handle survives the fix, but only past the gate, so only an admin can reach it — and knowing which accounts exist is legitimately an admin's business.
 

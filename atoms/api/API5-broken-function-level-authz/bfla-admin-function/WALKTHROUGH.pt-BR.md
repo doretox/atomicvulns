@@ -17,7 +17,7 @@ Abra o [`vulnerable/app.ts`](./vulnerable/app.ts). O handler vulnerable é curto
 ```ts
 app.post("/admin/users/:handle/promote", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
   // VULNERABLE: the caller is authenticated, but the handler never checks the caller's
   // ROLE. Promoting a user to admin is an admin-only function; here ANY authenticated
   // user can invoke it. Authenticated is not authorized to PERFORM this operation.
@@ -168,7 +168,7 @@ Response — `200`:
 {"handle":"bob","is_admin":true}
 ```
 
-O fix não quebrou a feature; ele restringiu quem pode invocá-la. Sem token ou com token ruim ainda leva `401`.
+O fix não quebrou a feature; ele restringiu quem pode invocá-la. Sem token ou com token ruim ainda leva `401`, e só o `401` traz um challenge `WWW-Authenticate: Bearer` — o header que diz ao cliente com que tipo de credencial voltar. Os `403` acima não trazem nenhum: você já estava autenticado, então não há o que pedir.
 
 **`403`, não `404`.** Os átomos de API1 respondem `404` pra um pedido fora do seu escopo; aqui o não-admin leva um `403` honesto. O endpoint é conhecido por premissa, então não há existência a esconder, e o `403` diz a verdade: você está autenticado, e a sua role não basta pra esta operação. O [`DIFF.pt-BR.md`](./DIFF.pt-BR.md) carrega o argumento completo — o RFC 9110 §15.5.4, o critério único da série pra escolher entre os dois, e por que o argumento do oráculo de enumeração (uma diferença nas responses que deixaria um atacante mapear quais ids existem) por trás do `404` de pedido no `bola-sequential-id` e no `bola-nested-resource` não se aplica a uma função conhecida.
 
