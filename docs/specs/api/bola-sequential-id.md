@@ -189,8 +189,9 @@ Autentica e devolve **só** os pedidos do chamador. **Corretamente escopado nas 
 ```ts
 app.get("/orders", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);
-  res.json(Object.values(ORDERS).filter((o) => o.owner === caller)); // only the caller's own
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);
+  // Correctly scoped: only the caller's own orders.
+  res.json(Object.values(ORDERS).filter((o) => o.owner === caller));
 });
 ```
 
@@ -203,12 +204,12 @@ Autentica (Bearer ruim → `401`: a **autenticação funciona**, de propósito),
 ```ts
 app.get("/orders/:id", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);        // AUTHENTICATION only
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
   const order = ORDERS[Number(req.params.id)];
   if (!order) return res.sendStatus(404);
   // VULNERABLE: authenticated, but the order is returned WITHOUT checking that
   // order.owner is the caller. Authenticated is not authorized for THIS object.
-  res.json(order);                                        // BOLA — no object-level check
+  res.json(order);                                          // BOLA -- no object-level check
 });
 ```
 
@@ -225,9 +226,9 @@ O gêmeo `fixed/` difere **APENAS no predicado de posse** acrescentado à guarda
 ```ts
 app.get("/orders/:id", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
   const order = ORDERS[Number(req.params.id)];
-  // FIXED: existence and ownership are ONE guard with ONE exit — a missing order and
+  // FIXED: existence and ownership are ONE guard with ONE exit -- a missing order and
   // someone else's order both hit the same sendStatus(404), so "doesn't exist" and
   // "not yours" are byte-identical by construction (a 403 here would be an enumeration oracle).
   if (!order || order.owner !== caller) return res.sendStatus(404);
@@ -242,8 +243,8 @@ Diff mínimo (o eixo único):
 -  if (!order) return res.sendStatus(404);
 -  // VULNERABLE: authenticated, but the order is returned WITHOUT checking that
 -  // order.owner is the caller. Authenticated is not authorized for THIS object.
--  res.json(order);                                        // BOLA — no object-level check
-+  // FIXED: existence and ownership are ONE guard with ONE exit — a missing order and
+-  res.json(order);                                          // BOLA -- no object-level check
++  // FIXED: existence and ownership are ONE guard with ONE exit -- a missing order and
 +  // someone else's order both hit the same sendStatus(404), so "doesn't exist" and
 +  // "not yours" are byte-identical by construction (a 403 here would be an enumeration oracle).
 +  if (!order || order.owner !== caller) return res.sendStatus(404);

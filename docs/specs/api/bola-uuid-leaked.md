@@ -195,8 +195,8 @@ Autentica (Bearer ruim → `401`), busca o pedido pelo id, e o devolve — **sem
 ```ts
 app.get("/orders/:id", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);          // AUTHENTICATION only
-  const order = ORDERS[req.params.id];                       // string key (UUID) -- no Number() coercion
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
+  const order = ORDERS[req.params.id];                      // string key (UUID) -- no Number() coercion
   if (!order) return res.sendStatus(404);
   // VULNERABLE: authenticated, but the order is returned WITHOUT checking that
   // order.owner is the caller. Authenticated is not authorized for THIS object.
@@ -219,8 +219,8 @@ O gêmeo `fixed/` difere do `vulnerable/` **APENAS no predicado de posse** acres
 ```ts
 app.get("/orders/:id", (req, res) => {
   const caller = authenticate(req);
-  if (caller === null) return res.sendStatus(401);
-  const order = ORDERS[req.params.id];
+  if (caller === null) return res.set("WWW-Authenticate", "Bearer").sendStatus(401);  // AUTHENTICATION only
+  const order = ORDERS[req.params.id];                      // string key (UUID) -- no Number() coercion
   // FIXED: existence and ownership are ONE guard with ONE exit -- a missing order and
   // someone else's order both hit the same sendStatus(404), so "doesn't exist" and
   // "not yours" are byte-identical by construction (a 403 here would be an enumeration oracle).
@@ -232,7 +232,7 @@ app.get("/orders/:id", (req, res) => {
 Diff mínimo (o eixo único, dentro deste átomo):
 
 ```diff
-   const order = ORDERS[req.params.id];
+   const order = ORDERS[req.params.id];                      // string key (UUID) -- no Number() coercion
 -  if (!order) return res.sendStatus(404);
 -  // VULNERABLE: authenticated, but the order is returned WITHOUT checking that
 -  // order.owner is the caller. Authenticated is not authorized for THIS object.
