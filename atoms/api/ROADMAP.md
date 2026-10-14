@@ -72,7 +72,7 @@ acessa (BOLA) e qual função se invoca (BFLA).
   - User comum invoca endpoint admin-only sem check de role (priv-esc vertical).
   - *Dependências:* átomos 01–03.
 
-- [ ] **05.** `bfla-method-based` — **API5** Broken Function Level Authorization
+- [x] **05.** `bfla-method-based` — **API5** Broken Function Level Authorization
   - `GET` permitido; `DELETE`/`PUT` no mesmo path não checado. O check depende
     do método e falta em um deles.
   - *Dependências:* átomo 04.
