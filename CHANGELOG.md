@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-14
+
+API Object & Function Authz (Phase 1 of the API ROADMAP, and the v1.1 milestone). The API series arrives — a second atom series on the OWASP API Security Top 10 2023, TypeScript/Express, API-only with no browser track — and its first phase closes the two authorization axes that open the API Top 10: object-level (API1, BOLA) and function-level (API5, BFLA). Three BOLA atoms walk the object axis: the missing ownership check behind a sequential id, with the whole collection enumerated in Burp Intruder; the same check missing behind an unguessable UUID that reached the attacker from outside the app, proving the identifier format is never the fix; and a nested resource where the parent store is authorized but the child order is not. Two BFLA atoms turn to the function axis: an admin-only function with no authorization at all (vertical privilege escalation), and the method-based variant where one method of a path is guarded and another on the same path is not. The lesson recurring across all five is that authenticated is not authorized, and the identifier — sequential, UUID, or a known path — is never the control. Each atom isolates one flaw with vulnerable/ and fixed/ side by side, Burp-first walkthroughs, and bilingual docs (EN + PT-BR).
+
 ### Added
 
-- Kicked off the **API series** (`atoms/api/`) — a second atom series built on the OWASP API Security Top 10 2023, with its own ordered `ROADMAP.md`. No API atoms are published yet; the series is planned.
+- Added API atom 01: `bola-sequential-id` — Broken Object Level Authorization (BOLA): a REST orders API authenticates the opaque Bearer token but serves `GET /orders/:id` without checking that `order.owner` is the caller, so changing the id reads another user's order and its PII; the ids are a contiguous counter, so Burp Intruder enumerates the whole collection in one sweep (the base leaks, not one object), and the fix folds existence and ownership into one guard with one `404` exit so "not yours" is byte-identical to "doesn't exist" and the sequential id is left untouched (API1 Broken Object Level Authorization, CWE-639).
+- Added API atom 02: `bola-uuid-leaked` — Broken Object Level Authorization (BOLA): the same missing ownership check with the object id changed to an unguessable UUID v4 that reaches the attacker from outside the application (a support call, a screenshot, a shared link), proving the identifier format is not the control — a wall of `404`s in Intruder means "didn't find", not "nothing to find", and the fix is the `bola-sequential-id` guard copied byte-for-byte, id-agnostic by construction (API1 Broken Object Level Authorization, CWE-639).
+- Added API atom 03: `bola-nested-resource` — Broken Object Level Authorization (BOLA) in a nested resource: `GET /stores/:storeId/orders/:orderId` authorizes the parent store with a real `403` that bites, then looks the child order up in the global collection without checking it belongs to that store, so an operator reads another store's order through a store they do operate; the fix moves the lookup inside the authorized store's scope rather than adding a predicate, and answers `403` for the store but `404` for the order under one criterion — is the target's existence sensitive? (API1 Broken Object Level Authorization, CWE-639).
+- Added API atom 04: `bfla-admin-function` — Broken Function Level Authorization (BFLA): `POST /admin/users/:handle/promote` authenticates the caller but never checks the caller's role, so any logged-in member invokes an admin-only function and grants the admin role to any account — vertical privilege escalation on a function with no authorization at all; the fix is one role guard between authentication and the target lookup, returning an honest `403` for a function whose existence is a premise, and `USERS` is a `Map` (not a plain object) so a `:handle` of `__proto__` cannot pollute `Object.prototype` (API5 Broken Function Level Authorization, CWE-285).
+- Added API atom 05: `bfla-method-based` — Broken Function Level Authorization (BFLA) by HTTP method: `GET /users/:handle` is guarded by an ownership check and `PATCH /users/:handle`, the very same path, is not, so any user edits anyone's record — authorization belongs to a (method, path) pair, not a path, with the ownership content of API1 riding the method axis of API5; the impact is proved by the victim reading her own record (the `PATCH` echoes the attacker's input, confirming the bypass but not the stored change), and the fix copies the `GET`'s ownership guard onto the `PATCH` (API5 Broken Function Level Authorization, CWE-285).
 
 ### Changed
 
@@ -120,7 +128,8 @@ First public release — MVP Pentester (Phase 1 of the ROADMAP).
 - Established bilingual documentation requirement: every atom ships EN + PT-BR versions of `README.md`, `WALKTHROUGH.md`, and `DIFF.md`, kept in sync within the same commit.
 - Established Burp Suite as the primary exploration path in every walkthrough; UI is context only.
 
-[Unreleased]: https://github.com/doretox/atomicvulns/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/doretox/atomicvulns/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/doretox/atomicvulns/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/doretox/atomicvulns/compare/v0.6.0...v1.0.0
 [0.6.0]: https://github.com/doretox/atomicvulns/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/doretox/atomicvulns/compare/v0.4.0...v0.5.0
