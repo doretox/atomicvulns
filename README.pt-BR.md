@@ -7,6 +7,7 @@
 [![Release](https://img.shields.io/github/v/release/doretox/atomicvulns)](https://github.com/doretox/atomicvulns/releases/latest)
 ![Web atoms](https://img.shields.io/badge/web%20atoms-38-blue)
 ![OWASP Top 10](https://img.shields.io/badge/OWASP-Top%2010%202021-red)
+![API atoms](https://img.shields.io/badge/api%20atoms-5-blue)
 ![OWASP API Top 10](https://img.shields.io/badge/OWASP%20API-2023%20in%20progress-orange)
 ![web stack](https://img.shields.io/badge/web-Python%203.11%2B%2FFlask-blue)
 ![api stack](https://img.shields.io/badge/api-TypeScript%2FExpress-blue)
@@ -40,7 +41,12 @@ A **série web** (Python/Flask) cobre todas as dez categorias do OWASP Top 10 20
 | **A09 — Security Logging and Monitoring Failures** | `logging-failures-demo` |
 | **A10 — Server-Side Request Forgery (SSRF)** | `ssrf-basic`, `ssrf-blind-oob`, `ssrf-cloud-metadata` |
 
-A **série API** (TypeScript/Express) mira o OWASP API Security Top 10 2023 e está em andamento: seu primeiro átomo — [`bola-sequential-id`](./atoms/api/API1-broken-object-level-authz/bola-sequential-id/) (API1 — Broken Object Level Authorization) — está publicado, e o plano ordenado completo vive no seu [ROADMAP](./atoms/api/ROADMAP.md).
+A **série API** (TypeScript/Express) mira o OWASP API Security Top 10 2023. Sua primeira fase — **Authorization: Object & Function** — está publicada: cinco átomos em duas categorias, fechando os eixos de autorização no nível de objeto e no nível de função. O plano ordenado completo vive no seu [ROADMAP](./atoms/api/ROADMAP.md).
+
+| Categoria | Átomos |
+|---|---|
+| **API1 — Broken Object Level Authorization** | `bola-sequential-id`, `bola-uuid-leaked`, `bola-nested-resource` |
+| **API5 — Broken Function Level Authorization** | `bfla-admin-function`, `bfla-method-based` |
 
 ## Público-alvo
 
