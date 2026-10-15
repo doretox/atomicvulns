@@ -86,7 +86,7 @@ depois a passagem para authentication.
 
 **Milestone:** `v1.2 — API Property Authz & Auth`
 
-- [ ] **06.** `bopla-excessive-exposure` — **API3** Broken Object Property Level Authorization
+- [x] **06.** `bopla-excessive-exposure` — **API3** Broken Object Property Level Authorization
   - Face de leitura: o `GET` devolve propriedades que deveria ocultar
     (`password_hash`, `is_admin`, campos internos).
   - *Dependências:* átomos 01–05.
