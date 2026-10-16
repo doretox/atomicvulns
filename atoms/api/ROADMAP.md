@@ -91,7 +91,7 @@ depois a passagem para authentication.
     (`password_hash`, `is_admin`, campos internos).
   - *Dependências:* átomos 01–05.
 
-- [ ] **07.** `bopla-mass-assignment` — **API3** Broken Object Property Level Authorization
+- [x] **07.** `bopla-mass-assignment` — **API3** Broken Object Property Level Authorization
   - Face de escrita: o `PATCH` aceita propriedades que deveria rejeitar
     (`{"is_admin": true}` num update de perfil).
   - *Dependências:* átomo 06.
