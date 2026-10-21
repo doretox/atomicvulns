@@ -96,7 +96,7 @@ depois a passagem para authentication.
     (`{"is_admin": true}` num update de perfil).
   - *Dependências:* átomo 06.
 
-- [ ] **08.** `auth-predictable-token` — **API2** Broken Authentication
+- [x] **08.** `auth-predictable-token` — **API2** Broken Authentication
   - Token opaco previsível emitido no login; forja do token de outro usuário
     em uma request.
   - *Dependências:* átomo 01.
